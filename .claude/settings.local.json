@@ -3,12 +3,19 @@
     "allow": [
       "Bash(pdflatex -interaction=nonstopmode RESEARCH_PAPER.tex)",
       "Bash(python3 -c \":*)",
-      "Bash(gh auth:*)",
-      "Bash(find . -name *.npy -o -name *.pt -o -name *.pkl)",
-      "Bash(find . -name *.pdf -not -path ./docs/*)",
-      "Bash(xargs du:*)",
-      "Bash(gh repo:*)",
-      "Bash(git add:*)"
+      "Bash(git *)",
+      "Bash(gh *)",
+      "Bash(du *)",
+      "Bash(find *)",
+      "Bash(wc *)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "echo '\\n[HOOK REMINDER] Check: did you commit and push changes? Run git status to verify.'"
+      }
     ]
   }
 }
