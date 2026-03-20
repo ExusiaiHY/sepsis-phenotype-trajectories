@@ -1,0 +1,360 @@
+{
+  "n_patients": 11986,
+  "n_windows": 3,
+  "n_adjacent_pairs": 2,
+  "k": 4,
+  "event_level": {
+    "transition_count_matrix": [
+      [
+        5603,
+        249,
+        126,
+        457
+      ],
+      [
+        1009,
+        6378,
+        188,
+        701
+      ],
+      [
+        303,
+        317,
+        2699,
+        196
+      ],
+      [
+        590,
+        333,
+        120,
+        4703
+      ]
+    ],
+    "transition_prob_matrix": [
+      [
+        0.8707,
+        0.0387,
+        0.0196,
+        0.071
+      ],
+      [
+        0.1219,
+        0.7707,
+        0.0227,
+        0.0847
+      ],
+      [
+        0.0862,
+        0.0902,
+        0.7679,
+        0.0558
+      ],
+      [
+        0.1027,
+        0.058,
+        0.0209,
+        0.8185
+      ]
+    ],
+    "total_transition_events": 23972,
+    "self_transition_events": 19383,
+    "non_self_transition_events": 4589,
+    "non_self_fraction": 0.1914,
+    "top_non_self_transitions": [
+      {
+        "from": 1,
+        "to": 0,
+        "count": 1009,
+        "prob": 0.1219
+      },
+      {
+        "from": 1,
+        "to": 3,
+        "count": 701,
+        "prob": 0.0847
+      },
+      {
+        "from": 3,
+        "to": 0,
+        "count": 590,
+        "prob": 0.1027
+      },
+      {
+        "from": 0,
+        "to": 3,
+        "count": 457,
+        "prob": 0.071
+      },
+      {
+        "from": 3,
+        "to": 1,
+        "count": 333,
+        "prob": 0.058
+      },
+      {
+        "from": 2,
+        "to": 1,
+        "count": 317,
+        "prob": 0.0902
+      },
+      {
+        "from": 2,
+        "to": 0,
+        "count": 303,
+        "prob": 0.0862
+      },
+      {
+        "from": 0,
+        "to": 1,
+        "count": 249,
+        "prob": 0.0387
+      },
+      {
+        "from": 2,
+        "to": 3,
+        "count": 196,
+        "prob": 0.0558
+      },
+      {
+        "from": 1,
+        "to": 2,
+        "count": 188,
+        "prob": 0.0227
+      }
+    ],
+    "transition_entropy": 3.8941,
+    "max_possible_entropy": 4.0,
+    "entropy_ratio": 0.9735
+  },
+  "patient_level": {
+    "stable_count": 7858,
+    "stable_fraction": 0.6556,
+    "single_transition_count": 3667,
+    "single_transition_fraction": 0.3059,
+    "multi_transition_count": 461,
+    "multi_transition_fraction": 0.0385,
+    "mean_transitions_per_patient": 0.3829,
+    "top_trajectory_patterns": [
+      {
+        "pattern": [
+          1,
+          1,
+          1
+        ],
+        "count": 2596,
+        "fraction": 0.2166
+      },
+      {
+        "pattern": [
+          0,
+          0,
+          0
+        ],
+        "count": 2210,
+        "fraction": 0.1844
+      },
+      {
+        "pattern": [
+          3,
+          3,
+          3
+        ],
+        "count": 1911,
+        "fraction": 0.1594
+      },
+      {
+        "pattern": [
+          2,
+          2,
+          2
+        ],
+        "count": 1141,
+        "fraction": 0.0952
+      },
+      {
+        "pattern": [
+          1,
+          0,
+          0
+        ],
+        "count": 535,
+        "fraction": 0.0446
+      },
+      {
+        "pattern": [
+          1,
+          1,
+          0
+        ],
+        "count": 378,
+        "fraction": 0.0315
+      },
+      {
+        "pattern": [
+          1,
+          1,
+          3
+        ],
+        "count": 301,
+        "fraction": 0.0251
+      },
+      {
+        "pattern": [
+          1,
+          3,
+          3
+        ],
+        "count": 300,
+        "fraction": 0.025
+      },
+      {
+        "pattern": [
+          3,
+          0,
+          0
+        ],
+        "count": 234,
+        "fraction": 0.0195
+      },
+      {
+        "pattern": [
+          3,
+          3,
+          0
+        ],
+        "count": 222,
+        "fraction": 0.0185
+      },
+      {
+        "pattern": [
+          0,
+          0,
+          3
+        ],
+        "count": 180,
+        "fraction": 0.015
+      },
+      {
+        "pattern": [
+          3,
+          1,
+          1
+        ],
+        "count": 168,
+        "fraction": 0.014
+      },
+      {
+        "pattern": [
+          0,
+          3,
+          3
+        ],
+        "count": 148,
+        "fraction": 0.0123
+      },
+      {
+        "pattern": [
+          2,
+          1,
+          1
+        ],
+        "count": 137,
+        "fraction": 0.0114
+      },
+      {
+        "pattern": [
+          0,
+          1,
+          1
+        ],
+        "count": 135,
+        "fraction": 0.0113
+      }
+    ]
+  },
+  "mortality_descriptives": {
+    "all_cohort": {
+      "stable": {
+        "n": 7858,
+        "mortality_rate": 0.1556,
+        "label": "stable"
+      },
+      "single_transition": {
+        "n": 3667,
+        "mortality_rate": 0.1129,
+        "label": "single_transition"
+      },
+      "multi_transition": {
+        "n": 461,
+        "mortality_rate": 0.1518,
+        "label": "multi_transition"
+      }
+    },
+    "train": {
+      "stable": {
+        "n": 4089,
+        "mortality_rate": 0.157
+      },
+      "single_transition": {
+        "n": 1852,
+        "mortality_rate": 0.1021
+      },
+      "multi_transition": {
+        "n": 250,
+        "mortality_rate": 0.152
+      }
+    },
+    "val": {
+      "stable": {
+        "n": 1171,
+        "mortality_rate": 0.1452
+      },
+      "single_transition": {
+        "n": 565,
+        "mortality_rate": 0.1186
+      },
+      "multi_transition": {
+        "n": 62,
+        "mortality_rate": 0.2581
+      }
+    },
+    "test": {
+      "stable": {
+        "n": 2598,
+        "mortality_rate": 0.1582
+      },
+      "single_transition": {
+        "n": 1250,
+        "mortality_rate": 0.1264
+      },
+      "multi_transition": {
+        "n": 149,
+        "mortality_rate": 0.1074
+      }
+    }
+  },
+  "mortality_by_stable_phenotype": {
+    "cluster_0": {
+      "n": 2210,
+      "mortality_rate": 0.0394
+    },
+    "cluster_1": {
+      "n": 2596,
+      "mortality_rate": 0.2253
+    },
+    "cluster_2": {
+      "n": 1141,
+      "mortality_rate": 0.319
+    },
+    "cluster_3": {
+      "n": 1911,
+      "mortality_rate": 0.0979
+    }
+  },
+  "stability_assessment": {
+    "stable_fraction": 0.6556,
+    "non_self_event_fraction": 0.1914,
+    "entropy_ratio": 0.9735,
+    "flag": "OK: Meaningful transition activity detected."
+  }
+}

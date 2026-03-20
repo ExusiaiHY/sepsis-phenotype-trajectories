@@ -1,0 +1,151 @@
+{
+  "s0_patients": 11986,
+  "s0_features": 24,
+  "pca_components": 32,
+  "pca_variance_explained": 0.6245608533851035,
+  "clustering_results": {
+    "2": {
+      "silhouette": 0.10624447910990677,
+      "calinski_harabasz": 1100.771452303078,
+      "davies_bouldin": 3.0880000859029284,
+      "clusters": {
+        "0": {
+          "n": 5337,
+          "mortality": 0.22934232715008432
+        },
+        "1": {
+          "n": 6649,
+          "mortality": 0.07264250263197473
+        }
+      }
+    },
+    "3": {
+      "silhouette": 0.09094065437410734,
+      "calinski_harabasz": 908.2984107939927,
+      "davies_bouldin": 2.8391904473408474,
+      "clusters": {
+        "0": {
+          "n": 1335,
+          "mortality": 0.351310861423221
+        },
+        "1": {
+          "n": 4714,
+          "mortality": 0.18752651675859142
+        },
+        "2": {
+          "n": 5937,
+          "mortality": 0.05962607377463365
+        }
+      }
+    },
+    "4": {
+      "silhouette": 0.057232145904917535,
+      "calinski_harabasz": 829.334423979742,
+      "davies_bouldin": 2.6278200292299307,
+      "clusters": {
+        "0": {
+          "n": 3394,
+          "mortality": 0.08721272834413671
+        },
+        "1": {
+          "n": 3526,
+          "mortality": 0.06352807714123652
+        },
+        "2": {
+          "n": 3881,
+          "mortality": 0.19299149703684618
+        },
+        "3": {
+          "n": 1185,
+          "mortality": 0.369620253164557
+        }
+      }
+    },
+    "5": {
+      "silhouette": 0.06131162263133659,
+      "calinski_harabasz": 760.809742600841,
+      "davies_bouldin": 2.5766873695759296,
+      "clusters": {
+        "0": {
+          "n": 3277,
+          "mortality": 0.18004272200183094
+        },
+        "1": {
+          "n": 3233,
+          "mortality": 0.08320445406742963
+        },
+        "2": {
+          "n": 3366,
+          "mortality": 0.058823529411764705
+        },
+        "3": {
+          "n": 1077,
+          "mortality": 0.28040854224698236
+        },
+        "4": {
+          "n": 1033,
+          "mortality": 0.33688286544046464
+        }
+      }
+    },
+    "6": {
+      "silhouette": 0.06526046086116194,
+      "calinski_harabasz": 697.687568471759,
+      "davies_bouldin": 2.4987641029655276,
+      "clusters": {
+        "0": {
+          "n": 1059,
+          "mortality": 0.254957507082153
+        },
+        "1": {
+          "n": 3305,
+          "mortality": 0.059304084720121025
+        },
+        "2": {
+          "n": 3057,
+          "mortality": 0.18874713771671572
+        },
+        "3": {
+          "n": 1121,
+          "mortality": 0.21855486173059768
+        },
+        "4": {
+          "n": 3155,
+          "mortality": 0.07543581616481775
+        },
+        "5": {
+          "n": 289,
+          "mortality": 0.6262975778546713
+        }
+      }
+    }
+  },
+  "consistency_checks": [
+    {
+      "name": "patient_count",
+      "paper": 11816,
+      "s0": 11986,
+      "consistent": true
+    },
+    {
+      "name": "k4_silhouette",
+      "paper": 0.065,
+      "s0": 0.057232145904917535,
+      "directionally_consistent": true,
+      "close": true
+    },
+    {
+      "name": "k4_mortality_separation",
+      "paper_range": 0.30399999999999994,
+      "s0_range": 0.30609217602332045,
+      "has_separation": true
+    },
+    {
+      "name": "missing_rate",
+      "paper": 0.78,
+      "s0": 0.7333575487136841,
+      "consistent": "True"
+    }
+  ],
+  "mortality_label_note": "S0 uses ground truth in-hospital mortality from PhysioNet Outcomes files. V1 paper used proxy mortality derived from GCS<=5 or MAP<55. The proxy dramatically overestimates mortality (~50% vs ~14%). Clustering metric differences are primarily driven by this label change."
+}

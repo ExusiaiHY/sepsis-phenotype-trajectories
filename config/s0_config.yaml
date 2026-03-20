@@ -1,0 +1,37 @@
+# S0 Data Layer Configuration
+# Used by scripts/s0_prepare.py
+
+data:
+  source: physionet2012
+  data_dir: data/external    # Relative to project root
+  output_dir: data/s0        # Where S0 outputs go
+
+  physionet2012:
+    sets:
+      - set-a
+      - set-b
+      - set-c
+    center_a_sets:
+      - set-a
+      - set-b
+    center_b_sets:
+      - set-c
+    min_measurements: 1      # Skip patients with fewer measurements
+
+  n_hours: 48                # Temporal window length
+
+preprocess:
+  max_forward_fill_hours: 6
+  outlier_sigma: 4.0
+  normalization: standard    # standard | minmax | none
+
+splits:
+  method: cross_center       # cross_center | random
+  train_ratio: 0.7           # Only used for random splits
+  val_ratio: 0.15
+  seed: 42
+  stratify_by: mortality_inhospital
+
+runtime:
+  seed: 42
+  log_level: INFO

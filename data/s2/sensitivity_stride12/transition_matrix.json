@@ -1,0 +1,123 @@
+{
+  "transition_count_matrix": [
+    [
+      5603,
+      249,
+      126,
+      457
+    ],
+    [
+      1009,
+      6378,
+      188,
+      701
+    ],
+    [
+      303,
+      317,
+      2699,
+      196
+    ],
+    [
+      590,
+      333,
+      120,
+      4703
+    ]
+  ],
+  "transition_prob_matrix": [
+    [
+      0.8707,
+      0.0387,
+      0.0196,
+      0.071
+    ],
+    [
+      0.1219,
+      0.7707,
+      0.0227,
+      0.0847
+    ],
+    [
+      0.0862,
+      0.0902,
+      0.7679,
+      0.0558
+    ],
+    [
+      0.1027,
+      0.058,
+      0.0209,
+      0.8185
+    ]
+  ],
+  "total_transition_events": 23972,
+  "self_transition_events": 19383,
+  "non_self_transition_events": 4589,
+  "non_self_fraction": 0.1914,
+  "top_non_self_transitions": [
+    {
+      "from": 1,
+      "to": 0,
+      "count": 1009,
+      "prob": 0.1219
+    },
+    {
+      "from": 1,
+      "to": 3,
+      "count": 701,
+      "prob": 0.0847
+    },
+    {
+      "from": 3,
+      "to": 0,
+      "count": 590,
+      "prob": 0.1027
+    },
+    {
+      "from": 0,
+      "to": 3,
+      "count": 457,
+      "prob": 0.071
+    },
+    {
+      "from": 3,
+      "to": 1,
+      "count": 333,
+      "prob": 0.058
+    },
+    {
+      "from": 2,
+      "to": 1,
+      "count": 317,
+      "prob": 0.0902
+    },
+    {
+      "from": 2,
+      "to": 0,
+      "count": 303,
+      "prob": 0.0862
+    },
+    {
+      "from": 0,
+      "to": 1,
+      "count": 249,
+      "prob": 0.0387
+    },
+    {
+      "from": 2,
+      "to": 3,
+      "count": 196,
+      "prob": 0.0558
+    },
+    {
+      "from": 1,
+      "to": 2,
+      "count": 188,
+      "prob": 0.0227
+    }
+  ],
+  "transition_entropy": 3.8941,
+  "max_possible_entropy": 4.0,
+  "entropy_ratio": 0.9735
+}

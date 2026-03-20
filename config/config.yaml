@@ -1,0 +1,123 @@
+paths:
+  raw_data: data/raw
+  processed_data: data/processed
+  demo_data: data/demo
+  output_figures: outputs/figures
+  output_models: outputs/models
+  output_reports: outputs/reports
+data:
+  source: simulated
+  simulated:
+    n_patients: 500
+    n_timesteps: 48
+    n_subtypes: 4
+    missing_rate: 0.15
+    random_seed: 42
+  mimic:
+    db_path: ''
+    cohort_sql: ''
+    sepsis_definition: sepsis3
+  eicu:
+    db_path: ''
+  physionet:
+    data_dir: data/external
+    n_hours: 48
+  sepsis2019:
+    data_dir: data/external
+    n_hours: 48
+variables:
+  vitals:
+  - heart_rate
+  - sbp
+  - dbp
+  - map
+  - resp_rate
+  - spo2
+  - temperature
+  labs:
+  - lactate
+  - creatinine
+  - bilirubin
+  - platelet
+  - wbc
+  - pao2_fio2
+  - inr
+  treatments:
+  - vasopressor
+  - mechanical_vent
+  - rrt
+  outcomes:
+  - mortality_28d
+  - icu_los
+  - shock_onset
+preprocess:
+  resample_interval: 1H
+  missing_strategy: forward_fill_then_median
+  outlier_method: clip
+  outlier_sigma: 4.0
+  normalization: standard
+features:
+  statistical:
+    window_functions:
+    - mean
+    - std
+    - min
+    - max
+    - trend
+    - last_value
+    sub_windows:
+    - 12
+    - 24
+    - 48
+  representation:
+    model_type: transformer
+    pretrain_task: masked_event
+    embedding_dim: 64
+    n_layers: 2
+    n_heads: 4
+    dropout: 0.1
+    learning_rate: 0.001
+    pretrain_epochs: 50
+    batch_size: 32
+clustering:
+  method: kmeans
+  k_range:
+  - 2
+  - 8
+  optimal_k_criterion: silhouette
+  n_init: 20
+  random_seed: 42
+reduction:
+  method: umap
+  n_components: 2
+  umap:
+    n_neighbors: 15
+    min_dist: 0.1
+    metric: euclidean
+  tsne:
+    perplexity: 30
+    learning_rate: 200
+evaluation:
+  clustering_metrics:
+  - silhouette_score
+  - calinski_harabasz_score
+  - davies_bouldin_score
+  survival:
+    enabled: true
+    time_col: icu_los
+    event_col: mortality_28d
+    alpha: 0.05
+visualization:
+  style: seaborn-v0_8-whitegrid
+  figsize:
+  - 10
+  - 8
+  dpi: 150
+  palette: Set2
+  font_family: sans-serif
+  save_format: png
+runtime:
+  random_seed: 42
+  n_jobs: -1
+  verbose: true
+  log_level: INFO

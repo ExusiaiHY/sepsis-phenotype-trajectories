@@ -1,0 +1,12 @@
+{
+  "n_patients": 11986,
+  "mortality_sources": {
+    "outcomes_file": 11986
+  },
+  "mortality_rate_ground_truth": 0.14241615217754047,
+  "mortality_rate_proxy": 0.4477724011346571,
+  "discrepancy": 0.30535624895711666,
+  "proxy_sensitivity": 0.5571177504393673,
+  "proxy_specificity": 0.5703862243408891,
+  "proxy_ppv": 0.1771939631078815
+}

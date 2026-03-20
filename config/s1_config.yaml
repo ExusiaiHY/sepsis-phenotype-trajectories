@@ -1,0 +1,36 @@
+# S1 Self-Supervised Encoder Configuration
+
+encoder:
+  n_features: 21          # Continuous features from S0 schema
+  d_model: 128            # Moderate capacity for 12K-patient cohort
+  n_heads: 4              # 128/4 = 32 per head
+  n_layers: 2             # Minimal depth to avoid overfitting
+  d_ff: 256               # 2x expansion factor
+  dropout: 0.2
+  max_seq_len: 48
+
+pretraining:
+  mask_ratio: 0.15        # Fraction of observed values to mask
+  epochs: 50
+  batch_size: 64
+  lr: 1.0e-3
+  weight_decay: 1.0e-5
+  patience: 10            # Early stopping patience
+  grad_clip: 1.0
+  seed: 42
+
+pca_baseline:
+  n_components: 32        # Match V1 PCA setting
+
+evaluation:
+  k_values: [2, 4]
+  n_seeds: 5              # Multi-seed KMeans evaluation
+  seeds: [42, 123, 456, 789, 2024]
+
+paths:
+  s0_dir: data/s0
+  s1_dir: data/s1
+
+runtime:
+  device: auto            # auto | cpu | cuda | mps
+  log_level: INFO

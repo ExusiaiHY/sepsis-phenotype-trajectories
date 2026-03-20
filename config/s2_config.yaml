@@ -1,0 +1,20 @@
+# S2-light: Descriptive temporal phenotype trajectories
+
+rolling_windows:
+  window_len: 24       # hours per window
+  stride: 6            # hours between window starts
+  seq_len: 48          # full sequence length
+
+clustering:
+  k: 4
+  n_init: 20
+  seed: 42
+
+paths:
+  s0_dir: data/s0
+  s15_encoder: data/s15/checkpoints/pretrain_best.pt
+  s2_dir: data/s2
+
+runtime:
+  device: auto
+  log_level: INFO

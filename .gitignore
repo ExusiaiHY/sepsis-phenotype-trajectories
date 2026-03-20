@@ -1,0 +1,53 @@
+# ============================================
+# Project .gitignore
+# ============================================
+
+# --- Large data & artifacts (excluded from GitHub) ---
+archive/
+*.npy
+*.npz
+*.pt
+*.pkl
+*.h5
+
+# Raw data archives
+data/external/*.tar.gz
+data/external/.cache*
+
+# Reference code zips
+eicu-code-main.zip
+mimic-code-main.zip
+
+# Keep JSON reports and configs (small, useful for reproducibility)
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+*.so
+.venv/
+venv/
+env/
+
+# --- LaTeX build artifacts ---
+docs/*.aux
+docs/*.log
+docs/*.out
+docs/*.synctex.gz
+docs/*.fdb_latexmk
+docs/*.fls
+docs/*.toc
+docs/*.bbl
+docs/*.blg
+
+# --- IDE ---
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# --- Non-project PDFs (keep only our manuscript PDF) ---
+docs/s11263-*.pdf
+firebase-debug.log

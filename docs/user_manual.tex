@@ -1,0 +1,394 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tabularx}
+\usepackage{titlesec}
+\usepackage{parskip}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Software User Manual}
+\fancyhead[R]{\small ICU Sepsis Subtype Discovery}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!5},
+  columns=fullflexible,
+  language=bash,
+}
+
+\graphicspath{{../outputs/figures/}}
+
+\title{%
+  \Large\bfseries Software User Manual\\[4pt]
+  \large ICU Sepsis Dynamic Subtype Discovery and Analysis System
+}
+\author{Wang Ruike}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Software Overview}
+
+This software is a dynamic subtype discovery and analysis system designed for ICU sepsis patient time-series data. Based on electronic health record (EHR) time-series data, the system performs standardized preprocessing, statistical feature extraction, dimensionality reduction, and cluster analysis to automatically discover dynamic subtypes among sepsis patients.
+
+Key features include:
+\begin{itemize}[nosep]
+  \item Loading and preprocessing of simulated or real ICU sepsis patient time-series data
+  \item Feature extraction across multiple time windows with multiple statistical measures
+  \item Automatic optimal cluster number search and multi-method clustering comparison
+  \item Clustering quality evaluation, survival stratification analysis, and subtype clinical profiling
+  \item Automatic generation of 7 types of visualization charts
+  \item Structured evaluation report output (JSON + plain text)
+\end{itemize}
+
+% ============================================================
+\section{System Requirements}
+
+\begin{table}[H]
+\centering
+\caption{Minimum and recommended system requirements.}
+\begin{tabular}{ll}
+\toprule
+\textbf{Item} & \textbf{Requirement} \\
+\midrule
+Operating System & macOS / Linux / Windows \\
+Python Version & 3.9 or above \\
+Memory & 4\,GB minimum (8\,GB recommended) \\
+Disk Space & 500\,MB minimum (including dependencies) \\
+GPU & Not required (MVP version) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================
+\section{Installation Steps}
+
+\subsection{Obtain the Project Code}
+
+Copy the project directory to your local working directory:
+
+\begin{lstlisting}
+cd /path/to/project
+\end{lstlisting}
+
+\subsection{Install Python Dependencies}
+
+\begin{lstlisting}
+pip install -r requirements.txt
+\end{lstlisting}
+
+Key dependencies:
+
+\begin{table}[H]
+\centering\small
+\caption{Key Python dependencies.}
+\begin{tabular}{llp{5cm}}
+\toprule
+\textbf{Package} & \textbf{Version} & \textbf{Purpose} \\
+\midrule
+numpy & $\geq$1.24.0 & Numerical computation \\
+pandas & $\geq$2.0.0 & Data processing \\
+scipy & $\geq$1.10.0 & Scientific computation \\
+pyyaml & $\geq$6.0 & Configuration file parsing \\
+scikit-learn & $\geq$1.3.0 & Clustering and evaluation \\
+umap-learn & $\geq$0.5.3 & Dimensionality reduction \\
+matplotlib & $\geq$3.7.0 & Visualization \\
+lifelines & $\geq$0.27.0 & Survival analysis (recommended) \\
+duckdb & $\geq$0.9.0 & MIMIC-IV data pipeline \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Verify Installation}
+
+\begin{lstlisting}
+cd src
+python main.py --n-patients 100 --skip-vis
+\end{lstlisting}
+
+If the output displays \texttt{"All steps completed!"}, the installation is successful.
+
+% ============================================================
+\section{Project Directory Structure}
+
+\begin{lstlisting}[language={},frame=single]
+project/
++-- config/
+|   +-- config.yaml           # Global configuration
++-- data/
+|   +-- raw/                   # Raw data
+|   +-- processed/             # Preprocessed cached data
+|   +-- demo/                  # Demo data
++-- docs/                      # Project documentation
++-- outputs/
+|   +-- figures/               # Visualization output (PNG)
+|   +-- models/                # Saved model files
+|   +-- reports/               # Evaluation reports (JSON + TXT)
++-- src/
+|   +-- main.py                # Main entry point
+|   +-- data_loader.py         # Data loading
+|   +-- preprocess.py          # Preprocessing module
+|   +-- feature_engineering.py # Feature extraction
+|   +-- representation_model.py# Representation learning
+|   +-- clustering.py          # Clustering module
+|   +-- evaluation.py          # Evaluation module
+|   +-- visualization.py       # Visualization module
+|   +-- utils.py               # Shared utilities
++-- requirements.txt
++-- README.md
+\end{lstlisting}
+
+% ============================================================
+\section{Input Data Format}
+
+\subsection{Simulated Data (Default)}
+
+The system includes a built-in simulated data generator, allowing it to run without external data. The simulator produces time-series data for patients with 4 sepsis subtypes based on clinically reasonable parameters.
+
+\subsection{Real Data Interface (MIMIC-IV / eICU)}
+
+When using real data, the following format is required:
+
+\textbf{Time-series data (3D tensor):}
+\begin{itemize}[nosep]
+  \item Shape: \texttt{(n\_patients, n\_timesteps, n\_features)}
+  \item Data type: \texttt{float64}
+  \item Missing values: represented by \texttt{NaN}
+\end{itemize}
+
+\textbf{Patient information table (DataFrame):}
+
+\begin{table}[H]
+\centering\small
+\caption{Patient information table schema.}
+\begin{tabular}{lll}
+\toprule
+\textbf{Column} & \textbf{Type} & \textbf{Description} \\
+\midrule
+patient\_id & str & Unique patient identifier \\
+mortality\_28d & int & 28-day mortality (0/1) \\
+icu\_los & float & ICU length of stay (hours) \\
+shock\_onset & int & Shock occurrence (0/1) \\
+age & int & Age \\
+gender & str & Gender (M/F) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================
+\section{Configuration File}
+
+The configuration file is located at \texttt{config/config.yaml} in YAML format.
+
+\subsection{Data Source}
+
+\begin{lstlisting}[language={}]
+data:
+  source: "simulated"  # "simulated" | "mimic" | "eicu"
+  simulated:
+    n_patients: 500
+    n_timesteps: 48
+    n_subtypes: 4
+    missing_rate: 0.15
+    random_seed: 42
+\end{lstlisting}
+
+\subsection{Preprocessing}
+
+\begin{lstlisting}[language={}]
+preprocess:
+  missing_strategy: "forward_fill_then_median"
+  outlier_method: "clip"
+  outlier_sigma: 4.0
+  normalization: "standard"
+\end{lstlisting}
+
+\subsection{Clustering}
+
+\begin{lstlisting}[language={}]
+clustering:
+  method: "kmeans"
+  k_range: [2, 8]
+  optimal_k_criterion: "silhouette"
+\end{lstlisting}
+
+\subsection{Dimensionality Reduction}
+
+\begin{lstlisting}[language={}]
+reduction:
+  method: "umap"    # "umap" | "tsne" | "pca"
+  n_components: 2
+  umap:
+    n_neighbors: 15
+    min_dist: 0.1
+\end{lstlisting}
+
+% ============================================================
+\section{How to Run}
+
+\subsection{Basic Execution}
+
+\begin{lstlisting}
+cd project/src
+python main.py
+\end{lstlisting}
+
+This runs the full analysis pipeline with default settings (500 simulated patients).
+
+\subsection{Command-Line Arguments}
+
+\begin{table}[H]
+\centering\small
+\caption{Available command-line arguments.}
+\begin{tabular}{llp{4.5cm}}
+\toprule
+\textbf{Argument} & \textbf{Default} & \textbf{Description} \\
+\midrule
+\texttt{--config} & config.yaml & Custom config file path \\
+\texttt{--n-patients} & 500 & Number of simulated patients \\
+\texttt{--source} & simulated & Data source \\
+\texttt{--method} & kmeans & Clustering method \\
+\texttt{--k} & auto & Cluster count \\
+\texttt{--reduction} & umap & Reduction method \\
+\texttt{--seed} & 42 & Random seed \\
+\texttt{--skip-vis} & false & Skip visualization \\
+\texttt{--compare-methods} & false & Multi-method comparison \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Usage Examples}
+
+\begin{lstlisting}
+# 1000 patients, GMM clustering
+python main.py --n-patients 1000 --method gmm
+
+# K=4, t-SNE reduction
+python main.py --k 4 --reduction tsne
+
+# Quick run (skip visualization)
+python main.py --n-patients 200 --skip-vis
+
+# Multi-method clustering comparison
+python main.py --compare-methods
+
+# MIMIC-IV data source
+python main.py --source mimic
+\end{lstlisting}
+
+% ============================================================
+\section{Output Description}
+
+\subsection{Visualization Charts (\texttt{outputs/figures/})}
+
+\begin{table}[H]
+\centering\small
+\caption{Generated visualization files.}
+\begin{tabular}{lp{8cm}}
+\toprule
+\textbf{File} & \textbf{Description} \\
+\midrule
+\texttt{missing\_pattern.png} & Missing rate distribution per variable \\
+\texttt{cluster\_scatter.png} & Cluster scatter plot after UMAP/t-SNE reduction \\
+\texttt{k\_selection.png} & Optimal K selection curves (Silhouette, CH, DB) \\
+\texttt{subtype\_heatmap.png} & Subtype feature profile heatmap \\
+\texttt{survival\_curves.png} & Kaplan-Meier survival curves per subtype \\
+\texttt{trajectory\_comparison.png} & Key variable trajectory comparison \\
+\texttt{summary\_dashboard.png} & Comprehensive results dashboard (2$\times$2) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation Reports (\texttt{outputs/reports/})}
+
+\begin{table}[H]
+\centering
+\caption{Generated report files.}
+\begin{tabular}{llp{6cm}}
+\toprule
+\textbf{File} & \textbf{Format} & \textbf{Content} \\
+\midrule
+\texttt{evaluation\_report.json} & JSON & Complete evaluation data (machine-parseable) \\
+\texttt{evaluation\_summary.txt} & Text & Human-readable summary \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Sample Output Figures}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{missing_pattern.png}
+\caption{Example output: Missing rate distribution across clinical variables.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{summary_dashboard.png}
+\caption{Example output: Summary dashboard with cluster scatter, K selection, mortality, and LOS distribution.}
+\end{figure}
+
+% ============================================================
+\section{Frequently Asked Questions}
+
+\textbf{Q1: \texttt{ModuleNotFoundError} at runtime}
+
+A: Ensure all dependencies are installed: \texttt{pip install -r requirements.txt}
+
+\medskip
+\textbf{Q2: UMAP dimensionality reduction is slow}
+
+A: UMAP may be slow with $>$5000 patients. Use \texttt{--reduction pca} as a faster alternative, or reduce patient count for quick validation.
+
+\medskip
+\textbf{Q3: How to use real MIMIC-IV data?}
+
+A: Complete PhysioNet credentialing at \url{https://physionet.org/content/mimiciv/}, download the data, then run:
+\begin{lstlisting}
+python import_to_duckdb.py --data-dir ../mimic-iv-data
+python run_concepts.py
+python build_analysis_table.py
+python main.py --source mimic
+\end{lstlisting}
+
+\medskip
+\textbf{Q4: Clustering results differ between runs}
+
+A: Ensure a random seed is set (default~42). All random processes are managed uniformly via the \texttt{set\_global\_seed()} function.
+
+\medskip
+\textbf{Q5: How to change the number of clusters?}
+
+A: Use \texttt{--k 4} to force $K=4$, or modify \texttt{k\_range} in \texttt{config.yaml} for the auto-search range.
+
+% ============================================================
+\section{Important Notes}
+
+\begin{enumerate}[nosep]
+  \item For the first run, use default settings with a smaller patient count (200--300) for validation.
+  \item Configuration changes take effect immediately on the next run; no reinstallation needed.
+  \item Results in \texttt{outputs/} are overwritten on subsequent runs; back up manually if needed.
+  \item Simulated data is for development and validation only; use real data for formal reports.
+  \item The survival analysis feature requires \texttt{lifelines}; without it, the system falls back to chi-square tests.
+\end{enumerate}
+
+\end{document}

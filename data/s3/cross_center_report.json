@@ -1,0 +1,257 @@
+{
+  "center_a_n": 7989,
+  "center_b_n": 3997,
+  "n_windows": 5,
+  "k": 4,
+  "prevalence": {
+    "center_a": [
+      [
+        0.2425,
+        0.3585,
+        0.158,
+        0.2411
+      ],
+      [
+        0.2649,
+        0.3432,
+        0.151,
+        0.241
+      ],
+      [
+        0.2974,
+        0.3232,
+        0.1324,
+        0.247
+      ],
+      [
+        0.3139,
+        0.2977,
+        0.1268,
+        0.2616
+      ],
+      [
+        0.3268,
+        0.2819,
+        0.1262,
+        0.2651
+      ]
+    ],
+    "center_b": [
+      [
+        0.2517,
+        0.3545,
+        0.1601,
+        0.2337
+      ],
+      [
+        0.2767,
+        0.3373,
+        0.1524,
+        0.2337
+      ],
+      [
+        0.2982,
+        0.3212,
+        0.1394,
+        0.2412
+      ],
+      [
+        0.3202,
+        0.2987,
+        0.1291,
+        0.2519
+      ],
+      [
+        0.3393,
+        0.2797,
+        0.1261,
+        0.2549
+      ]
+    ],
+    "l1_per_window": [
+      0.0228,
+      0.0265,
+      0.0155,
+      0.0193,
+      0.0249
+    ],
+    "mean_l1": 0.0218
+  },
+  "center_a": {
+    "n_patients": 7989,
+    "stable_fraction": 0.6496,
+    "single_fraction": 0.2923,
+    "multi_fraction": 0.0581,
+    "non_self_proportion": 0.103,
+    "non_self_count": 3292,
+    "total_events": 31956,
+    "transition_matrix": [
+      [
+        8289,
+        191,
+        100,
+        357
+      ],
+      [
+        642,
+        9298,
+        136,
+        490
+      ],
+      [
+        223,
+        224,
+        3955,
+        137
+      ],
+      [
+        457,
+        241,
+        94,
+        7122
+      ]
+    ],
+    "mortality_by_stable_phenotype": {
+      "P0": {
+        "n": 1452,
+        "mortality": 0.0386
+      },
+      "P1": {
+        "n": 1705,
+        "mortality": 0.2182
+      },
+      "P2": {
+        "n": 743,
+        "mortality": 0.3257
+      },
+      "P3": {
+        "n": 1290,
+        "mortality": 0.0969
+      }
+    },
+    "mortality_by_category": {
+      "stable": {
+        "n": 5190,
+        "mortality": 0.1532
+      },
+      "single": {
+        "n": 2335,
+        "mortality": 0.1084
+      },
+      "multi": {
+        "n": 464,
+        "mortality": 0.1595
+      }
+    }
+  },
+  "center_b": {
+    "n_patients": 3997,
+    "stable_fraction": 0.644,
+    "single_fraction": 0.2937,
+    "multi_fraction": 0.0623,
+    "non_self_proportion": 0.106,
+    "non_self_count": 1695,
+    "total_events": 15988,
+    "transition_matrix": [
+      [
+        4254,
+        85,
+        45,
+        200
+      ],
+      [
+        314,
+        4615,
+        76,
+        238
+      ],
+      [
+        110,
+        122,
+        2014,
+        76
+      ],
+      [
+        256,
+        122,
+        51,
+        3410
+      ]
+    ],
+    "mortality_by_stable_phenotype": {
+      "P0": {
+        "n": 764,
+        "mortality": 0.0419
+      },
+      "P1": {
+        "n": 842,
+        "mortality": 0.2399
+      },
+      "P2": {
+        "n": 367,
+        "mortality": 0.2997
+      },
+      "P3": {
+        "n": 601,
+        "mortality": 0.0982
+      }
+    },
+    "mortality_by_category": {
+      "stable": {
+        "n": 2574,
+        "mortality": 0.1566
+      },
+      "single": {
+        "n": 1174,
+        "mortality": 0.1261
+      },
+      "multi": {
+        "n": 249,
+        "mortality": 0.1365
+      }
+    }
+  },
+  "silhouette_per_window": {
+    "center_a": [
+      0.0715,
+      0.0737,
+      0.0778,
+      0.0801,
+      0.0817
+    ],
+    "center_b": [
+      0.0723,
+      0.0748,
+      0.0771,
+      0.0798,
+      0.0819
+    ]
+  },
+  "robustness": {
+    "stable_fraction_similar": true,
+    "stable_fraction_diff": 0.0056,
+    "transition_proportion_similar": true,
+    "transition_proportion_diff": 0.003,
+    "mortality_ordering_match": true,
+    "order_a": [
+      "P0",
+      "P3",
+      "P1",
+      "P2"
+    ],
+    "order_b": [
+      "P0",
+      "P3",
+      "P1",
+      "P2"
+    ],
+    "highest_risk_same": true,
+    "center_b_mortality_range": 0.2578,
+    "range_meaningful": true,
+    "prevalence_l1_low": true,
+    "mean_prevalence_l1": 0.0218,
+    "criteria_passed": 6,
+    "conclusion": "STRONG CROSS-CENTER GENERALIZATION: All 6 criteria passed.",
+    "claim_level": "robust cross-center generalization"
+  }
+}

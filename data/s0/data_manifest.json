@@ -1,0 +1,500 @@
+{
+  "generated_at": "2026-03-18T14:25:04.259760",
+  "python_version": "3.14.3 (main, Feb  3 2026, 15:32:20) [Clang 17.0.0 (clang-1700.6.3.2)]",
+  "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
+  "schema": {
+    "continuous": [
+      {
+        "name": "heart_rate",
+        "index": 0,
+        "unit": "bpm",
+        "availability": "observed",
+        "reliability": "high",
+        "imputation_allowed": true,
+        "normalization_group": "vitals",
+        "description": "Heart rate",
+        "physionet2012_source": "HR"
+      },
+      {
+        "name": "sbp",
+        "index": 1,
+        "unit": "mmHg",
+        "availability": "observed",
+        "reliability": "high",
+        "imputation_allowed": true,
+        "normalization_group": "vitals",
+        "description": "Systolic blood pressure",
+        "physionet2012_source": "SysABP,NISysABP"
+      },
+      {
+        "name": "dbp",
+        "index": 2,
+        "unit": "mmHg",
+        "availability": "observed",
+        "reliability": "high",
+        "imputation_allowed": true,
+        "normalization_group": "vitals",
+        "description": "Diastolic blood pressure",
+        "physionet2012_source": "DiasABP,NIDiasABP"
+      },
+      {
+        "name": "map",
+        "index": 3,
+        "unit": "mmHg",
+        "availability": "observed",
+        "reliability": "high",
+        "imputation_allowed": true,
+        "normalization_group": "vitals",
+        "description": "Mean arterial pressure",
+        "physionet2012_source": "MAP,NIMAP"
+      },
+      {
+        "name": "resp_rate",
+        "index": 4,
+        "unit": "/min",
+        "availability": "observed",
+        "reliability": "medium",
+        "imputation_allowed": true,
+        "normalization_group": "vitals",
+        "description": "Respiratory rate",
+        "physionet2012_source": "RespRate"
+      },
+      {
+        "name": "spo2",
+        "index": 5,
+        "unit": "%",
+        "availability": "observed",
+        "reliability": "medium",
+        "imputation_allowed": true,
+        "normalization_group": "vitals",
+        "description": "Oxygen saturation",
+        "physionet2012_source": "SaO2"
+      },
+      {
+        "name": "temperature",
+        "index": 6,
+        "unit": "\u00b0C",
+        "availability": "observed",
+        "reliability": "high",
+        "imputation_allowed": true,
+        "normalization_group": "vitals",
+        "description": "Body temperature",
+        "physionet2012_source": "Temp"
+      },
+      {
+        "name": "gcs",
+        "index": 7,
+        "unit": "score",
+        "availability": "observed",
+        "reliability": "high",
+        "imputation_allowed": true,
+        "normalization_group": "vitals",
+        "description": "Glasgow Coma Scale",
+        "physionet2012_source": "GCS"
+      },
+      {
+        "name": "creatinine",
+        "index": 8,
+        "unit": "mg/dL",
+        "availability": "observed",
+        "reliability": "medium",
+        "imputation_allowed": true,
+        "normalization_group": "labs",
+        "description": "Serum creatinine",
+        "physionet2012_source": "Creatinine"
+      },
+      {
+        "name": "bun",
+        "index": 9,
+        "unit": "mg/dL",
+        "availability": "observed",
+        "reliability": "medium",
+        "imputation_allowed": true,
+        "normalization_group": "labs",
+        "description": "Blood urea nitrogen",
+        "physionet2012_source": "BUN"
+      },
+      {
+        "name": "glucose",
+        "index": 10,
+        "unit": "mg/dL",
+        "availability": "observed",
+        "reliability": "medium",
+        "imputation_allowed": true,
+        "normalization_group": "labs",
+        "description": "Blood glucose",
+        "physionet2012_source": "Glucose"
+      },
+      {
+        "name": "wbc",
+        "index": 11,
+        "unit": "K/uL",
+        "availability": "observed",
+        "reliability": "medium",
+        "imputation_allowed": true,
+        "normalization_group": "labs",
+        "description": "White blood cell count",
+        "physionet2012_source": "WBC"
+      },
+      {
+        "name": "platelet",
+        "index": 12,
+        "unit": "K/uL",
+        "availability": "observed",
+        "reliability": "medium",
+        "imputation_allowed": true,
+        "normalization_group": "labs",
+        "description": "Platelet count",
+        "physionet2012_source": "Platelets"
+      },
+      {
+        "name": "potassium",
+        "index": 13,
+        "unit": "mEq/L",
+        "availability": "observed",
+        "reliability": "medium",
+        "imputation_allowed": true,
+        "normalization_group": "labs",
+        "description": "Serum potassium",
+        "physionet2012_source": "K"
+      },
+      {
+        "name": "sodium",
+        "index": 14,
+        "unit": "mEq/L",
+        "availability": "observed",
+        "reliability": "medium",
+        "imputation_allowed": true,
+        "normalization_group": "labs",
+        "description": "Serum sodium",
+        "physionet2012_source": "Na"
+      },
+      {
+        "name": "lactate",
+        "index": 15,
+        "unit": "mmol/L",
+        "availability": "observed",
+        "reliability": "low",
+        "imputation_allowed": true,
+        "normalization_group": "labs",
+        "description": "Blood lactate",
+        "physionet2012_source": "Lactate"
+      },
+      {
+        "name": "bilirubin",
+        "index": 16,
+        "unit": "mg/dL",
+        "availability": "observed",
+        "reliability": "low",
+        "imputation_allowed": true,
+        "normalization_group": "labs",
+        "description": "Total bilirubin",
+        "physionet2012_source": "Bilirubin"
+      },
+      {
+        "name": "pao2",
+        "index": 17,
+        "unit": "mmHg",
+        "availability": "observed",
+        "reliability": "medium",
+        "imputation_allowed": true,
+        "normalization_group": "blood_gas",
+        "description": "Partial pressure O2",
+        "physionet2012_source": "PaO2"
+      },
+      {
+        "name": "fio2",
+        "index": 18,
+        "unit": "frac",
+        "availability": "observed",
+        "reliability": "medium",
+        "imputation_allowed": true,
+        "normalization_group": "blood_gas",
+        "description": "Fraction inspired O2",
+        "physionet2012_source": "FiO2"
+      },
+      {
+        "name": "paco2",
+        "index": 19,
+        "unit": "mmHg",
+        "availability": "observed",
+        "reliability": "medium",
+        "imputation_allowed": true,
+        "normalization_group": "blood_gas",
+        "description": "Partial pressure CO2",
+        "physionet2012_source": "PaCO2"
+      },
+      {
+        "name": "ph",
+        "index": 20,
+        "unit": "",
+        "availability": "observed",
+        "reliability": "medium",
+        "imputation_allowed": true,
+        "normalization_group": "blood_gas",
+        "description": "Blood pH",
+        "physionet2012_source": "pH"
+      }
+    ],
+    "interventions": [
+      {
+        "name": "antibiotics_on",
+        "index": 0,
+        "unit": "binary",
+        "availability": "unavailable",
+        "reliability": "unknown",
+        "imputation_allowed": false,
+        "normalization_group": "binary",
+        "description": "Antibiotic administration",
+        "physionet2012_source": ""
+      },
+      {
+        "name": "rrt_on",
+        "index": 1,
+        "unit": "binary",
+        "availability": "unavailable",
+        "reliability": "unknown",
+        "imputation_allowed": false,
+        "normalization_group": "binary",
+        "description": "Renal replacement therapy",
+        "physionet2012_source": ""
+      }
+    ],
+    "proxy_indicators": [
+      {
+        "name": "vasopressor_proxy",
+        "index": 0,
+        "unit": "binary",
+        "availability": "proxy",
+        "reliability": "low",
+        "imputation_allowed": false,
+        "normalization_group": "binary",
+        "description": "Proxy: MAP < 65 mmHg (NOT a treatment record)",
+        "physionet2012_source": "Derived from MAP"
+      },
+      {
+        "name": "mechvent_proxy",
+        "index": 1,
+        "unit": "binary",
+        "availability": "proxy",
+        "reliability": "low",
+        "imputation_allowed": false,
+        "normalization_group": "binary",
+        "description": "Proxy: FiO2 > 0.21 (NOT a treatment record)",
+        "physionet2012_source": "Derived from FiO2"
+      }
+    ],
+    "n_continuous": 21,
+    "n_interventions": 2,
+    "n_proxy": 2,
+    "static_fields": [
+      "patient_id",
+      "age",
+      "sex",
+      "height_cm",
+      "weight_kg",
+      "icu_type",
+      "icu_los_hours",
+      "mortality_inhospital",
+      "mortality_source",
+      "center_id",
+      "set_name",
+      "data_source",
+      "sepsis_onset_hour",
+      "anchor_time_type"
+    ]
+  },
+  "config": {
+    "data": {
+      "source": "physionet2012",
+      "data_dir": "data/external",
+      "output_dir": "data/s0",
+      "physionet2012": {
+        "sets": [
+          "set-a",
+          "set-b",
+          "set-c"
+        ],
+        "center_a_sets": [
+          "set-a",
+          "set-b"
+        ],
+        "center_b_sets": [
+          "set-c"
+        ],
+        "min_measurements": 1
+      },
+      "n_hours": 48
+    },
+    "preprocess": {
+      "max_forward_fill_hours": 6,
+      "outlier_sigma": 4.0,
+      "normalization": "standard"
+    },
+    "splits": {
+      "method": "cross_center",
+      "train_ratio": 0.7,
+      "val_ratio": 0.15,
+      "seed": 42,
+      "stratify_by": "mortality_inhospital"
+    },
+    "runtime": {
+      "seed": 42,
+      "log_level": "INFO"
+    }
+  },
+  "extraction_stats": {
+    "n_patients": 11986,
+    "n_hours": 48,
+    "n_continuous": 21,
+    "n_interventions": 2,
+    "n_proxy": 2,
+    "overall_continuous_missing_rate": 0.7333575487136841,
+    "skipped_patients": 14,
+    "has_outcome_labels": true
+  },
+  "preprocess_stats": {
+    "n_patients": 11986,
+    "n_hours": 48,
+    "n_features": 21,
+    "max_forward_fill_hours": 6,
+    "outlier_sigma": 4.0,
+    "normalization": "standard",
+    "feature_medians": [
+      85.0,
+      118.0,
+      58.0,
+      77.0,
+      19.0,
+      97.0,
+      37.0,
+      14.0,
+      1.0,
+      20.0,
+      127.0,
+      11.5,
+      178.0,
+      4.0,
+      139.0,
+      1.899999976158142,
+      0.8999999761581421,
+      116.0,
+      0.5,
+      39.0,
+      7.389999866485596
+    ],
+    "norm_means": [
+      86.39152526855469,
+      120.42375946044922,
+      59.148250579833984,
+      78.9390869140625,
+      19.121498107910156,
+      96.35702514648438,
+      37.00510025024414,
+      11.924259185791016,
+      1.1668442487716675,
+      22.768253326416016,
+      131.59669494628906,
+      11.965834617614746,
+      183.76638793945312,
+      4.049222946166992,
+      139.1029510498047,
+      1.9814711809158325,
+      1.0258623361587524,
+      123.11000061035156,
+      0.5103939175605774,
+      39.48078155517578,
+      7.420398235321045
+    ],
+    "norm_stds": [
+      17.47657585144043,
+      22.23986053466797,
+      13.326966285705566,
+      14.544034957885742,
+      2.573397159576416,
+      1.0272618532180786,
+      0.7799902558326721,
+      3.8161635398864746,
+      0.7862116098403931,
+      13.400436401367188,
+      31.440963745117188,
+      4.091001987457275,
+      64.73865509033203,
+      0.40728598833084106,
+      3.0845136642456055,
+      0.667923092842102,
+      0.9142060875892639,
+      41.72328567504883,
+      0.11926417797803879,
+      5.185886383056641,
+      0.17358191311359406
+    ],
+    "per_feature_missing_rate_before_imputation": [
+      0.097878098487854,
+      0.11195355653762817,
+      0.11208212375640869,
+      0.11933541297912598,
+      0.7593685388565063,
+      0.9598090052604675,
+      0.628676176071167,
+      0.679433286190033,
+      0.9272432327270508,
+      0.9275717735290527,
+      0.9317450523376465,
+      0.9326609969139099,
+      0.926294207572937,
+      0.9241093993186951,
+      0.9289500713348389,
+      0.9588165283203125,
+      0.9829784035682678,
+      0.8847631216049194,
+      0.8429939150810242,
+      0.8845545649528503,
+      0.8792914748191833
+    ]
+  },
+  "cohort_summary": {
+    "n_patients": 11986,
+    "centers": {
+      "center_a": 7989,
+      "center_b": 3997
+    },
+    "data_sources": {
+      "physionet2012": 11986
+    },
+    "mortality_source": {
+      "outcomes_file": 11986
+    },
+    "age_mean": 64.54622059068913,
+    "sex_male_ratio": 0.5602369431002837,
+    "anchor_time_types": {
+      "icu_admission": 11986
+    },
+    "mortality_rate": 0.14241615217754047,
+    "mortality_n_available": 11986
+  },
+  "file_checksums": {
+    "raw_aligned/continuous.npy": "602efb44d30c6009889536f284b78959a1389535a3638e67d31eb053ee299540",
+    "raw_aligned/interventions.npy": "e7ee1785b9e2e523e12675a6a1ea43ce11c7d136ea294df2c12d48df2932694d",
+    "raw_aligned/masks_continuous.npy": "a4591881c4ce44cff2a25c7fd1f349c81e442810a5e6e1e798999cef44ac5dac",
+    "raw_aligned/masks_interventions.npy": "33d416c205ead1ed53f612250c7520a70ef71fe774f8bde947f1bac06160e2c8",
+    "raw_aligned/masks_proxy.npy": "d0aa39b8e42b9f25ee687b160a104042da21f47ed4c3d68a8023558eb1399e74",
+    "raw_aligned/proxy_indicators.npy": "971f9c817d3eedb1a7fe4b2eab0f85d76baa5550b232b8e3013e282806d8304f",
+    "processed/continuous.npy": "f268aa5b6accd80c7ce2c8be56c71cadbf9c7e6f2c4f7031d2ba57c3c9072e00",
+    "processed/interventions.npy": "e7ee1785b9e2e523e12675a6a1ea43ce11c7d136ea294df2c12d48df2932694d",
+    "processed/masks_continuous.npy": "a4591881c4ce44cff2a25c7fd1f349c81e442810a5e6e1e798999cef44ac5dac",
+    "processed/masks_interventions.npy": "33d416c205ead1ed53f612250c7520a70ef71fe774f8bde947f1bac06160e2c8",
+    "processed/masks_proxy.npy": "d0aa39b8e42b9f25ee687b160a104042da21f47ed4c3d68a8023558eb1399e74",
+    "processed/preprocess_stats.json": "c098d2f491cdda194ae695556df6042ba562756476a7bc9ad0e5a46aa4e2fed5",
+    "processed/proxy_indicators.npy": "971f9c817d3eedb1a7fe4b2eab0f85d76baa5550b232b8e3013e282806d8304f",
+    "static.csv": "0b3b780f6e266bf936bfdb37dcf4a34b1d8332593dbd4fd30547fe3532ac3537"
+  },
+  "notes": [
+    "This manifest records the exact data pipeline configuration and outputs.",
+    "No V1 performance metrics are included.",
+    "V1 clustering quality metrics are unresolved pending rerun and are NOT referenced here.",
+    "Intervention channels (antibiotics_on, rrt_on) are unavailable for PhysioNet 2012.",
+    "vasopressor_proxy and mechvent_proxy are PROXY indicators, not true treatment records.",
+    "sepsis_onset_hour is NaN for PhysioNet 2012; anchor_time_type is icu_admission."
+  ]
+}

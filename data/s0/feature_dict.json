@@ -1,0 +1,302 @@
+{
+  "continuous": [
+    {
+      "name": "heart_rate",
+      "index": 0,
+      "unit": "bpm",
+      "availability": "observed",
+      "reliability": "high",
+      "imputation_allowed": true,
+      "normalization_group": "vitals",
+      "description": "Heart rate",
+      "physionet2012_source": "HR"
+    },
+    {
+      "name": "sbp",
+      "index": 1,
+      "unit": "mmHg",
+      "availability": "observed",
+      "reliability": "high",
+      "imputation_allowed": true,
+      "normalization_group": "vitals",
+      "description": "Systolic blood pressure",
+      "physionet2012_source": "SysABP,NISysABP"
+    },
+    {
+      "name": "dbp",
+      "index": 2,
+      "unit": "mmHg",
+      "availability": "observed",
+      "reliability": "high",
+      "imputation_allowed": true,
+      "normalization_group": "vitals",
+      "description": "Diastolic blood pressure",
+      "physionet2012_source": "DiasABP,NIDiasABP"
+    },
+    {
+      "name": "map",
+      "index": 3,
+      "unit": "mmHg",
+      "availability": "observed",
+      "reliability": "high",
+      "imputation_allowed": true,
+      "normalization_group": "vitals",
+      "description": "Mean arterial pressure",
+      "physionet2012_source": "MAP,NIMAP"
+    },
+    {
+      "name": "resp_rate",
+      "index": 4,
+      "unit": "/min",
+      "availability": "observed",
+      "reliability": "medium",
+      "imputation_allowed": true,
+      "normalization_group": "vitals",
+      "description": "Respiratory rate",
+      "physionet2012_source": "RespRate"
+    },
+    {
+      "name": "spo2",
+      "index": 5,
+      "unit": "%",
+      "availability": "observed",
+      "reliability": "medium",
+      "imputation_allowed": true,
+      "normalization_group": "vitals",
+      "description": "Oxygen saturation",
+      "physionet2012_source": "SaO2"
+    },
+    {
+      "name": "temperature",
+      "index": 6,
+      "unit": "\u00b0C",
+      "availability": "observed",
+      "reliability": "high",
+      "imputation_allowed": true,
+      "normalization_group": "vitals",
+      "description": "Body temperature",
+      "physionet2012_source": "Temp"
+    },
+    {
+      "name": "gcs",
+      "index": 7,
+      "unit": "score",
+      "availability": "observed",
+      "reliability": "high",
+      "imputation_allowed": true,
+      "normalization_group": "vitals",
+      "description": "Glasgow Coma Scale",
+      "physionet2012_source": "GCS"
+    },
+    {
+      "name": "creatinine",
+      "index": 8,
+      "unit": "mg/dL",
+      "availability": "observed",
+      "reliability": "medium",
+      "imputation_allowed": true,
+      "normalization_group": "labs",
+      "description": "Serum creatinine",
+      "physionet2012_source": "Creatinine"
+    },
+    {
+      "name": "bun",
+      "index": 9,
+      "unit": "mg/dL",
+      "availability": "observed",
+      "reliability": "medium",
+      "imputation_allowed": true,
+      "normalization_group": "labs",
+      "description": "Blood urea nitrogen",
+      "physionet2012_source": "BUN"
+    },
+    {
+      "name": "glucose",
+      "index": 10,
+      "unit": "mg/dL",
+      "availability": "observed",
+      "reliability": "medium",
+      "imputation_allowed": true,
+      "normalization_group": "labs",
+      "description": "Blood glucose",
+      "physionet2012_source": "Glucose"
+    },
+    {
+      "name": "wbc",
+      "index": 11,
+      "unit": "K/uL",
+      "availability": "observed",
+      "reliability": "medium",
+      "imputation_allowed": true,
+      "normalization_group": "labs",
+      "description": "White blood cell count",
+      "physionet2012_source": "WBC"
+    },
+    {
+      "name": "platelet",
+      "index": 12,
+      "unit": "K/uL",
+      "availability": "observed",
+      "reliability": "medium",
+      "imputation_allowed": true,
+      "normalization_group": "labs",
+      "description": "Platelet count",
+      "physionet2012_source": "Platelets"
+    },
+    {
+      "name": "potassium",
+      "index": 13,
+      "unit": "mEq/L",
+      "availability": "observed",
+      "reliability": "medium",
+      "imputation_allowed": true,
+      "normalization_group": "labs",
+      "description": "Serum potassium",
+      "physionet2012_source": "K"
+    },
+    {
+      "name": "sodium",
+      "index": 14,
+      "unit": "mEq/L",
+      "availability": "observed",
+      "reliability": "medium",
+      "imputation_allowed": true,
+      "normalization_group": "labs",
+      "description": "Serum sodium",
+      "physionet2012_source": "Na"
+    },
+    {
+      "name": "lactate",
+      "index": 15,
+      "unit": "mmol/L",
+      "availability": "observed",
+      "reliability": "low",
+      "imputation_allowed": true,
+      "normalization_group": "labs",
+      "description": "Blood lactate",
+      "physionet2012_source": "Lactate"
+    },
+    {
+      "name": "bilirubin",
+      "index": 16,
+      "unit": "mg/dL",
+      "availability": "observed",
+      "reliability": "low",
+      "imputation_allowed": true,
+      "normalization_group": "labs",
+      "description": "Total bilirubin",
+      "physionet2012_source": "Bilirubin"
+    },
+    {
+      "name": "pao2",
+      "index": 17,
+      "unit": "mmHg",
+      "availability": "observed",
+      "reliability": "medium",
+      "imputation_allowed": true,
+      "normalization_group": "blood_gas",
+      "description": "Partial pressure O2",
+      "physionet2012_source": "PaO2"
+    },
+    {
+      "name": "fio2",
+      "index": 18,
+      "unit": "frac",
+      "availability": "observed",
+      "reliability": "medium",
+      "imputation_allowed": true,
+      "normalization_group": "blood_gas",
+      "description": "Fraction inspired O2",
+      "physionet2012_source": "FiO2"
+    },
+    {
+      "name": "paco2",
+      "index": 19,
+      "unit": "mmHg",
+      "availability": "observed",
+      "reliability": "medium",
+      "imputation_allowed": true,
+      "normalization_group": "blood_gas",
+      "description": "Partial pressure CO2",
+      "physionet2012_source": "PaCO2"
+    },
+    {
+      "name": "ph",
+      "index": 20,
+      "unit": "",
+      "availability": "observed",
+      "reliability": "medium",
+      "imputation_allowed": true,
+      "normalization_group": "blood_gas",
+      "description": "Blood pH",
+      "physionet2012_source": "pH"
+    }
+  ],
+  "interventions": [
+    {
+      "name": "antibiotics_on",
+      "index": 0,
+      "unit": "binary",
+      "availability": "unavailable",
+      "reliability": "unknown",
+      "imputation_allowed": false,
+      "normalization_group": "binary",
+      "description": "Antibiotic administration",
+      "physionet2012_source": ""
+    },
+    {
+      "name": "rrt_on",
+      "index": 1,
+      "unit": "binary",
+      "availability": "unavailable",
+      "reliability": "unknown",
+      "imputation_allowed": false,
+      "normalization_group": "binary",
+      "description": "Renal replacement therapy",
+      "physionet2012_source": ""
+    }
+  ],
+  "proxy_indicators": [
+    {
+      "name": "vasopressor_proxy",
+      "index": 0,
+      "unit": "binary",
+      "availability": "proxy",
+      "reliability": "low",
+      "imputation_allowed": false,
+      "normalization_group": "binary",
+      "description": "Proxy: MAP < 65 mmHg (NOT a treatment record)",
+      "physionet2012_source": "Derived from MAP"
+    },
+    {
+      "name": "mechvent_proxy",
+      "index": 1,
+      "unit": "binary",
+      "availability": "proxy",
+      "reliability": "low",
+      "imputation_allowed": false,
+      "normalization_group": "binary",
+      "description": "Proxy: FiO2 > 0.21 (NOT a treatment record)",
+      "physionet2012_source": "Derived from FiO2"
+    }
+  ],
+  "n_continuous": 21,
+  "n_interventions": 2,
+  "n_proxy": 2,
+  "static_fields": [
+    "patient_id",
+    "age",
+    "sex",
+    "height_cm",
+    "weight_kg",
+    "icu_type",
+    "icu_los_hours",
+    "mortality_inhospital",
+    "mortality_source",
+    "center_id",
+    "set_name",
+    "data_source",
+    "sepsis_onset_hour",
+    "anchor_time_type"
+  ]
+}

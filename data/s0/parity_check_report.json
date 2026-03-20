@@ -1,0 +1,213 @@
+{
+  "checks": [
+    {
+      "name": "Feature count",
+      "passed": false,
+      "detail": "V1=29, S0=24"
+    },
+    {
+      "name": "Feature order",
+      "passed": false,
+      "detail": "First diff at: 7"
+    },
+    {
+      "name": "Patient count",
+      "passed": true,
+      "detail": "V1=11816, S0=11986, diff=170"
+    },
+    {
+      "name": "Common patients",
+      "passed": true,
+      "detail": "Common=11816, V1-only=0, S0-only=170"
+    },
+    {
+      "name": "Missingness parity (max diff < 5%)",
+      "passed": false,
+      "detail": "Max diff=84.3% at mechanical_vent"
+    }
+  ],
+  "summary": {
+    "n_checks": 5,
+    "n_passed": 2,
+    "v1_patients": 11816,
+    "s0_patients": 11986,
+    "common_patients": 11816,
+    "max_missingness_diff": 84.28789973258972,
+    "feature_diffs": [
+      {
+        "feature": "heart_rate",
+        "v1_missing": 10.332035657865042,
+        "s0_missing": 9.814552301963438,
+        "diff": 0.5174833559016037
+      },
+      {
+        "feature": "sbp",
+        "v1_missing": 58.16301342812006,
+        "s0_missing": 11.223129654705485,
+        "diff": 46.93988377341458
+      },
+      {
+        "feature": "dbp",
+        "v1_missing": 58.22296039268788,
+        "s0_missing": 11.236176935229068,
+        "diff": 46.98678345745881
+      },
+      {
+        "feature": "map",
+        "v1_missing": 58.773238264500115,
+        "s0_missing": 11.952895791017829,
+        "diff": 46.820342473482285
+      },
+      {
+        "feature": "resp_rate",
+        "v1_missing": 76.06123758745204,
+        "s0_missing": 75.91859907470096,
+        "diff": 0.14263851275107697
+      },
+      {
+        "feature": "spo2",
+        "v1_missing": 95.98514020537124,
+        "s0_missing": 95.97226923944933,
+        "diff": 0.012870965921905508
+      },
+      {
+        "feature": "temperature",
+        "v1_missing": 62.99209405326111,
+        "s0_missing": 62.89899994357933,
+        "diff": 0.09309410968178611
+      },
+      {
+        "feature": "lactate",
+        "v1_missing": 100.0,
+        "s0_missing": 95.87670672534416,
+        "diff": 4.123293274655836
+      },
+      {
+        "feature": "creatinine",
+        "v1_missing": 92.79931166779508,
+        "s0_missing": 92.72455427668697,
+        "diff": 0.07475739110810764
+      },
+      {
+        "feature": "bilirubin",
+        "v1_missing": 100.0,
+        "s0_missing": 98.2955667456556,
+        "diff": 1.7044332543443943
+      },
+      {
+        "feature": "platelet",
+        "v1_missing": 92.68823346874294,
+        "s0_missing": 92.62634704355676,
+        "diff": 0.06188642518617371
+      },
+      {
+        "feature": "wbc",
+        "v1_missing": 93.32226077634846,
+        "s0_missing": 93.2607269803656,
+        "diff": 0.06153379598285369
+      },
+      {
+        "feature": "pao2_fio2",
+        "v1_missing": 96.3575166440984,
+        "s0_missing": 100.0,
+        "diff": 3.6424833559016037
+      },
+      {
+        "feature": "inr",
+        "v1_missing": 100.0,
+        "s0_missing": 100.0,
+        "diff": 0.0
+      },
+      {
+        "feature": "vasopressor",
+        "v1_missing": 0.0,
+        "s0_missing": 11.952894926071167,
+        "diff": 11.952894926071167
+      },
+      {
+        "feature": "mechanical_vent",
+        "v1_missing": 0.0,
+        "s0_missing": 84.28789973258972,
+        "diff": 84.28789973258972
+      },
+      {
+        "feature": "rrt",
+        "v1_missing": 100.0,
+        "s0_missing": 100.0,
+        "diff": 0.0
+      },
+      {
+        "feature": "gcs",
+        "v1_missing": 68.04315476190477,
+        "s0_missing": 67.95623166328143,
+        "diff": 0.08692309862334469
+      },
+      {
+        "feature": "bun",
+        "v1_missing": 92.8315772399007,
+        "s0_missing": 92.75787773640262,
+        "diff": 0.07369950349807652
+      },
+      {
+        "feature": "sodium",
+        "v1_missing": 92.97544995486346,
+        "s0_missing": 92.89593206951027,
+        "diff": 0.07951788535319793
+      },
+      {
+        "feature": "potassium",
+        "v1_missing": 92.50380839539606,
+        "s0_missing": 92.41000902730761,
+        "diff": 0.09379936808845457
+      },
+      {
+        "feature": "bicarbonate",
+        "v1_missing": 92.98444199954864,
+        "s0_missing": 100.0,
+        "diff": 7.015558000451364
+      },
+      {
+        "feature": "glucose",
+        "v1_missing": 93.25296913789212,
+        "s0_missing": 93.17521439855562,
+        "diff": 0.07775473933649835
+      },
+      {
+        "feature": "hematocrit",
+        "v1_missing": 90.589737079666,
+        "s0_missing": 100.0,
+        "diff": 9.410262920334006
+      },
+      {
+        "feature": "magnesium",
+        "v1_missing": 92.98338411193862,
+        "s0_missing": 100.0,
+        "diff": 7.016615888061381
+      },
+      {
+        "feature": "pao2",
+        "v1_missing": 88.51151686978109,
+        "s0_missing": 88.46743821936357,
+        "diff": 0.044078650417517906
+      },
+      {
+        "feature": "fio2",
+        "v1_missing": 84.32245824870233,
+        "s0_missing": 84.287900586775,
+        "diff": 0.034557661927337335
+      },
+      {
+        "feature": "paco2",
+        "v1_missing": 88.489653859174,
+        "s0_missing": 88.44663309636651,
+        "diff": 0.04302076280748679
+      },
+      {
+        "feature": "ph",
+        "v1_missing": 87.96776263823065,
+        "s0_missing": 87.92068663958474,
+        "diff": 0.04707599864590861
+      }
+    ]
+  }
+}
