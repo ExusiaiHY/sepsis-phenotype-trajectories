@@ -1,105 +1,259 @@
-# 基于自监督患者轨迹表征的 ICU 脓毒症动态亚型发现与跨中心泛化验证研究
+# Self-Supervised Temporal Phenotype Trajectory Analysis of ICU Sepsis Patients
 
-## 项目简介
+> **Wang Ruike** | Department of Computer Science, Advanced Programming Course
 
-本项目面向 ICU 脓毒症患者，基于电子病历（EHR）时序数据，构建标准化患者轨迹数据处理流程，通过统计特征提取与自监督表征学习获得患者级别的特征表示，并结合多种聚类算法实现脓毒症动态亚型发现。系统支持跨数据集泛化验证接口，并提供完整的评估指标体系和可视化分析工具。
+A three-stage computational framework that progresses from static clustering to self-supervised representation learning to descriptive temporal phenotype trajectory analysis, applied to 11,986 multi-center ICU patients from the PhysioNet 2012 database.
 
-## 项目特色
+---
 
-- **研究导向**：不是简单的分类器，而是面向亚型发现的无监督/自监督分析框架
-- **临床合理**：模拟数据基于真实 ICU 脓毒症表型（α/β/γ/δ），保留时序性、多变量性和缺失模式
-- **模块化设计**：数据加载、预处理、特征工程、表征学习、聚类、评估、可视化完全解耦
-- **可扩展**：MVP 使用统计特征+聚类，V2 可无缝升级为自监督 Transformer 编码器
-- **跨中心验证就绪**：预留 MIMIC-IV 和 eICU 数据加载接口
+## Highlights
 
-## 目录结构
+- **27.7 pp** mortality range across temporally stable phenotypes (4.0% - 31.7%)
+- **35.2%** of patients undergo phenotype transitions within 48 ICU hours
+- **6/6** cross-center validation criteria passed (train Center A, evaluate Center B)
+- **14.2%** ground-truth in-hospital mortality (verified outcomes, not proxy labels)
+
+---
+
+## Three-Stage Framework
+
+```
+Stage 1 ─ Static Baseline
+   Raw Data ──> Preprocessing ──> 378 Features ──> PCA (32d) ──> K-Means (K=4)
+
+Stage 2 ─ Self-Supervised Representation Learning
+   Time Series + Masks ──> Transformer Encoder ──> Masked Prediction
+                                                  + Contrastive Window Loss
+                                                  ──> 128d Embeddings
+
+Stage 3 ─ Temporal Phenotype Trajectories
+   Rolling Windows (24h, stride 6h) ──> Per-Window Embedding ──> K-Means
+                                     ──> Trajectory Classification
+                                     ──> Transition Analysis
+```
+
+### Stage 1: Static Phenotyping Baseline
+
+PCA-based clustering on statistical features. Establishes the reference point: K=4 phenotypes with silhouette = 0.061 and mortality range 29.2 pp.
+
+### Stage 2: Self-Supervised Encoder (S1.5)
+
+A Transformer encoder (2-layer, 4-head, 128d) trained via:
+- **Masked value prediction** (15% masking on observed values)
+- **Temporal contrastive window objective** (NT-Xent on stochastic 30h views, lambda warmup 0 -> 0.5)
+
+Four representations systematically compared:
+
+| Method | Silhouette | Mortality Range | Center L1 | Mort. Probe AUROC | Density \|r\| |
+|--------|-----------|----------------|-----------|-------------------|--------------|
+| PCA (32d) | 0.061 | 29.2% | 0.027 | 0.825 | 0.231 |
+| S1: masked only (128d) | 0.087 | 17.6% | 0.024 | 0.825 | 0.247 |
+| **S1.5: mask+contrastive (128d)** | **0.080** | **24.6%** | **0.016** | **0.830** | **0.148** |
+| S1.6: lambda=0.2 (128d) | 0.079 | 25.1% | 0.021 | 0.825 | 0.148 |
+
+S1.5 selected for temporal analysis based on superior center stability, lowest missingness sensitivity, and highest mortality probe AUROC.
+
+### Stage 3: Temporal Phenotype Trajectories
+
+Rolling-window embeddings (5 windows of 24h, 6h stride) clustered via K-Means:
+
+| Stable Phenotype | N | In-Hospital Mortality |
+|-----------------|---|----------------------|
+| Phenotype 0 (lowest risk) | 2,216 | 4.0% |
+| Phenotype 3 | 1,891 | 9.7% |
+| Phenotype 1 | 2,547 | 22.5% |
+| Phenotype 2 (highest risk) | 1,110 | **31.7%** |
+
+**Key findings:**
+- 64.8% of patients remain in a stable phenotype across all windows
+- 35.2% exhibit at least one phenotype transition
+- Most common transitions move toward lower-acuity phenotypes (P1->P0, P1->P3, P3->P0)
+- Single-transition patients have lower mortality (11.4%) than stable patients (15.4%)
+- Stride=12h sensitivity analysis confirms identical mortality ordering (conservative estimate)
+
+### Cross-Center Validation (S3)
+
+Encoder and K-Means trained exclusively on Center A (7,989 patients), evaluated on held-out Center B (3,997 patients):
+
+| Metric | Center A (train) | Center B (test) |
+|--------|-----------------|-----------------|
+| Stable fraction | 65.0% | 64.4% |
+| Mortality ordering | [P0, P3, P1, P2] | [P0, P3, P1, P2] |
+| Highest-risk phenotype | P2 (32.6%) | P2 (30.0%) |
+| Mean prevalence L1 | --- | 0.022 |
+
+> **Caveat:** Both centers derive from the same PhysioNet 2012 source database. This is cross-center temporal validation within a multi-center cohort, not full external validation on independently collected databases.
+
+---
+
+## Project Structure
 
 ```
 project/
-├── config/
-│   └── config.yaml          # 全局配置文件
-├── data/
-│   ├── raw/                  # 原始数据
-│   ├── processed/            # 预处理后的数据
-│   └── demo/                 # 演示数据
-├── docs/
-│   ├── 项目计划书.md
-│   ├── 中期进展评估.md
-│   ├── 软件效果评估.md
-│   └── 软件使用说明书.md
-├── outputs/
-│   ├── figures/              # 可视化图形
-│   ├── models/               # 保存的模型
-│   └── reports/              # 评估报告
-├── src/
-│   ├── main.py               # 主入口程序
-│   ├── data_loader.py        # 数据读取与模拟数据生成
-│   ├── preprocess.py         # 预处理（缺失填充、异常值、标准化）
-│   ├── feature_engineering.py # 统计特征提取
-│   ├── representation_model.py # 表征学习（MVP: PCA / V2: 自监督）
-│   ├── clustering.py         # 聚类与最优 K 搜索
-│   ├── evaluation.py         # 评估（内部指标 + 生存分层 + 外部验证）
-│   ├── visualization.py      # 可视化（散点图、热力图、K-M 曲线等）
-│   └── utils.py              # 公共工具（日志、配置、种子、计时器）
-├── requirements.txt
-└── README.md
+├── CLAUDE.md                   # Claude Code workflow instructions
+├── README.md                   # This file
+├── requirements.txt            # Python dependencies
+│
+├── config/                     # YAML configurations for each stage
+│   ├── config.yaml             # Global settings
+│   ├── s0_config.yaml          # S0 data pipeline
+│   ├── s1_config.yaml          # S1 masked encoder
+│   ├── s15_config.yaml         # S1.5 contrastive encoder
+│   ├── s16_config.yaml         # S1.6 lambda ablation
+│   └── s2_config.yaml          # S2 temporal trajectories
+│
+├── s0/                         # Stage 0: Data pipeline + real outcomes
+│   ├── data_loader.py          # PhysioNet 2012 data loading
+│   ├── preprocess.py           # Hourly resampling, imputation, masks
+│   ├── feature_engineering.py  # 378 statistical features
+│   └── schema.py               # CLIF-inspired data schema
+│
+├── s1/                         # Stage 1: Masked reconstruction encoder
+│   ├── encoder.py              # Transformer encoder architecture
+│   ├── pretrain.py             # Masked value prediction training
+│   └── extract.py              # Embedding extraction
+│
+├── s15/                        # Stage 1.5: Contrastive encoder
+│   ├── contrastive_encoder.py  # Encoder + projection head + NT-Xent
+│   ├── pretrain_contrastive.py # Combined masked + contrastive training
+│   ├── diagnostics.py          # Probes (mortality, center, LOS, density)
+│   └── compare_three.py        # Multi-representation comparison
+│
+├── s2light/                    # Stage 2: Temporal phenotype trajectories
+│   ├── rolling_embeddings.py   # Rolling-window extraction
+│   ├── temporal_clustering.py  # Per-window K-Means
+│   ├── transition_analysis.py  # Trajectory classification + transitions
+│   └── visualization.py        # Sankey, prevalence, mortality plots
+│
+├── scripts/                    # Executable scripts for each stage
+│   ├── s0_preprocess.py
+│   ├── s1_pretrain.py
+│   ├── s15_pretrain.py / s15_extract.py / s15_compare.py
+│   ├── s16_run_all.py
+│   ├── s2_extract_rolling.py / s2_cluster_and_analyze.py
+│   ├── s2_sensitivity_stride12.py
+│   └── s3_cross_center_validation.py
+│
+├── src/                        # Legacy V1 pipeline (reference only)
+│
+├── data/                       # Data directory (.npy files gitignored)
+│   ├── external/               # Raw PhysioNet 2012 text files + Outcomes
+│   ├── s0/                     # Preprocessed tensors + static.csv + splits
+│   ├── s1/ s15/ s16/           # Embeddings + checkpoints + reports
+│   ├── s2/                     # Rolling embeddings + trajectory stats
+│   └── s3/                     # Cross-center validation report
+│
+├── docs/                       # Documentation + Manuscript
+│   ├── RESEARCH_PAPER.tex      # LaTeX manuscript (submission-ready)
+│   ├── RESEARCH_PAPER.md       # Markdown version
+│   ├── RESEARCH_PAPER.pdf      # Compiled PDF (13 pages)
+│   ├── WORKLOG.md              # Chronological work log
+│   ├── DECISIONS.md            # Design decision log (D001-D016)
+│   ├── EXPERIMENT_REGISTRY.md  # Experiment tracking (E001-E015)
+│   ├── MANUSCRIPT_PATCHLIST.md # Manuscript revision tracking (P001-P014)
+│   ├── NEXT_STEPS.md           # Project status + future directions
+│   └── figures/                # All manuscript figures (9 total)
+│
+└── tests/                      # Unit tests
 ```
 
-## 快速开始
+---
 
-### 1. 环境准备
+## Quick Start
+
+### Prerequisites
 
 ```bash
-# 建议使用 Python 3.10+
+# Python 3.10+
 pip install -r requirements.txt
 ```
 
-### 2. 运行（使用模拟数据）
+### Reproduce the Full Pipeline
 
 ```bash
-cd project/src
-python main.py
+# Set environment (macOS)
+export OMP_NUM_THREADS=1
+export KMP_DUPLICATE_LIB_OK=TRUE
+
+# Stage 0: Preprocess PhysioNet 2012 data
+python scripts/s0_preprocess.py
+
+# Stage 1.5: Train self-supervised encoder (50 epochs)
+python scripts/s15_pretrain.py --epochs 50 --device cpu
+python scripts/s15_extract.py
+python scripts/s15_compare.py
+
+# Stage 2: Temporal phenotype trajectories
+python scripts/s2_extract_rolling.py
+python scripts/s2_cluster_and_analyze.py
+
+# Stage 2 sensitivity: Stride=12h robustness check
+python scripts/s2_sensitivity_stride12.py
+
+# Stage 3: Cross-center validation
+python scripts/s3_cross_center_validation.py
+
+# Compile manuscript
+cd docs && pdflatex -interaction=nonstopmode RESEARCH_PAPER.tex && pdflatex -interaction=nonstopmode RESEARCH_PAPER.tex
 ```
 
-### 3. 自定义参数
+---
 
-```bash
-# 生成 1000 名患者，使用 GMM 聚类
-python main.py --n-patients 1000 --method gmm
+## Data
 
-# 指定 K=4，使用 t-SNE 降维
-python main.py --k 4 --reduction tsne
+**PhysioNet 2012 Challenge** — 12,000 ICU patients across 4 hospitals, organized into 2 centers:
+- **Center A** (set-a + set-b): 7,989 patients (used for training)
+- **Center B** (set-c): 3,997 patients (held-out for cross-center validation)
 
-# 运行多方法聚类对比
-python main.py --compare-methods
-```
+21 continuous clinical variables (vital signs + labs), 48-hour observation windows, 73.3% overall missing rate. Ground-truth in-hospital mortality from PhysioNet Outcomes files (14.2%).
 
-### 4. 查看结果
+> The raw `.txt` files are included in `data/external/`. Large processed arrays (`.npy`) are excluded from git via `.gitignore`.
 
-- 图形输出：`outputs/figures/`
-- 评估报告：`outputs/reports/`
-- 处理后数据：`data/processed/`
+---
 
-## 技术栈
+## Tech Stack
 
-| 层级 | 工具 |
-|------|------|
-| 数据处理 | pandas, numpy, scipy |
-| 机器学习 | scikit-learn |
-| 降维可视化 | umap-learn, matplotlib |
-| 生存分析 | lifelines |
-| 配置管理 | PyYAML |
-| 深度学习（V2） | PyTorch |
+| Layer | Tools |
+|-------|-------|
+| Deep Learning | PyTorch (Transformer encoder, NT-Xent loss) |
+| ML & Clustering | scikit-learn (K-Means, PCA, linear probes) |
+| Data Processing | pandas, NumPy, SciPy |
+| Visualization | Matplotlib (figures, Sankey diagrams) |
+| Manuscript | LaTeX (pdflatex, natbib) |
+| Version Control | Git + GitHub |
 
-## 评估指标
+---
 
-- **聚类质量**：轮廓系数、Calinski-Harabasz 指数、Davies-Bouldin 指数
-- **外部验证**：ARI、NMI（有真实标签时）
-- **生存分层**：Kaplan-Meier 曲线、log-rank 检验、各亚型死亡率
-- **临床画像**：各亚型的人口学、器官功能、治疗模式对比
+## Documentation
 
-## 版本规划
+| Document | Purpose |
+|----------|---------|
+| [WORKLOG.md](docs/WORKLOG.md) | Chronological log of all work sessions |
+| [DECISIONS.md](docs/DECISIONS.md) | Design decisions with rationale (D001-D016) |
+| [EXPERIMENT_REGISTRY.md](docs/EXPERIMENT_REGISTRY.md) | All experiments with configs and results (E001-E015) |
+| [MANUSCRIPT_PATCHLIST.md](docs/MANUSCRIPT_PATCHLIST.md) | Manuscript revision tracking (P001-P014) |
+| [NEXT_STEPS.md](docs/NEXT_STEPS.md) | Current status and future directions |
 
-- **MVP（当前）**：模拟数据 → 统计特征 → PCA → K-Means/GMM → 评估可视化
-- **V2**：自监督 Transformer 预训练 → 结局约束聚类 → 跨中心验证
-- **V3**：多器官交互图 → 图聚类 → SHAP 可解释性分析
+---
+
+## Manuscript Status
+
+**SUBMISSION-READY** (audit completed 2026-03-20)
+
+- 13 pages, 4 tables, 4 main figures + 5 supplementary
+- 20 references (7 from 2025)
+- 14 patches applied and verified
+- All claims traceable to logged experiments
+- No overclaims, no proxy mortality, no causal language
+
+---
+
+## References
+
+1. Rudd et al. (2020). Global sepsis incidence and mortality. *The Lancet*
+2. Seymour et al. (2019). Clinical phenotypes for sepsis. *JAMA*
+3. Silva et al. (2012). PhysioNet/CinC Challenge 2012. *Computing in Cardiology*
+4. Zheng et al. (2025). Self-supervised representation learning for clinical EHR. *npj Digital Medicine*
+5. Feng et al. (2025). Deep temporal graph clustering for sepsis. *EClinicalMedicine*
+
+See full reference list in the [manuscript](docs/RESEARCH_PAPER.pdf).
