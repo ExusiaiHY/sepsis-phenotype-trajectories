@@ -10,11 +10,11 @@ Department of Computer Science, Advanced Programming Course
 
 **Background.** Sepsis exhibits substantial clinical heterogeneity, yet most phenotyping approaches rely on static summary features that compress temporal dynamics into single-timepoint representations. Whether learned temporal representations can reveal clinically meaningful phenotype trajectories within the first 48 ICU hours remains underexplored.
 
-**Methods.** We developed a three-stage computational framework applied to 11,986 ICU patients from the PhysioNet 2012 multi-center database (4 hospitals, 2 centers). First, we established a static phenotyping baseline using statistical features and PCA. Second, we trained a Transformer-based encoder via self-supervised learning (masked value prediction combined with a temporal contrastive window objective) and compared four representation methods across clustering quality, mortality stratification, center stability, and missingness robustness. Third, using the selected self-supervised representation, we extracted rolling-window embeddings (24-hour windows, 6-hour stride) and performed descriptive temporal phenotype trajectory analysis via K-Means clustering on per-window embeddings. All mortality outcomes were obtained from verified PhysioNet Outcomes files (in-hospital mortality rate: 14.2%).
+**Methods.** We developed a three-stage computational framework applied to 11,986 ICU patients from the PhysioNet 2012 multi-center database (4 hospitals, 2 centers). First, we established a static phenotyping baseline using statistical features and PCA. Second, we trained a Transformer-based encoder via self-supervised learning (masked value prediction combined with a temporal contrastive window objective) and compared four representation methods across clustering quality, mortality stratification, center stability, and missingness robustness. Third, using the selected self-supervised representation, we extracted rolling-window embeddings (24-hour windows, 6-hour stride) and performed descriptive temporal phenotype trajectory analysis via K-Means clustering on per-window embeddings. We additionally characterized cohort composition and structured missingness to interpret why explicit mask-aware modeling is necessary. All mortality outcomes were obtained from verified PhysioNet Outcomes files (in-hospital mortality rate: 14.2%).
 
-**Results.** Static K=4 clustering on PCA-reduced features identified phenotypes with mortality rates ranging from 6.8% to 36.0%. The self-supervised encoder achieved superior center stability (cluster distribution L1 distance = 0.016 vs 0.027 for PCA) and reduced missingness sensitivity (density-norm correlation |r| = 0.15 vs 0.23), while PCA retained stronger static mortality separation. Temporal trajectory analysis revealed that 64.8% of patients maintained a stable phenotype across all windows, while 35.2% exhibited at least one phenotype transition. Stable phenotypes showed strongly stratified mortality (4.0%, 9.7%, 22.5%, 31.7%; range 27.7 percentage points). Single-transition patients had lower mortality (11.4%) than stable patients (15.4%), and phenotype prevalence shifted toward lower-acuity states over the 48-hour window. Sensitivity analysis with reduced overlap (stride=12h) confirmed identical mortality ordering and range (28.0pp), with transition rates increasing under reduced overlap, indicating the primary analysis provides a conservative estimate. Cross-center temporal validation within the PhysioNet 2012 multi-center cohort (train on Center A, evaluate on Center B) confirmed identical mortality ordering, the same highest-risk phenotype, and a 25.8 percentage-point mortality range on the held-out center.
+**Results.** Data analysis showed a steep missingness gradient between core hemodynamic variables (9.8%-11.9% missing for heart rate and blood pressure channels) and laboratory variables (mean 93.8% missing; bilirubin 98.3%). Static K=4 clustering on PCA-reduced features identified phenotypes with mortality rates ranging from 6.8% to 36.0%. The self-supervised encoder achieved superior center stability (cluster distribution L1 distance = 0.016 vs 0.027 for PCA) and reduced missingness sensitivity (density-norm correlation |r| = 0.15 vs 0.23), while PCA retained stronger static mortality separation. Temporal trajectory analysis revealed that 64.8% of patients maintained a stable phenotype across all windows, while 35.2% exhibited at least one phenotype transition. Stable phenotypes showed strongly stratified mortality (4.0%, 9.7%, 22.5%, 31.7%; range 27.7 percentage points). The three most frequent non-self transitions accounted for 48.1% of all transition events and predominantly moved toward lower-acuity phenotypes. Sensitivity analysis with reduced overlap (stride=12h) confirmed identical mortality ordering and range (28.0pp), with transition rates increasing under reduced overlap, indicating the primary analysis provides a conservative estimate. Cross-center temporal validation within the PhysioNet 2012 multi-center cohort (train on Center A, evaluate on Center B) confirmed identical mortality ordering, the same highest-risk phenotype, and a 25.8 percentage-point mortality range on the held-out center.
 
-**Conclusions.** Self-supervised temporal representations enable descriptive phenotype trajectory analysis that reveals clinically meaningful within-stay dynamics beyond static clustering. The identified phenotypes show strong mortality stratification with ground-truth outcomes and cross-center temporal validation within the PhysioNet 2012 multi-center cohort. Both centers derive from the same source database; full external validation requires independently collected ICU cohorts. These findings support further investigation of temporal phenotyping for sepsis precision medicine, though causal treatment-response claims require additional study designs.
+**Conclusions.** Self-supervised temporal representations enable descriptive phenotype trajectory analysis that reveals clinically meaningful within-stay dynamics beyond static clustering. The data audit in this study shows that explicit treatment of missingness is not optional but foundational for ICU time-series modeling. The identified phenotypes show strong mortality stratification with ground-truth outcomes and cross-center temporal validation within the PhysioNet 2012 multi-center cohort. Both centers derive from the same source database; full external validation requires independently collected ICU cohorts. These findings support further investigation of temporal phenotyping for sepsis precision medicine, though causal treatment-response claims require additional study designs.
 
 **Keywords**: sepsis phenotyping, self-supervised learning, temporal trajectories, ICU time-series, multi-center, representation learning
 
@@ -128,9 +128,13 @@ A Transformer-based encoder processes the hourly time series with observation ma
 
 Four representations are systematically compared: (1) PCA baseline (32 dimensions), (2) masked reconstruction only (S1, 128 dimensions), (3) masked + contrastive (S1.5, λ=0.5, 128 dimensions), and (4) reduced contrastive ablation (S1.6, λ=0.2, 128 dimensions). All learned encoders have identical architecture (296K–321K parameters) and are trained for 50 epochs with cosine learning rate scheduling.
 
+#### 3.5.4 Principle Interpretation of the Representation Design
+
+The Stage 2 design separates four complementary roles. First, concatenating values and observation masks preserves whether a measurement is truly observed or merely imputed, preventing the model from conflating absence with physiologic normality. Second, masked reconstruction forces the encoder to learn local temporal and cross-variable dependencies from real observations rather than memorizing complete trajectories. Third, the contrastive window objective aligns two partially overlapping 30-hour views from the same patient stay, encouraging patient-level consistency under local time shifts and sampling variation. Fourth, observation-density-weighted pooling gives more influence to hours carrying more measured signal without discarding sparse hours entirely. Together, these choices explain why the learned representation can be reused on arbitrary sub-windows in Stage 3 while remaining less sensitive to center mix and raw observation density than simpler baselines.
+
 ### 3.6 Descriptive Temporal Phenotype Trajectories (Stage 3)
 
-Using the frozen S1.5 encoder, rolling-window embeddings are extracted for each patient: 5 windows of 24 hours with 6-hour stride, covering positions [0,24), [6,30), [12,36), [18,42), [24,48). K-Means (K=4) is fit on train-split window embeddings only (30,955 windows from 6,191 patients) and applied to all 59,930 windows. Per-patient phenotype trajectories are constructed as 5-element sequences of cluster assignments.
+Using the frozen S1.5 encoder, rolling-window embeddings are extracted for each patient: 5 windows of 24 hours with 6-hour stride, covering positions [0,24), [6,30), [12,36), [18,42), [24,48). K-Means (K=4) is fit on train-split window embeddings only (30,955 windows from 6,191 patients) and applied to all 59,930 windows. Per-patient phenotype trajectories are constructed as 5-element sequences of cluster assignments. Conceptually, each 24-hour embedding acts as a local clinical state summary, so Stage 3 converts patient stays into observable state sequences without imposing a parametric transition model.
 
 Patients are classified as: **stable** (all 5 labels identical), **single-transition** (exactly 1 label change), or **multi-transition** (2+ changes). Empirical transition matrices, prevalence shifts across window positions, and mortality descriptives by trajectory category are computed. All temporal analyses are descriptive; no latent-state models or causal claims are involved.
 
@@ -142,15 +146,35 @@ Patients are classified as: **stable** (all 5 labels identical), **single-transi
 
 ## 4. Results
 
-### 4.1 Static Phenotyping Baseline (Stage 1)
+### 4.1 Cohort Characterization and Missingness Pattern
 
-After quality filtering, 11,986 patients were retained (Center A: 7,989; Center B: 3,997). Overall missing rate was 73.3% across 21 continuous features. Ground-truth in-hospital mortality was 14.2%.
+After quality filtering, 11,986 patients were retained (Center A: 7,989; Center B: 3,997). Ground-truth in-hospital mortality was 14.2%, and the retained cohort covered nearly the full 48-hour analytic window (mean ICU LOS 47.3 hours, median 47.5 hours).
 
-Static K=4 clustering on PCA-reduced statistical features identified phenotypes with mortality rates of 6.8%, 10.0%, 33.8%, and 36.0% (range 29.2 percentage points). Silhouette score was 0.061, consistent with the inherently fuzzy boundaries expected in real ICU data with high missingness.
+**Table 1. Cohort characterization and data completeness**
 
-### 4.2 Representation Learning Comparison (Stage 2)
+| Metric | Value |
+|--------|-------|
+| Patients | 11,986 |
+| Age | 64.6 ± 17.2 years (median 67) |
+| Sex | 43.9% female, 56.0% male, 0.1% unknown |
+| Center split | 7,989 Center A / 3,997 Center B |
+| In-hospital mortality | 14.2% overall; 14.0% in Center A, 14.6% in Center B |
+| ICU LOS | 47.3h mean; 47.5h median |
+| ICU type distribution | 14.7% / 21.1% / 35.8% / 28.4% for types 1-4 |
+| Height / weight missing | 47.7% / 8.3% |
+| Core hemodynamic missingness | 9.8%-11.9% for heart rate, SBP, DBP, MAP |
+| Blood gas missingness | 87.3% mean across PaO2, FiO2, PaCO2, pH |
+| Laboratory missingness | 93.8% mean; bilirubin 98.3%, lactate 95.9% |
 
-**Table 1. Representation comparison (K=4, mean ± std over 5 seeds)**
+The missingness pattern was strongly structured rather than random. Core hemodynamic channels were relatively dense, whereas respiratory, neurological, and laboratory variables were far sparser: respiratory rate was 75.9% missing, temperature 62.9%, GCS 67.9%, and most laboratory markers exceeded 92% missingness. This gradient explains why explicit observation masks are essential in this project: a model that sees only imputed values would incorrectly treat "not measured" as weak evidence of physiologic normality.
+
+### 4.2 Static Phenotyping Baseline (Stage 1)
+
+Static K=4 clustering on PCA-reduced statistical features identified phenotypes with mortality rates of 6.8%, 10.0%, 33.8%, and 36.0% (range 29.2 percentage points). Silhouette score was 0.061, consistent with the fuzzy but clinically stratified cluster boundaries expected in real ICU data with severe sparsity. This baseline established that clinically meaningful risk separation was present in the cohort before any self-supervised learning was introduced.
+
+### 4.3 Representation Learning Comparison (Stage 2)
+
+**Table 2. Representation comparison (K=4, mean ± std over 5 seeds)**
 
 | Method | Silhouette | Mortality Range | Center L1 ↓ | Mort. Probe AUROC | Density |r| ↓ |
 |--------|-----------|----------------|------------|-------------------|---------|
@@ -159,19 +183,21 @@ Static K=4 clustering on PCA-reduced statistical features identified phenotypes 
 | S1.5: masked + contrastive (128d) | 0.080 ± 0.001 | 24.6% | **0.016** | **0.830** | **0.148** |
 | S1.6: λ=0.2 ablation (128d) | 0.079 ± 0.000 | 25.1% | 0.021 | 0.825 | 0.148 |
 
-Center probe AUROC was 0.50–0.52 for all methods (evaluated on a random stratified split mixing both centers), confirming no representation encodes center identity. S1.5 was selected for temporal analysis based on its superior center stability (L1 = 0.016), reduced missingness sensitivity (|r| = 0.148), and highest mortality probe AUROC (0.830). PCA's stronger static mortality separation (29.2% vs 24.6%) is noted; however, PCA requires re-extraction of summary statistics per window and cannot natively process variable-length sub-sequences, making it unsuitable for rolling-window temporal analysis.
+Center probe AUROC was 0.50-0.52 for all methods (evaluated on a random stratified split mixing both centers), confirming that no representation encoded center identity in a directly separable way. Compared with S1, adding the contrastive window objective in S1.5 slightly reduced geometric compactness (silhouette 0.087 to 0.080) but restored 7.0 percentage points of mortality separation, reduced center prevalence divergence from 0.024 to 0.016, and lowered missingness sensitivity from 0.247 to 0.148. Relative to PCA, S1.5 traded some static mortality range for substantially better center stability and a roughly 36% lower density-norm correlation. This pattern supports the intended interpretation: contrastive regularization makes embeddings less tied to site mix and raw measurement density while preserving clinically relevant outcome information.
 
-### 4.3 Descriptive Temporal Phenotype Trajectories (Stage 3)
+S1.5 was therefore selected for temporal analysis not because it was uniformly best on every metric, but because it offered the best balance between clinical signal, robustness to structured sparsity, and direct suitability for arbitrary rolling windows. PCA remained a useful static baseline, but it could not naturally process variable-length sub-sequences without re-engineering features for every window.
 
-#### 4.3.1 Rolling-Window Extraction
+### 4.4 Descriptive Temporal Phenotype Trajectories (Stage 3)
 
-Using the frozen S1.5 encoder, 59,930 window embeddings (11,986 patients × 5 windows) were extracted. Per-window observation density decreased from 27.9% (earliest window) to 25.4% (latest window), reflecting declining measurement frequency during ICU stays. Per-window silhouette ranged from 0.072 to 0.082.
+#### 4.4.1 Rolling-Window Extraction
 
-#### 4.3.2 Temporal Phenotype Stability and Transitions
+Using the frozen S1.5 encoder, 59,930 window embeddings (11,986 patients × 5 windows) were extracted. Per-window observation density decreased from 27.9% in the earliest window to 25.4% in the latest window, a 2.5 percentage-point absolute drop that reflects declining measurement frequency during ICU stays. Despite this decline, per-window silhouette remained stable and even improved modestly from 0.072 to 0.082, suggesting that the learned representation remained usable as the observation stream became sparser.
 
-Of 11,986 patients, 7,764 (64.8%) maintained a stable phenotype across all five windows, 3,509 (29.3%) exhibited exactly one transition, and 713 (5.9%) exhibited multiple transitions.
+#### 4.4.2 Temporal Phenotype Stability and Transitions
 
-**Table 2. Stable phenotype mortality stratification**
+Of 11,986 patients, 7,764 (64.8%) maintained a stable phenotype across all five windows, 3,509 (29.3%) exhibited exactly one transition, and 713 (5.9%) exhibited multiple transitions. The four fully stable trajectories, [0,0,0,0,0], [1,1,1,1,1], [2,2,2,2,2], and [3,3,3,3,3], were also the four most common patient-level patterns, indicating that temporal structure was dominated by persistent low-dimensional states rather than noisy label oscillation.
+
+**Table 3. Stable phenotype mortality stratification**
 
 | Stable Phenotype | N | In-Hospital Mortality |
 |-----------------|---|----------------------|
@@ -180,21 +206,23 @@ Of 11,986 patients, 7,764 (64.8%) maintained a stable phenotype across all five 
 | Phenotype 1 | 2,547 | 22.5% |
 | Phenotype 2 | 1,110 | 31.7% |
 
-The 27.7 percentage-point mortality range across temporally stable phenotypes exceeded the static S1.5 clustering result (24.6%), suggesting that restricting to temporally stable patients yields purer phenotype subgroups.
+The 27.7 percentage-point mortality range across temporally stable phenotypes exceeded the static S1.5 clustering result (24.6%), suggesting that restricting attention to temporally consistent patients yields cleaner phenotype strata. Phenotype 2 was the smallest stable subgroup (9.3% of the cohort) but the highest-risk one, whereas Phenotype 0 combined the largest low-risk population with the lowest mortality.
 
-#### 4.3.3 Transition Pathways and Mortality
+#### 4.4.3 Transition Pathways and Mortality
 
-The most frequent non-self transitions were Phenotype 1→0 (956 events, 6.1% of Phenotype 1 exits), Phenotype 1→3 (728 events), and Phenotype 3→0 (713 events), collectively representing movement toward lower-acuity phenotypes. Single-transition patients had lower in-hospital mortality (11.4%) than stable patients (15.4%) or multi-transition patients (15.2%). This descriptive association suggests that phenotype transitions—particularly from higher-risk to lower-risk phenotypes—may reflect favorable clinical trajectory change, though causal interpretation requires controlled study designs.
+Across 47,944 adjacent window pairs, 4,987 events (10.4%) were non-self transitions. The transition entropy ratio was 0.637, indicating that transitions were neither random nor trivially concentrated in a single pathway. The most frequent non-self transitions were Phenotype 1->0 (956 events), Phenotype 1->3 (728), and Phenotype 3->0 (713); together they accounted for 48.1% of all non-self transitions and primarily represented movement toward lower-risk states.
 
-#### 4.3.4 Temporal Prevalence Shift
+Patients with exactly one transition had lower mortality (11.4%) than stable patients (15.4%) or multi-transition patients (15.2%). This descriptive association is clinically interesting because it suggests that a subset of transitions may correspond to early stabilization rather than deterioration. At the same time, the similar mortality of stable and multi-transition patients indicates that transition count alone is not sufficient to characterize risk; transition direction matters.
 
-Phenotype 0 (lowest mortality) increased in prevalence from 24.6% at window [0,24h) to 33.1% at window [24,48h), while Phenotype 1 decreased from 35.7% to 28.1% (Figure 3). This population-level shift is consistent with clinical stabilization during the first 48 ICU hours, though it may also reflect survivor bias or changes in measurement patterns.
+#### 4.4.4 Temporal Prevalence Shift
 
-### 4.4 Stride Sensitivity Analysis
+Phenotype 0 (lowest mortality) increased in prevalence from 24.6% at window [0,24h) to 33.1% at window [24,48h), while Phenotype 1 decreased from 35.7% to 28.1%. This population-level shift is consistent with partial clinical stabilization during the first 48 ICU hours. Because observation density also decreased over time, the prevalence shift should be read as a joint effect of evolving physiology, survivor filtering, and measurement practice rather than as direct evidence of treatment response.
 
-To assess the influence of window overlap on temporal findings, we repeated the analysis with stride=12h (3 windows, 50% overlap). Cluster centroids showed near-perfect alignment with the primary analysis (cosine distance < 0.0001 after Hungarian matching). Results:
+### 4.5 Stride Sensitivity Analysis
 
-**Table 3. Stride sensitivity comparison**
+To assess the influence of window overlap on temporal findings, we repeated the analysis with stride=12h (3 windows, 50% overlap). Cluster centroids showed near-perfect alignment with the primary analysis (cosine distance < 0.0001 after Hungarian matching), indicating that the recovered phenotype geometry was effectively unchanged.
+
+**Table 4. Stride sensitivity comparison**
 
 | Metric | Stride=6h (primary) | Stride=12h (sensitivity) |
 |--------|---------------------|--------------------------|
@@ -206,11 +234,11 @@ To assess the influence of window overlap on temporal findings, we repeated the 
 
 The mortality ordering of stable phenotypes was identical under both strides, the highest-risk phenotype remained Phenotype 2, and the mortality range was preserved (28.0pp vs 27.7pp). The proportion of non-self transitions increased from 10.4% to 19.1% under reduced overlap, indicating that the primary stride=6h analysis provides a conservative estimate of temporal phenotype change rather than an overlap-inflated one.
 
-### 4.5 Cross-Center Temporal Validation
+### 4.6 Cross-Center Temporal Validation
 
-To assess whether the temporal phenotype trajectories generalize beyond the training center, we performed out-of-center validation: the KMeans model was trained on Center A rolling-window embeddings and evaluated on Center B (a separate hospital within the PhysioNet 2012 cohort). The S1.5 encoder was also trained exclusively on Center A data.
+To assess whether the temporal phenotype trajectories generalized beyond the training center, we performed out-of-center validation: the KMeans model was trained on Center A rolling-window embeddings and evaluated on Center B (a separate hospital within the PhysioNet 2012 cohort). The S1.5 encoder was also trained exclusively on Center A data.
 
-**Table 4. Cross-center temporal validation (Center A vs Center B)**
+**Table 5. Cross-center temporal validation (Center A vs Center B)**
 
 | Metric | Center A (train) | Center B (test) |
 |--------|-----------------|-----------------|
@@ -223,15 +251,17 @@ To assess whether the temporal phenotype trajectories generalize beyond the trai
 | Stable P3 mortality | 9.7% | 9.8% |
 | Stable P1 mortality | 21.8% | 24.0% |
 | Stable P2 mortality | 32.6% | 30.0% |
-| Mean prevalence L1 | — | 0.022 |
+| Mean prevalence L1 | - | 0.022 |
 
-All six validation criteria were satisfied: stable fraction similarity (diff = 0.6pp), transition proportion similarity (diff = 0.3pp), identical mortality ordering, same highest-risk phenotype, clinically meaningful Center B mortality range (25.8pp), and low per-window prevalence divergence (L1 = 0.022). Per-window silhouette scores were within 0.001 across centers at all five window positions.
+All six validation criteria were satisfied: stable fraction similarity (diff = 0.6pp), transition proportion similarity (diff = 0.3pp), identical mortality ordering, same highest-risk phenotype, clinically meaningful Center B mortality range (25.8pp), and low per-window prevalence divergence (mean L1 = 0.0218; range 0.0155-0.0265 across windows). Per-window silhouette scores were within 0.001 across centers at all five window positions.
 
-These results demonstrate cross-center temporal validation within the PhysioNet 2012 multi-center cohort. Both centers derive from the same source database; full external validation requires independently collected ICU cohorts (e.g., eICU-CRD, MIMIC-IV).
+The detailed pattern was also consistent. Low-risk Phenotypes 0 and 3 showed nearly identical mortality in both centers, whereas higher-risk Phenotypes 1 and 2 shifted modestly in absolute rate but preserved the same ordering. This is the pattern expected from a useful temporal phenotyping system: absolute calibration can vary by site, but the relative state structure remains stable.
 
-### 4.6 Simulated Data Validation
+These results demonstrate cross-center temporal validation within the PhysioNet 2012 multi-center cohort. Both centers derive from the same source database; full external validation still requires independently collected ICU cohorts such as eICU-CRD or MIMIC-IV.
 
-The synthetic data generator was used for pipeline validation. K-Means on PCA-reduced simulated features achieved ARI = 0.245 and NMI = 0.495 against known ground-truth labels. *Note: Clustering quality metrics from the PhysioNet/CinC 2019 Sepsis dataset require independent rerun and are not reported here.*
+### 4.7 Simulated Data Validation
+
+The synthetic data generator was used for pipeline validation. K-Means on PCA-reduced simulated features achieved ARI = 0.245 and NMI = 0.495 against known ground-truth labels. This result is modest rather than spectacular, but it is useful as an honesty check: the pipeline can recover non-random subtype structure in controlled data, yet clustering remains a genuinely difficult problem even under simpler conditions. *Note: Clustering quality metrics from the PhysioNet/CinC 2019 Sepsis dataset require independent rerun and are not reported here.*
 
 ---
 
@@ -239,35 +269,53 @@ The synthetic data generator was used for pipeline validation. K-Means on PCA-re
 
 ### 5.1 Three-Level Phenotyping Framework
 
-This work demonstrates a progression from static clustering (Stage 1) through self-supervised representation learning (Stage 2) to descriptive temporal phenotype trajectory analysis (Stage 3). Each stage addresses a limitation of the previous: Stage 2 replaces hand-crafted summary statistics with learned representations that encode temporal patterns and are robust to missingness; Stage 3 reveals within-stay dynamics that static methods cannot capture.
+This work demonstrates a progression from static clustering (Stage 1) through self-supervised representation learning (Stage 2) to descriptive temporal phenotype trajectory analysis (Stage 3). Each stage addresses a limitation of the previous one. Stage 1 shows that clinically meaningful heterogeneity exists in the cohort. Stage 2 replaces hand-crafted summaries with a learned representation that can directly ingest sub-sequences while accounting for structured missingness. Stage 3 then turns those embeddings into temporal phenotype sequences that make within-stay movement visible.
 
-The temporal trajectory analysis shows that approximately one-third of ICU sepsis patients undergo phenotype transitions within the first 48 hours. The clinical significance of these transitions is supported by three findings: (1) stable phenotypes show strongly stratified mortality (4.0%–31.7%), (2) the most common transitions move from higher-risk to lower-risk phenotypes, and (3) single-transition patients have lower mortality than stable patients, consistent with the interpretation that phenotype change may reflect clinical improvement.
+The temporal trajectory analysis shows that approximately one-third of ICU sepsis patients undergo at least one phenotype transition within the first 48 hours. The importance of those transitions is supported by three convergent findings: stable phenotypes show strong mortality stratification, the dominant transition directions move toward lower-risk states, and single-transition patients have lower mortality than the cohort of fully stable patients. Taken together, these results argue that early within-stay dynamics contain clinically meaningful information that static clustering alone cannot expose.
 
-### 5.2 Representation Learning Trade-offs
+### 5.2 Principle Interpretation of the Framework
 
-The self-supervised encoder (S1.5) offered improved center stability and reduced missingness sensitivity compared to PCA, though PCA retained stronger static mortality separation. This trade-off is characteristic of learned representations: they capture more generalizable patterns at the cost of discriminative specificity on the training distribution. The selection of S1.5 for temporal analysis was motivated primarily by its ability to process variable-length sub-sequences directly, a capability PCA lacks. The contrastive window objective specifically encourages temporal consistency, making S1.5 naturally suited for rolling-window analysis.
+The central methodological idea is not simply "use a Transformer," but to align the representation design with the structure of ICU data. In this project, missingness is informative, temporally local patterns matter, and patient state should remain partially stable across nearby windows. The framework therefore combines explicit mask channels, reconstruction of withheld observed values, contrastive alignment of overlapping windows from the same patient, and window-level clustering of frozen embeddings.
 
-### 5.3 Limitations
+These components play different roles. Mask channels preserve the distinction between measured and imputed values. Masked reconstruction encourages the model to learn short-range temporal and cross-variable regularities from observed clinical signals. Contrastive window alignment encourages patient-level consistency across local time shifts and sampling variation, which is especially important when later applying the encoder to rolling 24-hour windows. Density-weighted pooling reduces the influence of almost-empty hours without dropping them entirely. In combination, the model is encouraged to treat sparsity as context rather than noise while avoiding a trivial dependence on measurement count alone.
 
-1. **Descriptive, not model-based**: The temporal phenotype trajectories arise from per-window clustering rather than latent-state inference (e.g., HMMs). This limits the ability to model transition dynamics probabilistically.
-2. **Overlap sensitivity**: Window overlap (75% at stride=6h) smooths embedding changes, potentially underestimating transition rates. Sensitivity analysis with 50% overlap confirmed mortality stratification but showed higher transition rates, suggesting the primary analysis is conservative.
-3. **Missing treatment data**: PhysioNet 2012 lacks true treatment records. Proxy indicators (MAP < 65, FiO2 > 0.21) are physiological thresholds, not treatment decisions. Treatment-aware phenotyping requires datasets with documented interventions (e.g., MIMIC-IV with vasopressor, fluid, and antibiotic timing [20]).
-4. **Observational associations**: Patients who transition between phenotypes may differ systematically from stable patients in ways not captured by the current feature set. The lower mortality observed in transitioning patients is a descriptive association, not a causal effect of transition.
-5. **Single-dataset scope**: While cross-center temporal validation within the PhysioNet 2012 cohort shows that phenotypes transfer across centers (identical mortality ordering, 25.8pp range on held-out Center B), both centers derive from the same source database. External validation on independently collected ICU cohorts is needed to establish broader generalizability.
-6. **Data sparsity**: The 73.3% missing rate limits the signal available for both representation learning and clustering. Key sepsis biomarkers (lactate, bilirubin) are extremely sparse in PhysioNet 2012.
+### 5.3 Data Interpretation and Clinical Meaning
 
-### 5.4 Future Directions
+The data analysis in Section 4 clarifies why the learned temporal phenotypes behave the way they do. The cohort contains dense hemodynamic streams but extremely sparse laboratory variables, so the recovered temporal states are likely driven most strongly by evolving vital-sign patterns, with laboratory information acting as occasional but clinically important corrections. This helps explain why prevalence shifts are smooth rather than abrupt and why robustness to observation density matters so much.
 
-1. **Treatment-aware temporal phenotyping**: Integration of treatment variables from MIMIC-IV or eICU would enable analysis of phenotype-treatment interactions and heterogeneous treatment effects
-2. **Latent-state models**: Replacing per-window clustering with HMMs or switching state-space models would enable probabilistic transition modeling
-3. **External database validation**: Validating temporal phenotypes on independently collected ICU databases (eICU-CRD, MIMIC-IV) would establish generalizability beyond the PhysioNet 2012 cohort
-4. **Bedside implementation**: Real-time phenotype assignment from early (6h, 12h) data windows could support clinical decision-making
+The transition structure is also clinically interpretable at a descriptive level. Nearly half of all non-self transitions come from three pathways, 1->0, 1->3, and 3->0, all of which move toward lower-risk states. Meanwhile, the highest-risk stable phenotype remains Phenotype 2 in both centers. A reasonable interpretation is that the framework is separating persistent high-risk patients from a larger population that gradually stabilizes during early ICU care. However, this interpretation remains phenomenological because the temporal phenotypes were not post-hoc labeled with specific biomarker signatures or treatment exposure profiles.
+
+### 5.4 Representation Learning Trade-offs
+
+The self-supervised encoder (S1.5) offered improved center stability and reduced missingness sensitivity compared with PCA, though PCA retained stronger static mortality separation. This trade-off is characteristic of learned representations: they often sacrifice some training-distribution sharpness in exchange for invariances that matter when the representation is reused under shifted conditions. In this project, that reuse condition was rolling-window temporal analysis.
+
+S1 alone achieved the highest silhouette, but it also produced the weakest clinical separation among the learned models and the highest coupling to observation density. Adding the contrastive term partially reversed that behavior, suggesting that contrastive regularization did not merely smooth the space; it reshaped the space toward patient-level temporal consistency. That is the main reason S1.5, rather than PCA or S1, was the right representation for Stage 3.
+
+### 5.5 Limitations
+
+1. **Descriptive, not model-based**: The temporal phenotype trajectories arise from per-window clustering rather than latent-state inference such as hidden Markov models. This limits probabilistic transition modeling and uncertainty quantification.
+2. **Overlap sensitivity**: Window overlap (75% at stride=6h) smooths embedding changes and likely underestimates transition rates. Sensitivity analysis confirmed that the main clinical ordering is robust, but exact transition frequency depends on the window design.
+3. **Missing treatment data**: PhysioNet 2012 lacks true treatment records. Proxy indicators such as MAP < 65 or FiO2 > 0.21 are physiological thresholds, not interventions. Treatment-aware phenotyping requires datasets with documented vasopressor, fluid, ventilation, and antibiotic timing.
+4. **Observational associations**: Patients who transition between phenotypes may differ systematically from stable patients in ways not captured here. The lower mortality observed in single-transition patients is a descriptive association, not a causal effect of transition.
+5. **Single-dataset scope**: Cross-center temporal validation within the PhysioNet 2012 cohort is strong internal evidence, but both centers derive from the same source database. External validation on independently collected ICU cohorts is still required.
+6. **Sparse phenotype semantics**: The current paper can rank temporal phenotypes by risk, but it does not yet assign them mechanistic labels based on treatments, organ-failure pathways, or multimodal evidence such as notes or waveforms.
+7. **Data sparsity ceiling**: With an overall missing rate of 73.3% and key biomarkers such as bilirubin and lactate observed only rarely, there is an upper bound on how much physiologic detail any model can recover from this dataset alone.
+
+### 5.6 Future Directions
+
+1. **Treatment-aware temporal phenotyping**: Extending the same pipeline to MIMIC-IV or eICU with true intervention timestamps would allow direct analysis of phenotype-treatment interactions and heterogeneous treatment effects rather than descriptive risk stratification alone.
+2. **State-space modeling and uncertainty**: Replacing per-window clustering with hidden Markov models, switching state-space models, or neural latent-state approaches would make transition probabilities and confidence intervals explicit.
+3. **External database validation**: Repeating the full pipeline on independently collected ICU cohorts is the most important next scientific step for establishing generalizability beyond the PhysioNet 2012 ecosystem.
+4. **Earlier bedside deployment**: A practical version of the framework would infer phenotype membership from 6-hour or 12-hour windows and update it online as new measurements arrive, enabling earlier decision support.
+5. **Richer phenotype interpretation**: Post-hoc attribution analysis, multimodal augmentation, and linkage to organ-support variables could turn the current risk-ranked phenotypes into clinically named subgroups with clearer bedside meaning.
 
 ---
 
 ## 6. Conclusion
 
-This study presents a three-stage framework for sepsis phenotyping that progresses from static clustering to self-supervised representation learning to descriptive temporal phenotype trajectory analysis. Applied to 11,986 multi-center ICU patients with ground-truth mortality outcomes, the framework identifies four phenotypes with strongly stratified mortality (4.0%–31.7% for temporally stable patients). Temporal analysis reveals that 35.2% of patients undergo phenotype transitions within 48 hours, with transitions predominantly toward lower-acuity phenotypes and conservative transition rate estimates confirmed by stride sensitivity analysis. Cross-center temporal validation within the PhysioNet 2012 cohort confirms that phenotype structure, mortality ordering, and transition patterns transfer from the training center to a held-out center, though both centers derive from the same source database. These descriptive findings demonstrate that temporal phenotype trajectories provide clinically meaningful and reproducible information beyond static subtyping, supporting further investigation with treatment-aware datasets, external database validation, and prospective study designs.
+This paper extends the project from a concise manuscript into a fuller research narrative by tying together cohort characterization, model design principles, quantitative comparison, temporal trajectory analysis, and future outlook. Applied to 11,986 multi-center ICU patients with verified in-hospital mortality labels, the framework identifies four temporally meaningful phenotypes with strong mortality stratification (4.0%-31.7% among stable patients), substantial within-stay movement (35.2% of patients transition at least once), and consistent cross-center behavior within the PhysioNet 2012 cohort.
+
+The main scientific lesson is that explicit handling of structured missingness and temporal locality is essential for ICU time-series phenotyping. Static feature clustering can reveal coarse heterogeneity, but mask-aware self-supervised representation learning is what makes rolling-window analysis feasible. The present results are descriptive rather than causal, yet they show that temporal phenotype trajectories carry reproducible clinical information beyond static subtyping. That makes them a plausible foundation for future treatment-aware, externally validated, and eventually bedside-deployable sepsis phenotyping systems.
 
 ---
 
