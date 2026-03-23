@@ -10,15 +10,16 @@
 <p>
   <a href="docs/RESEARCH_PAPER.pdf"><img src="https://img.shields.io/badge/Research%20Paper-PDF-B31B1B?style=for-the-badge" alt="Research Paper PDF"></a>
   <a href="docs/RESEARCH_PAPER.md"><img src="https://img.shields.io/badge/Manuscript-Markdown-1F6FEB?style=for-the-badge" alt="Manuscript Markdown"></a>
-  <a href="docs/EXPERIMENT_REGISTRY.md"><img src="https://img.shields.io/badge/Experiments-E001--E017-0E8A16?style=for-the-badge" alt="Experiment Registry"></a>
+  <a href="docs/EXPERIMENT_REGISTRY.md"><img src="https://img.shields.io/badge/Experiments-E001--E022-0E8A16?style=for-the-badge" alt="Experiment Registry"></a>
   <a href="docs/DECISIONS.md"><img src="https://img.shields.io/badge/Design%20Log-D001--D016-6F42C1?style=for-the-badge" alt="Design Decisions"></a>
 </p>
 
 <p>
   A research codebase for ICU sepsis phenotyping that moves from static clustering,
   to self-supervised temporal representation learning, to descriptive phenotype trajectory analysis
-  on 11,986 multi-center PhysioNet 2012 patients, with supplementary downstream mortality validation
-  on frozen learned embeddings.
+  on 11,986 multi-center PhysioNet 2012 patients, with supplementary downstream mortality validation,
+  Sepsis 2019 auxiliary data bridging, end-to-end supervised fine-tuning, and systematic downstream
+  hyperparameter search.
 </p>
 
 <img src="docs/figures/summary_dashboard.png" alt="Project summary dashboard" width="920">
@@ -95,6 +96,14 @@ Frozen S1.5 embeddings
   -> logistic regression mortality classifier
   -> threshold tuning on Center A validation split
   -> held-out Center B accuracy / balanced accuracy / recall / AUROC
+
+Bridged PhysioNet 2019 sepsis cohort (40,331 stays, 18/21 shared channels)
+  -> auxiliary supervised transfer
+  -> end-to-end attention-pooled mortality fine-tuning
+
+Systematic downstream model search
+  -> HGB / ensemble / logistic variants on fused multi-view features
+  -> explicit accuracy vs recall trade-off under 14.6% mortality prevalence
 ```
 
 ## Visual Overview
@@ -169,22 +178,33 @@ Frozen S1.5 embeddings
 
 ### Supplementary Downstream Mortality Validation
 
-| Operating Point | Test Accuracy | Test Balanced Accuracy | Test Recall | Test AUROC |
-|----------------|--------------:|-----------------------:|------------:|-----------:|
-| Balanced threshold (`thr=0.55`) | 0.784 | 0.745 | 0.691 | 0.829 |
-| Accuracy-optimized threshold (`thr=0.85`) | 0.865 | 0.623 | 0.280 | 0.829 |
+| Model / Operating Point | Test Accuracy | Test Balanced Accuracy | Test Recall | Test AUROC |
+|------------------------|--------------:|-----------------------:|------------:|-----------:|
+| Frozen S1.5 probe, balanced threshold (`thr=0.55`) | 0.784 | 0.745 | 0.691 | 0.829 |
+| Frozen S1.5 probe, accuracy threshold (`thr=0.85`) | 0.865 | 0.623 | 0.280 | 0.829 |
+| End-to-end fine-tune + Sepsis2019 auxiliary supervision | 0.795 | 0.753 | 0.692 | 0.842 |
+| Accuracy-search ensemble leader (`val acc` winner) | 0.871 | 0.660 | 0.361 | 0.863 |
 | Majority-class baseline | 0.854 | 0.500 | 0.000 | - |
 
-Because held-out mortality prevalence is only `14.6%`, plain accuracy is misleading on its own. The accuracy-optimized operating point barely beats the majority baseline while missing most deaths, whereas the balanced threshold preserves the same AUROC with much stronger recall.
+Because held-out mortality prevalence is only `14.6%`, plain accuracy is misleading on its own. The new end-to-end fine-tuning path improves both the frozen-probe accuracy and AUROC without collapsing recall, while the accuracy-oriented searched ensemble pushes headline accuracy much higher by operating at a much lower positive rate.
 
 ### Improved Downstream Models
 
 Using more of the already-available cohort information than the embedding-only linear probe:
 
+- `End-to-end attention fine-tune + Sepsis2019 auxiliary supervision` reaches `test accuracy=0.795`, `balanced accuracy=0.753`, `recall=0.692`, `AUROC=0.842`
 - `HGB + statistics + masks + proxy + static` reaches `test accuracy=0.791`, `balanced accuracy=0.780`, `AUROC=0.862`
 - `HGB ensemble (fused + stats views)` reaches `balanced accuracy=0.785`, `recall=0.812`, `AUROC=0.865`
+- `35-run accuracy-oriented search` selects an ensemble with `test accuracy=0.871`, `precision=0.601`, `recall=0.361`, `AUROC=0.863`
+- The highest-AUROC searched configuration reaches `test accuracy=0.874`, `balanced accuracy=0.685`, `recall=0.417`, `AUROC=0.867`
 
 These models learn from more data modalities already present in the repository: 48h summary statistics, missingness patterns, proxy indicators, demographics, and optionally S1.5 embeddings.
+
+### Additional Data Integration
+
+- `scripts/s19_prepare.py` bridges the local PhysioNet/CinC 2019 sepsis stubs into the same `continuous / masks / static / splits` layout used by `data/s0`
+- The bridge covers `40,331` ICU stays with `18 / 21` shared continuous channels; the missing overlap channels are `gcs`, `sodium`, and `pao2`
+- Preprocessing reuses the PhysioNet 2012 normalization statistics so the auxiliary source is numerically compatible with the pretrained S1.5 encoder
 
 ## Repository Map
 
@@ -246,6 +266,9 @@ python scripts/s15_compare.py
 python scripts/s15_diagnostics.py
 python scripts/s15_train_classifier.py
 python scripts/s15_train_advanced_classifier.py --model-type hgb --feature-set stats_mask_proxy_static
+python scripts/s19_prepare.py
+python scripts/s15_finetune_supervised.py
+python scripts/s15_hparam_search.py --mode advanced --threshold-metric accuracy
 
 # Stage 2: temporal phenotype trajectory analysis
 python scripts/s2_extract_rolling.py

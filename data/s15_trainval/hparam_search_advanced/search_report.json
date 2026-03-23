@@ -1,0 +1,1703 @@
+{
+  "mode": "advanced",
+  "threshold_metric": "accuracy",
+  "n_candidates": 35,
+  "leaders": {
+    "accuracy": {
+      "run_name": "30_ensemble_d3_lr0p05_iter200",
+      "config": {
+        "model_type": "hgb_ensemble",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 3,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.425,
+      "val_metric": 0.8865,
+      "test_metric": 0.8714,
+      "test_metrics": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0878,
+        "accuracy": 0.8714,
+        "balanced_accuracy": 0.6598,
+        "precision": 0.6011,
+        "recall": 0.3607,
+        "f1": 0.4509,
+        "auroc": 0.863,
+        "confusion_matrix": {
+          "tn": 3272,
+          "fp": 140,
+          "fn": 374,
+          "tp": 211
+        }
+      }
+    },
+    "balanced_accuracy": {
+      "run_name": "24_hgb_fused_all_d7_lr0p05_iter400",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 7,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 400,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.275,
+      "val_metric": 0.7053,
+      "test_metric": 0.683,
+      "test_metrics": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.1081,
+        "accuracy": 0.8687,
+        "balanced_accuracy": 0.683,
+        "precision": 0.5694,
+        "recall": 0.4205,
+        "f1": 0.4838,
+        "auroc": 0.8556,
+        "confusion_matrix": {
+          "tn": 3226,
+          "fp": 186,
+          "fn": 339,
+          "tp": 246
+        }
+      }
+    },
+    "auroc": {
+      "run_name": "34_ensemble_d5_lr0p05_iter200",
+      "config": {
+        "model_type": "hgb_ensemble",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 5,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.375,
+      "val_metric": 0.8718,
+      "test_metric": 0.8673,
+      "test_metrics": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.1013,
+        "accuracy": 0.8744,
+        "balanced_accuracy": 0.685,
+        "precision": 0.6025,
+        "recall": 0.4171,
+        "f1": 0.4929,
+        "auroc": 0.8673,
+        "confusion_matrix": {
+          "tn": 3251,
+          "fp": 161,
+          "fn": 341,
+          "tp": 244
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "run_name": "01_hgb_stats_mask_proxy_static_d3_lr0p03_iter200",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "stats_mask_proxy_static",
+        "hgb_max_depth": 3,
+        "hgb_learning_rate": 0.03,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.5,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0434,
+        "accuracy": 0.8793,
+        "balanced_accuracy": 0.6059,
+        "precision": 0.7308,
+        "recall": 0.2253,
+        "f1": 0.3444,
+        "auroc": 0.8659,
+        "confusion_matrix": {
+          "tn": 1524,
+          "fp": 21,
+          "fn": 196,
+          "tp": 57
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0503,
+        "accuracy": 0.8764,
+        "balanced_accuracy": 0.6167,
+        "precision": 0.7264,
+        "recall": 0.2496,
+        "f1": 0.3715,
+        "auroc": 0.8568,
+        "confusion_matrix": {
+          "tn": 3357,
+          "fp": 55,
+          "fn": 439,
+          "tp": 146
+        }
+      }
+    },
+    {
+      "run_name": "02_hgb_stats_mask_proxy_static_d3_lr0p03_iter400",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "stats_mask_proxy_static",
+        "hgb_max_depth": 3,
+        "hgb_learning_rate": 0.03,
+        "hgb_max_iter": 400,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.475,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0617,
+        "accuracy": 0.8788,
+        "balanced_accuracy": 0.632,
+        "precision": 0.6577,
+        "recall": 0.2885,
+        "f1": 0.4011,
+        "auroc": 0.8672,
+        "confusion_matrix": {
+          "tn": 1507,
+          "fp": 38,
+          "fn": 180,
+          "tp": 73
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0703,
+        "accuracy": 0.8759,
+        "balanced_accuracy": 0.6441,
+        "precision": 0.6584,
+        "recall": 0.3162,
+        "f1": 0.4273,
+        "auroc": 0.861,
+        "confusion_matrix": {
+          "tn": 3316,
+          "fp": 96,
+          "fn": 400,
+          "tp": 185
+        }
+      }
+    },
+    {
+      "run_name": "03_hgb_stats_mask_proxy_static_d3_lr0p05_iter200",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "stats_mask_proxy_static",
+        "hgb_max_depth": 3,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.425,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0784,
+        "accuracy": 0.881,
+        "balanced_accuracy": 0.6614,
+        "precision": 0.6383,
+        "recall": 0.3557,
+        "f1": 0.4569,
+        "auroc": 0.8668,
+        "confusion_matrix": {
+          "tn": 1494,
+          "fp": 51,
+          "fn": 163,
+          "tp": 90
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0871,
+        "accuracy": 0.8707,
+        "balanced_accuracy": 0.6573,
+        "precision": 0.5977,
+        "recall": 0.3556,
+        "f1": 0.4459,
+        "auroc": 0.8613,
+        "confusion_matrix": {
+          "tn": 3272,
+          "fp": 140,
+          "fn": 377,
+          "tp": 208
+        }
+      }
+    },
+    {
+      "run_name": "04_hgb_stats_mask_proxy_static_d3_lr0p05_iter400",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "stats_mask_proxy_static",
+        "hgb_max_depth": 3,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 400,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.425,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0845,
+        "accuracy": 0.8815,
+        "balanced_accuracy": 0.6716,
+        "precision": 0.6316,
+        "recall": 0.3794,
+        "f1": 0.4741,
+        "auroc": 0.8642,
+        "confusion_matrix": {
+          "tn": 1489,
+          "fp": 56,
+          "fn": 157,
+          "tp": 96
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0911,
+        "accuracy": 0.8702,
+        "balanced_accuracy": 0.6619,
+        "precision": 0.5907,
+        "recall": 0.3675,
+        "f1": 0.4531,
+        "auroc": 0.8613,
+        "confusion_matrix": {
+          "tn": 3263,
+          "fp": 149,
+          "fn": 370,
+          "tp": 215
+        }
+      }
+    },
+    {
+      "run_name": "05_hgb_stats_mask_proxy_static_d5_lr0p03_iter200",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "stats_mask_proxy_static",
+        "hgb_max_depth": 5,
+        "hgb_learning_rate": 0.03,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.475,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0628,
+        "accuracy": 0.8799,
+        "balanced_accuracy": 0.6359,
+        "precision": 0.6637,
+        "recall": 0.2964,
+        "f1": 0.4098,
+        "auroc": 0.8675,
+        "confusion_matrix": {
+          "tn": 1507,
+          "fp": 38,
+          "fn": 178,
+          "tp": 75
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0686,
+        "accuracy": 0.8717,
+        "balanced_accuracy": 0.6331,
+        "precision": 0.6314,
+        "recall": 0.2957,
+        "f1": 0.4028,
+        "auroc": 0.8623,
+        "confusion_matrix": {
+          "tn": 3311,
+          "fp": 101,
+          "fn": 412,
+          "tp": 173
+        }
+      }
+    },
+    {
+      "run_name": "06_hgb_stats_mask_proxy_static_d5_lr0p03_iter400",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "stats_mask_proxy_static",
+        "hgb_max_depth": 5,
+        "hgb_learning_rate": 0.03,
+        "hgb_max_iter": 400,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.6,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.04,
+        "accuracy": 0.8771,
+        "balanced_accuracy": 0.5963,
+        "precision": 0.7222,
+        "recall": 0.2055,
+        "f1": 0.32,
+        "auroc": 0.8626,
+        "confusion_matrix": {
+          "tn": 1525,
+          "fp": 20,
+          "fn": 201,
+          "tp": 52
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0415,
+        "accuracy": 0.8727,
+        "balanced_accuracy": 0.5968,
+        "precision": 0.7289,
+        "recall": 0.2068,
+        "f1": 0.3222,
+        "auroc": 0.8629,
+        "confusion_matrix": {
+          "tn": 3367,
+          "fp": 45,
+          "fn": 464,
+          "tp": 121
+        }
+      }
+    },
+    {
+      "run_name": "07_hgb_stats_mask_proxy_static_d5_lr0p05_iter200",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "stats_mask_proxy_static",
+        "hgb_max_depth": 5,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.525,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0562,
+        "accuracy": 0.881,
+        "balanced_accuracy": 0.6283,
+        "precision": 0.6931,
+        "recall": 0.2767,
+        "f1": 0.3955,
+        "auroc": 0.8658,
+        "confusion_matrix": {
+          "tn": 1514,
+          "fp": 31,
+          "fn": 183,
+          "tp": 70
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.06,
+        "accuracy": 0.8747,
+        "balanced_accuracy": 0.627,
+        "precision": 0.675,
+        "recall": 0.2769,
+        "f1": 0.3927,
+        "auroc": 0.863,
+        "confusion_matrix": {
+          "tn": 3334,
+          "fp": 78,
+          "fn": 423,
+          "tp": 162
+        }
+      }
+    },
+    {
+      "run_name": "08_hgb_stats_mask_proxy_static_d5_lr0p05_iter400",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "stats_mask_proxy_static",
+        "hgb_max_depth": 5,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 400,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.55,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0523,
+        "accuracy": 0.8804,
+        "balanced_accuracy": 0.6214,
+        "precision": 0.7021,
+        "recall": 0.2609,
+        "f1": 0.3804,
+        "auroc": 0.8628,
+        "confusion_matrix": {
+          "tn": 1517,
+          "fp": 28,
+          "fn": 187,
+          "tp": 66
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0588,
+        "accuracy": 0.8729,
+        "balanced_accuracy": 0.6218,
+        "precision": 0.6638,
+        "recall": 0.2667,
+        "f1": 0.3805,
+        "auroc": 0.8595,
+        "confusion_matrix": {
+          "tn": 3333,
+          "fp": 79,
+          "fn": 429,
+          "tp": 156
+        }
+      }
+    },
+    {
+      "run_name": "09_hgb_stats_mask_proxy_static_d7_lr0p03_iter200",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "stats_mask_proxy_static",
+        "hgb_max_depth": 7,
+        "hgb_learning_rate": 0.03,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.525,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0517,
+        "accuracy": 0.8776,
+        "balanced_accuracy": 0.6148,
+        "precision": 0.6774,
+        "recall": 0.249,
+        "f1": 0.3642,
+        "auroc": 0.8656,
+        "confusion_matrix": {
+          "tn": 1515,
+          "fp": 30,
+          "fn": 190,
+          "tp": 63
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0588,
+        "accuracy": 0.8729,
+        "balanced_accuracy": 0.6218,
+        "precision": 0.6638,
+        "recall": 0.2667,
+        "f1": 0.3805,
+        "auroc": 0.8635,
+        "confusion_matrix": {
+          "tn": 3333,
+          "fp": 79,
+          "fn": 429,
+          "tp": 156
+        }
+      }
+    },
+    {
+      "run_name": "10_hgb_stats_mask_proxy_static_d7_lr0p03_iter400",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "stats_mask_proxy_static",
+        "hgb_max_depth": 7,
+        "hgb_learning_rate": 0.03,
+        "hgb_max_iter": 400,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.475,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0662,
+        "accuracy": 0.8799,
+        "balanced_accuracy": 0.6409,
+        "precision": 0.6555,
+        "recall": 0.3083,
+        "f1": 0.4194,
+        "auroc": 0.863,
+        "confusion_matrix": {
+          "tn": 1504,
+          "fp": 41,
+          "fn": 175,
+          "tp": 78
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0693,
+        "accuracy": 0.8694,
+        "balanced_accuracy": 0.6296,
+        "precision": 0.6137,
+        "recall": 0.2906,
+        "f1": 0.3944,
+        "auroc": 0.8635,
+        "confusion_matrix": {
+          "tn": 3305,
+          "fp": 107,
+          "fn": 415,
+          "tp": 170
+        }
+      }
+    },
+    {
+      "run_name": "11_hgb_stats_mask_proxy_static_d7_lr0p05_iter200",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "stats_mask_proxy_static",
+        "hgb_max_depth": 7,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.5,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0651,
+        "accuracy": 0.8788,
+        "balanced_accuracy": 0.6369,
+        "precision": 0.6496,
+        "recall": 0.3004,
+        "f1": 0.4108,
+        "auroc": 0.8622,
+        "confusion_matrix": {
+          "tn": 1504,
+          "fp": 41,
+          "fn": 177,
+          "tp": 76
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0638,
+        "accuracy": 0.8739,
+        "balanced_accuracy": 0.6308,
+        "precision": 0.6588,
+        "recall": 0.2872,
+        "f1": 0.4,
+        "auroc": 0.8591,
+        "confusion_matrix": {
+          "tn": 3325,
+          "fp": 87,
+          "fn": 417,
+          "tp": 168
+        }
+      }
+    },
+    {
+      "run_name": "12_hgb_stats_mask_proxy_static_d7_lr0p05_iter400",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "stats_mask_proxy_static",
+        "hgb_max_depth": 7,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 400,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.475,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0673,
+        "accuracy": 0.8832,
+        "balanced_accuracy": 0.6494,
+        "precision": 0.6777,
+        "recall": 0.3241,
+        "f1": 0.4385,
+        "auroc": 0.8612,
+        "confusion_matrix": {
+          "tn": 1506,
+          "fp": 39,
+          "fn": 171,
+          "tp": 82
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0663,
+        "accuracy": 0.8734,
+        "balanced_accuracy": 0.6334,
+        "precision": 0.6491,
+        "recall": 0.294,
+        "f1": 0.4047,
+        "auroc": 0.8573,
+        "confusion_matrix": {
+          "tn": 3319,
+          "fp": 93,
+          "fn": 413,
+          "tp": 172
+        }
+      }
+    },
+    {
+      "run_name": "13_hgb_fused_all_d3_lr0p03_iter200",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 3,
+        "hgb_learning_rate": 0.03,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.425,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0734,
+        "accuracy": 0.8815,
+        "balanced_accuracy": 0.6551,
+        "precision": 0.6515,
+        "recall": 0.3399,
+        "f1": 0.4468,
+        "auroc": 0.8651,
+        "confusion_matrix": {
+          "tn": 1499,
+          "fp": 46,
+          "fn": 167,
+          "tp": 86
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0776,
+        "accuracy": 0.8707,
+        "balanced_accuracy": 0.6438,
+        "precision": 0.6097,
+        "recall": 0.3231,
+        "f1": 0.4223,
+        "auroc": 0.8591,
+        "confusion_matrix": {
+          "tn": 3291,
+          "fp": 121,
+          "fn": 396,
+          "tp": 189
+        }
+      }
+    },
+    {
+      "run_name": "14_hgb_fused_all_d3_lr0p03_iter400",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 3,
+        "hgb_learning_rate": 0.03,
+        "hgb_max_iter": 400,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.425,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0812,
+        "accuracy": 0.8804,
+        "balanced_accuracy": 0.6643,
+        "precision": 0.6301,
+        "recall": 0.3636,
+        "f1": 0.4612,
+        "auroc": 0.8677,
+        "confusion_matrix": {
+          "tn": 1491,
+          "fp": 54,
+          "fn": 161,
+          "tp": 92
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0881,
+        "accuracy": 0.8742,
+        "balanced_accuracy": 0.6657,
+        "precision": 0.6165,
+        "recall": 0.3709,
+        "f1": 0.4632,
+        "auroc": 0.8606,
+        "confusion_matrix": {
+          "tn": 3277,
+          "fp": 135,
+          "fn": 368,
+          "tp": 217
+        }
+      }
+    },
+    {
+      "run_name": "15_hgb_fused_all_d3_lr0p05_iter200",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 3,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.425,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0806,
+        "accuracy": 0.8832,
+        "balanced_accuracy": 0.6693,
+        "precision": 0.6483,
+        "recall": 0.3715,
+        "f1": 0.4724,
+        "auroc": 0.8662,
+        "confusion_matrix": {
+          "tn": 1494,
+          "fp": 51,
+          "fn": 159,
+          "tp": 94
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0871,
+        "accuracy": 0.8702,
+        "balanced_accuracy": 0.6563,
+        "precision": 0.5948,
+        "recall": 0.3538,
+        "f1": 0.4437,
+        "auroc": 0.8594,
+        "confusion_matrix": {
+          "tn": 3271,
+          "fp": 141,
+          "fn": 378,
+          "tp": 207
+        }
+      }
+    },
+    {
+      "run_name": "16_hgb_fused_all_d3_lr0p05_iter400",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 3,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 400,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.475,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0723,
+        "accuracy": 0.8804,
+        "balanced_accuracy": 0.6511,
+        "precision": 0.6462,
+        "recall": 0.332,
+        "f1": 0.4386,
+        "auroc": 0.8655,
+        "confusion_matrix": {
+          "tn": 1499,
+          "fp": 46,
+          "fn": 169,
+          "tp": 84
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0736,
+        "accuracy": 0.8737,
+        "balanced_accuracy": 0.6441,
+        "precision": 0.6361,
+        "recall": 0.3197,
+        "f1": 0.4255,
+        "auroc": 0.8583,
+        "confusion_matrix": {
+          "tn": 3305,
+          "fp": 107,
+          "fn": 398,
+          "tp": 187
+        }
+      }
+    },
+    {
+      "run_name": "17_hgb_fused_all_d5_lr0p03_iter200",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 5,
+        "hgb_learning_rate": 0.03,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.375,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0973,
+        "accuracy": 0.8821,
+        "balanced_accuracy": 0.6918,
+        "precision": 0.6171,
+        "recall": 0.4269,
+        "f1": 0.5047,
+        "auroc": 0.8671,
+        "confusion_matrix": {
+          "tn": 1478,
+          "fp": 67,
+          "fn": 145,
+          "tp": 108
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.1041,
+        "accuracy": 0.8742,
+        "balanced_accuracy": 0.6883,
+        "precision": 0.5986,
+        "recall": 0.4256,
+        "f1": 0.4975,
+        "auroc": 0.8623,
+        "confusion_matrix": {
+          "tn": 3245,
+          "fp": 167,
+          "fn": 336,
+          "tp": 249
+        }
+      }
+    },
+    {
+      "run_name": "18_hgb_fused_all_d5_lr0p03_iter400",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 5,
+        "hgb_learning_rate": 0.03,
+        "hgb_max_iter": 400,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.375,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0968,
+        "accuracy": 0.8815,
+        "balanced_accuracy": 0.6898,
+        "precision": 0.6149,
+        "recall": 0.4229,
+        "f1": 0.5012,
+        "auroc": 0.8689,
+        "confusion_matrix": {
+          "tn": 1478,
+          "fp": 67,
+          "fn": 146,
+          "tp": 107
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.1008,
+        "accuracy": 0.8769,
+        "balanced_accuracy": 0.6893,
+        "precision": 0.6154,
+        "recall": 0.4239,
+        "f1": 0.502,
+        "auroc": 0.862,
+        "confusion_matrix": {
+          "tn": 3257,
+          "fp": 155,
+          "fn": 337,
+          "tp": 248
+        }
+      }
+    },
+    {
+      "run_name": "19_hgb_fused_all_d5_lr0p05_iter200",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 5,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.5,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0634,
+        "accuracy": 0.8804,
+        "balanced_accuracy": 0.6379,
+        "precision": 0.6667,
+        "recall": 0.3004,
+        "f1": 0.4142,
+        "auroc": 0.8689,
+        "confusion_matrix": {
+          "tn": 1507,
+          "fp": 38,
+          "fn": 177,
+          "tp": 76
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0625,
+        "accuracy": 0.8752,
+        "balanced_accuracy": 0.6316,
+        "precision": 0.672,
+        "recall": 0.2872,
+        "f1": 0.4024,
+        "auroc": 0.8637,
+        "confusion_matrix": {
+          "tn": 3330,
+          "fp": 82,
+          "fn": 417,
+          "tp": 168
+        }
+      }
+    },
+    {
+      "run_name": "20_hgb_fused_all_d5_lr0p05_iter400",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 5,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 400,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.55,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0567,
+        "accuracy": 0.8804,
+        "balanced_accuracy": 0.628,
+        "precision": 0.6863,
+        "recall": 0.2767,
+        "f1": 0.3944,
+        "auroc": 0.8659,
+        "confusion_matrix": {
+          "tn": 1513,
+          "fp": 32,
+          "fn": 183,
+          "tp": 70
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.057,
+        "accuracy": 0.8772,
+        "balanced_accuracy": 0.6278,
+        "precision": 0.7061,
+        "recall": 0.2752,
+        "f1": 0.3961,
+        "auroc": 0.8605,
+        "confusion_matrix": {
+          "tn": 3345,
+          "fp": 67,
+          "fn": 424,
+          "tp": 161
+        }
+      }
+    },
+    {
+      "run_name": "21_hgb_fused_all_d7_lr0p03_iter200",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 7,
+        "hgb_learning_rate": 0.03,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.35,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.1012,
+        "accuracy": 0.8826,
+        "balanced_accuracy": 0.6987,
+        "precision": 0.6154,
+        "recall": 0.4427,
+        "f1": 0.5149,
+        "auroc": 0.8673,
+        "confusion_matrix": {
+          "tn": 1475,
+          "fp": 70,
+          "fn": 141,
+          "tp": 112
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.1066,
+        "accuracy": 0.8727,
+        "balanced_accuracy": 0.6889,
+        "precision": 0.5892,
+        "recall": 0.4291,
+        "f1": 0.4965,
+        "auroc": 0.8629,
+        "confusion_matrix": {
+          "tn": 3237,
+          "fp": 175,
+          "fn": 334,
+          "tp": 251
+        }
+      }
+    },
+    {
+      "run_name": "22_hgb_fused_all_d7_lr0p03_iter400",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 7,
+        "hgb_learning_rate": 0.03,
+        "hgb_max_iter": 400,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.375,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.089,
+        "accuracy": 0.8826,
+        "balanced_accuracy": 0.6805,
+        "precision": 0.6312,
+        "recall": 0.3992,
+        "f1": 0.4891,
+        "auroc": 0.8671,
+        "confusion_matrix": {
+          "tn": 1486,
+          "fp": 59,
+          "fn": 152,
+          "tp": 101
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0886,
+        "accuracy": 0.8747,
+        "balanced_accuracy": 0.6674,
+        "precision": 0.6186,
+        "recall": 0.3744,
+        "f1": 0.4665,
+        "auroc": 0.8607,
+        "confusion_matrix": {
+          "tn": 3277,
+          "fp": 135,
+          "fn": 366,
+          "tp": 219
+        }
+      }
+    },
+    {
+      "run_name": "23_hgb_fused_all_d7_lr0p05_iter200",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 7,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.35,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0951,
+        "accuracy": 0.8843,
+        "balanced_accuracy": 0.6931,
+        "precision": 0.6316,
+        "recall": 0.4269,
+        "f1": 0.5094,
+        "auroc": 0.865,
+        "confusion_matrix": {
+          "tn": 1482,
+          "fp": 63,
+          "fn": 145,
+          "tp": 108
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.1023,
+        "accuracy": 0.8689,
+        "balanced_accuracy": 0.6754,
+        "precision": 0.5746,
+        "recall": 0.4017,
+        "f1": 0.4728,
+        "auroc": 0.8581,
+        "confusion_matrix": {
+          "tn": 3238,
+          "fp": 174,
+          "fn": 350,
+          "tp": 235
+        }
+      }
+    },
+    {
+      "run_name": "24_hgb_fused_all_d7_lr0p05_iter400",
+      "config": {
+        "model_type": "hgb",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 7,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 400,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.275,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.1018,
+        "accuracy": 0.8854,
+        "balanced_accuracy": 0.7053,
+        "precision": 0.6284,
+        "recall": 0.4545,
+        "f1": 0.5275,
+        "auroc": 0.8665,
+        "confusion_matrix": {
+          "tn": 1477,
+          "fp": 68,
+          "fn": 138,
+          "tp": 115
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.1081,
+        "accuracy": 0.8687,
+        "balanced_accuracy": 0.683,
+        "precision": 0.5694,
+        "recall": 0.4205,
+        "f1": 0.4838,
+        "auroc": 0.8556,
+        "confusion_matrix": {
+          "tn": 3226,
+          "fp": 186,
+          "fn": 339,
+          "tp": 246
+        }
+      }
+    },
+    {
+      "run_name": "25_logreg_embeddings",
+      "config": {
+        "model_type": "logreg",
+        "feature_set": "embeddings",
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.85,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0695,
+        "accuracy": 0.8732,
+        "balanced_accuracy": 0.632,
+        "precision": 0.6,
+        "recall": 0.2964,
+        "f1": 0.3968,
+        "auroc": 0.8257,
+        "confusion_matrix": {
+          "tn": 1495,
+          "fp": 50,
+          "fn": 178,
+          "tp": 75
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0706,
+        "accuracy": 0.8651,
+        "balanced_accuracy": 0.6229,
+        "precision": 0.5816,
+        "recall": 0.2803,
+        "f1": 0.3783,
+        "auroc": 0.8293,
+        "confusion_matrix": {
+          "tn": 3294,
+          "fp": 118,
+          "fn": 421,
+          "tp": 164
+        }
+      }
+    },
+    {
+      "run_name": "26_logreg_embeddings_static",
+      "config": {
+        "model_type": "logreg",
+        "feature_set": "embeddings_static",
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.85,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0745,
+        "accuracy": 0.876,
+        "balanced_accuracy": 0.6452,
+        "precision": 0.6119,
+        "recall": 0.3241,
+        "f1": 0.4238,
+        "auroc": 0.84,
+        "confusion_matrix": {
+          "tn": 1493,
+          "fp": 52,
+          "fn": 171,
+          "tp": 82
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0856,
+        "accuracy": 0.8682,
+        "balanced_accuracy": 0.6501,
+        "precision": 0.5848,
+        "recall": 0.3419,
+        "f1": 0.4315,
+        "auroc": 0.8443,
+        "confusion_matrix": {
+          "tn": 3270,
+          "fp": 142,
+          "fn": 385,
+          "tp": 200
+        }
+      }
+    },
+    {
+      "run_name": "27_logreg_fused_all",
+      "config": {
+        "model_type": "logreg",
+        "feature_set": "fused_all",
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.925,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.059,
+        "accuracy": 0.8737,
+        "balanced_accuracy": 0.6175,
+        "precision": 0.6226,
+        "recall": 0.2609,
+        "f1": 0.3677,
+        "auroc": 0.8178,
+        "confusion_matrix": {
+          "tn": 1505,
+          "fp": 40,
+          "fn": 187,
+          "tp": 66
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0743,
+        "accuracy": 0.8699,
+        "balanced_accuracy": 0.6377,
+        "precision": 0.6094,
+        "recall": 0.3094,
+        "f1": 0.4104,
+        "auroc": 0.839,
+        "confusion_matrix": {
+          "tn": 3296,
+          "fp": 116,
+          "fn": 404,
+          "tp": 181
+        }
+      }
+    },
+    {
+      "run_name": "28_ensemble_d3_lr0p03_iter200",
+      "config": {
+        "model_type": "hgb_ensemble",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 3,
+        "hgb_learning_rate": 0.03,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.4,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0773,
+        "accuracy": 0.8843,
+        "balanced_accuracy": 0.6666,
+        "precision": 0.6619,
+        "recall": 0.3636,
+        "f1": 0.4694,
+        "auroc": 0.8674,
+        "confusion_matrix": {
+          "tn": 1498,
+          "fp": 47,
+          "fn": 161,
+          "tp": 92
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0843,
+        "accuracy": 0.8719,
+        "balanced_accuracy": 0.6559,
+        "precision": 0.6083,
+        "recall": 0.3504,
+        "f1": 0.4447,
+        "auroc": 0.8607,
+        "confusion_matrix": {
+          "tn": 3280,
+          "fp": 132,
+          "fn": 380,
+          "tp": 205
+        }
+      }
+    },
+    {
+      "run_name": "29_ensemble_d3_lr0p03_iter400",
+      "config": {
+        "model_type": "hgb_ensemble",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 3,
+        "hgb_learning_rate": 0.03,
+        "hgb_max_iter": 400,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.45,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0712,
+        "accuracy": 0.8849,
+        "balanced_accuracy": 0.6587,
+        "precision": 0.6797,
+        "recall": 0.3439,
+        "f1": 0.4567,
+        "auroc": 0.8696,
+        "confusion_matrix": {
+          "tn": 1504,
+          "fp": 41,
+          "fn": 166,
+          "tp": 87
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0771,
+        "accuracy": 0.8727,
+        "balanced_accuracy": 0.6471,
+        "precision": 0.6234,
+        "recall": 0.3282,
+        "f1": 0.43,
+        "auroc": 0.8638,
+        "confusion_matrix": {
+          "tn": 3296,
+          "fp": 116,
+          "fn": 393,
+          "tp": 192
+        }
+      }
+    },
+    {
+      "run_name": "30_ensemble_d3_lr0p05_iter200",
+      "config": {
+        "model_type": "hgb_ensemble",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 3,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.425,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0751,
+        "accuracy": 0.8865,
+        "balanced_accuracy": 0.6679,
+        "precision": 0.6815,
+        "recall": 0.3636,
+        "f1": 0.4742,
+        "auroc": 0.8685,
+        "confusion_matrix": {
+          "tn": 1502,
+          "fp": 43,
+          "fn": 161,
+          "tp": 92
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0878,
+        "accuracy": 0.8714,
+        "balanced_accuracy": 0.6598,
+        "precision": 0.6011,
+        "recall": 0.3607,
+        "f1": 0.4509,
+        "auroc": 0.863,
+        "confusion_matrix": {
+          "tn": 3272,
+          "fp": 140,
+          "fn": 374,
+          "tp": 211
+        }
+      }
+    },
+    {
+      "run_name": "31_ensemble_d3_lr0p05_iter400",
+      "config": {
+        "model_type": "hgb_ensemble",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 3,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 400,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.425,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.084,
+        "accuracy": 0.8843,
+        "balanced_accuracy": 0.6765,
+        "precision": 0.649,
+        "recall": 0.3874,
+        "f1": 0.4851,
+        "auroc": 0.8675,
+        "confusion_matrix": {
+          "tn": 1492,
+          "fp": 53,
+          "fn": 155,
+          "tp": 98
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0918,
+        "accuracy": 0.8739,
+        "balanced_accuracy": 0.6705,
+        "precision": 0.6104,
+        "recall": 0.3829,
+        "f1": 0.4706,
+        "auroc": 0.8617,
+        "confusion_matrix": {
+          "tn": 3269,
+          "fp": 143,
+          "fn": 361,
+          "tp": 224
+        }
+      }
+    },
+    {
+      "run_name": "32_ensemble_d5_lr0p03_iter200",
+      "config": {
+        "model_type": "hgb_ensemble",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 5,
+        "hgb_learning_rate": 0.03,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.475,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0617,
+        "accuracy": 0.8865,
+        "balanced_accuracy": 0.6481,
+        "precision": 0.7207,
+        "recall": 0.3162,
+        "f1": 0.4396,
+        "auroc": 0.8708,
+        "confusion_matrix": {
+          "tn": 1514,
+          "fp": 31,
+          "fn": 173,
+          "tp": 80
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0638,
+        "accuracy": 0.8744,
+        "balanced_accuracy": 0.6318,
+        "precision": 0.6627,
+        "recall": 0.2889,
+        "f1": 0.4024,
+        "auroc": 0.8656,
+        "confusion_matrix": {
+          "tn": 3326,
+          "fp": 86,
+          "fn": 416,
+          "tp": 169
+        }
+      }
+    },
+    {
+      "run_name": "33_ensemble_d5_lr0p03_iter400",
+      "config": {
+        "model_type": "hgb_ensemble",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 5,
+        "hgb_learning_rate": 0.03,
+        "hgb_max_iter": 400,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.35,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0984,
+        "accuracy": 0.8843,
+        "balanced_accuracy": 0.698,
+        "precision": 0.6271,
+        "recall": 0.4387,
+        "f1": 0.5163,
+        "auroc": 0.8706,
+        "confusion_matrix": {
+          "tn": 1479,
+          "fp": 66,
+          "fn": 142,
+          "tp": 111
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.1116,
+        "accuracy": 0.8722,
+        "balanced_accuracy": 0.695,
+        "precision": 0.583,
+        "recall": 0.4444,
+        "f1": 0.5044,
+        "auroc": 0.8658,
+        "confusion_matrix": {
+          "tn": 3226,
+          "fp": 186,
+          "fn": 325,
+          "tp": 260
+        }
+      }
+    },
+    {
+      "run_name": "34_ensemble_d5_lr0p05_iter200",
+      "config": {
+        "model_type": "hgb_ensemble",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 5,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 200,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.375,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0945,
+        "accuracy": 0.8826,
+        "balanced_accuracy": 0.6888,
+        "precision": 0.6235,
+        "recall": 0.419,
+        "f1": 0.5012,
+        "auroc": 0.8718,
+        "confusion_matrix": {
+          "tn": 1481,
+          "fp": 64,
+          "fn": 147,
+          "tp": 106
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.1013,
+        "accuracy": 0.8744,
+        "balanced_accuracy": 0.685,
+        "precision": 0.6025,
+        "recall": 0.4171,
+        "f1": 0.4929,
+        "auroc": 0.8673,
+        "confusion_matrix": {
+          "tn": 3251,
+          "fp": 161,
+          "fn": 341,
+          "tp": 244
+        }
+      }
+    },
+    {
+      "run_name": "35_ensemble_d5_lr0p05_iter400",
+      "config": {
+        "model_type": "hgb_ensemble",
+        "feature_set": "fused_all",
+        "hgb_max_depth": 5,
+        "hgb_learning_rate": 0.05,
+        "hgb_max_iter": 400,
+        "threshold_metric": "accuracy"
+      },
+      "threshold": 0.525,
+      "val": {
+        "n_samples": 1798,
+        "positive_rate": 0.1407,
+        "predicted_positive_rate": 0.0595,
+        "accuracy": 0.8821,
+        "balanced_accuracy": 0.6356,
+        "precision": 0.6916,
+        "recall": 0.2925,
+        "f1": 0.4111,
+        "auroc": 0.8686,
+        "confusion_matrix": {
+          "tn": 1512,
+          "fp": 33,
+          "fn": 179,
+          "tp": 74
+        }
+      },
+      "test": {
+        "n_samples": 3997,
+        "positive_rate": 0.1464,
+        "predicted_positive_rate": 0.0593,
+        "accuracy": 0.8759,
+        "balanced_accuracy": 0.6285,
+        "precision": 0.6878,
+        "recall": 0.2786,
+        "f1": 0.3966,
+        "auroc": 0.8637,
+        "confusion_matrix": {
+          "tn": 3338,
+          "fp": 74,
+          "fn": 422,
+          "tp": 163
+        }
+      }
+    }
+  ]
+}

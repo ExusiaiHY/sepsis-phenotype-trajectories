@@ -200,3 +200,37 @@ All experiments with their configurations, results, and artifact locations.
   - Test: accuracy=0.765, balanced_accuracy=0.785, recall=0.812, F1=0.503, AUROC=0.865
 - **Artifacts:** data/s15_trainval/advanced_hgb_ensemble/advanced_mortality_classifier_report.json
 - **Conclusion:** The ensemble gives the strongest balanced accuracy and AUROC in the repo so far, at the cost of lower plain accuracy due to a recall-oriented operating point.
+
+## E020 — PhysioNet 2019 auxiliary data bridge
+- **Date:** 2026-03-23
+- **Method:** Converted local PhysioNet/CinC 2019 Sepsis Challenge stubs into the project's S0-compatible layout (`continuous`, `masks`, `proxy`, `static`, `splits`) using a shared 48h window. Reused PhysioNet 2012 preprocessing statistics to keep the auxiliary source numerically aligned with the pretrained S1.5 encoder.
+- **Data:** 40,331 ICU stays from `archive/sepsis2019_stubs`, random stratified split by `sepsis_label`.
+- **Results:**
+  - Shared feature coverage: 18 / 21 continuous channels (`gcs`, `sodium`, `pao2` unavailable)
+  - Sepsis prevalence: 4.65%
+  - Overall missing rate before imputation: 78.7%
+  - Split sizes: train=28,231 / val=6,050 / test=6,050
+- **Artifacts:** data/s19_bridge/bridge_report.json, data/s19_bridge/splits.json, data/s19_bridge/processed/preprocess_stats.json
+- **Conclusion:** A real second ICU time-series source is now integrated into the same on-disk interface used by S0, enabling multi-source supervised adaptation without refactoring the core data loaders.
+
+## E021 — End-to-end supervised fine-tuning with auxiliary Sepsis 2019 transfer
+- **Date:** 2026-03-23
+- **Method:** Initialized the S1.5 encoder from the pretrained checkpoint, performed auxiliary supervised training on the bridged PhysioNet 2019 sepsis task, reset the prediction head, then fine-tuned end-to-end on PhysioNet 2012 mortality using an attention-pooled classifier head.
+- **Data:** Auxiliary stage on `data/s19_bridge` (`sepsis_label`), main stage on `data/s0` cross-center mortality split.
+- **Results:**
+  - Auxiliary sepsis task: test accuracy=0.838, balanced_accuracy=0.809, recall=0.776, AUROC=0.888
+  - Main mortality task: test accuracy=0.795, balanced_accuracy=0.753, precision=0.388, recall=0.692, F1=0.498, AUROC=0.842
+  - Improvement over the frozen balanced-threshold embedding probe (E017): +1.1pp accuracy, +0.8pp balanced accuracy, +1.3 AUROC points
+- **Artifacts:** data/s15_trainval/finetune_supervised/finetune_report.json, data/s15_trainval/finetune_supervised/supervised_auxiliary_history.json, data/s15_trainval/finetune_supervised/supervised_main_history.json
+- **Conclusion:** End-to-end adaptation plus auxiliary transfer improves on the frozen embedding probe and slightly improves plain accuracy over the best single HGB model, while preserving substantially higher recall than accuracy-only operating points.
+
+## E022 — Accuracy-oriented systematic downstream hyperparameter search
+- **Date:** 2026-03-23
+- **Method:** Exhaustive 35-run search over LogisticRegression, HistGradientBoosting, and HGB ensemble variants on `embeddings`, `embeddings_static`, `stats_mask_proxy_static`, and `fused_all` views. Decision thresholds were selected on validation accuracy to explicitly study the accuracy frontier under class imbalance.
+- **Data:** Same S0 cross-center mortality split used throughout the project.
+- **Results:**
+  - Validation-accuracy leader: `ensemble d=3 lr=0.05 iter=200`, test accuracy=0.871, balanced_accuracy=0.660, precision=0.601, recall=0.361, AUROC=0.863
+  - Validation-AUROC leader under the same search: `ensemble d=5 lr=0.05 iter=200`, test accuracy=0.874, balanced_accuracy=0.685, precision=0.603, recall=0.417, AUROC=0.867
+  - Both exceed the majority-class baseline accuracy of 0.854, but both do so with markedly lower recall than the balance-oriented ensemble in E019
+- **Artifacts:** data/s15_trainval/hparam_search_advanced/search_report.json
+- **Conclusion:** Systematic search can push headline accuracy substantially higher, but the best accuracy-oriented operating points suppress sensitivity; E019 remains the preferred configuration when balanced accuracy and recall matter more than raw accuracy.

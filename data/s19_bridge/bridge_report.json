@@ -1,0 +1,41 @@
+{
+  "n_patients": 40331,
+  "n_hours": 48,
+  "mapped_features": [
+    "heart_rate",
+    "sbp",
+    "dbp",
+    "map",
+    "resp_rate",
+    "spo2",
+    "temperature",
+    "creatinine",
+    "bun",
+    "glucose",
+    "wbc",
+    "platelet",
+    "potassium",
+    "lactate",
+    "bilirubin",
+    "fio2",
+    "paco2",
+    "ph"
+  ],
+  "missing_features": [
+    "gcs",
+    "sodium",
+    "pao2"
+  ],
+  "feature_coverage": 0.8571,
+  "sepsis_prevalence": 0.0465,
+  "mortality_proxy_prevalence": 0.7858,
+  "overall_missing_rate_before_imputation": 0.7867,
+  "split_method": "random",
+  "split_sizes": {
+    "train": 28231,
+    "val": 6050,
+    "test": 6050
+  },
+  "stratify_by": "sepsis_label",
+  "reference_stats_path": "/Users/exusiaihy/Desktop/Python\u9ad8\u9636\u7a0b\u5e8f\u8bbe\u8ba1/project/data/s0/processed/preprocess_stats.json"
+}
