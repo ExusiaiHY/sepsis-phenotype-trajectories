@@ -234,3 +234,30 @@ All experiments with their configurations, results, and artifact locations.
   - Both exceed the majority-class baseline accuracy of 0.854, but both do so with markedly lower recall than the balance-oriented ensemble in E019
 - **Artifacts:** data/s15_trainval/hparam_search_advanced/search_report.json
 - **Conclusion:** Systematic search can push headline accuracy substantially higher, but the best accuracy-oriented operating points suppress sensitivity; E019 remains the preferred configuration when balanced accuracy and recall matter more than raw accuracy.
+
+## E023 — Leakage-aware OOF stacking committee with validation/explanation
+- **Date:** 2026-03-24
+- **Method:** Combined the original train and validation patients into a development split, generated 5-fold stratified out-of-fold predictions from three base learners (`stats_mask_proxy_static` HGB, `fused_all` HGB, `fused_all` LogisticRegression), then fit a logistic meta-classifier on the OOF predictions. Evaluated threshold-specific operating points plus bootstrap confidence intervals, calibration, and permutation importance over meta-features.
+- **Data:** Same S0 cross-center mortality split; train+val used only through OOF predictions, test remains the held-out Center B split.
+- **Results:**
+  - Accuracy operating point: test accuracy=0.880, balanced_accuracy=0.653, precision=0.682, recall=0.333, F1=0.448, AUROC=0.873
+  - Balanced operating point on the same probabilities: test accuracy=0.803, balanced_accuracy=0.792, precision=0.409, recall=0.776, F1=0.536, AUROC=0.873
+  - F1 operating point: test accuracy=0.854, balanced_accuracy=0.762, precision=0.501, recall=0.631, F1=0.558, AUROC=0.873
+  - Bootstrap test AUROC 95% CI: [0.858, 0.888]; bootstrap test accuracy 95% CI at the accuracy threshold: [0.870, 0.889]
+  - Meta-feature permutation importance ranked `fused_lr` first (mean AUROC drop 0.067), followed by `fused_hgb_d5` (0.056) and `stats_hgb_d5` (0.014)
+  - Calibration remained weak despite strong ranking: Brier=0.144, ECE=0.222
+- **Artifacts:** data/s15_trainval/stacking_accuracy/stacking_mortality_classifier.pkl, data/s15_trainval/stacking_accuracy/stacking_mortality_classifier_report.json, data/s15_trainval/stacking_accuracy/stacking_validation_report.json
+- **Conclusion:** Using OOF stacking lifts both the best held-out accuracy and the best held-out AUROC in the repository, but the most accurate operating point suppresses recall substantially and is not well calibrated.
+
+## E024 — DuckDB MIMIC profile and analysis-table readiness audit
+- **Date:** 2026-03-24
+- **Method:** Profiled the local `archive/db/mimic4.db` DuckDB database for schema inventory, key table row counts, cohort summary, first-day missingness, and readiness of all tables required by `src/build_analysis_table.py`.
+- **Data:** Local MIMIC-IV mock DuckDB database used for schema-compatibility and concept-pipeline smoke testing.
+- **Results:**
+  - Schemas present: `mimiciv_hosp`, `mimiciv_icu`, `mimiciv_derived`
+  - `mimiciv_derived.icustay_detail`: 15 ICU stays / 15 patients
+  - `mimiciv_derived.sepsis3`: 5 stays (33.3% prevalence in the mock cohort)
+  - Required analysis tables present: 9 / 9
+  - First-day vital/lab summary tables had 0.0 missingness for the profiled mock rows
+- **Artifacts:** data/mimic_db_profile/mimic_duckdb_profile.json, data/mimic_db_profile/mimic_duckdb_profile.md
+- **Conclusion:** The legacy DuckDB path is queryable and complete enough to support reproducible cohort inspection and analysis-table construction, even though the bundled database remains a small mock rather than a research-scale MIMIC extract.

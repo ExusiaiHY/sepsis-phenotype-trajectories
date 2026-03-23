@@ -10,7 +10,7 @@
 <p>
   <a href="docs/RESEARCH_PAPER.pdf"><img src="https://img.shields.io/badge/Research%20Paper-PDF-B31B1B?style=for-the-badge" alt="Research Paper PDF"></a>
   <a href="docs/RESEARCH_PAPER.md"><img src="https://img.shields.io/badge/Manuscript-Markdown-1F6FEB?style=for-the-badge" alt="Manuscript Markdown"></a>
-  <a href="docs/EXPERIMENT_REGISTRY.md"><img src="https://img.shields.io/badge/Experiments-E001--E022-0E8A16?style=for-the-badge" alt="Experiment Registry"></a>
+  <a href="docs/EXPERIMENT_REGISTRY.md"><img src="https://img.shields.io/badge/Experiments-E001--E024-0E8A16?style=for-the-badge" alt="Experiment Registry"></a>
   <a href="docs/DECISIONS.md"><img src="https://img.shields.io/badge/Design%20Log-D001--D016-6F42C1?style=for-the-badge" alt="Design Decisions"></a>
 </p>
 
@@ -18,8 +18,8 @@
   A research codebase for ICU sepsis phenotyping that moves from static clustering,
   to self-supervised temporal representation learning, to descriptive phenotype trajectory analysis
   on 11,986 multi-center PhysioNet 2012 patients, with supplementary downstream mortality validation,
-  Sepsis 2019 auxiliary data bridging, end-to-end supervised fine-tuning, and systematic downstream
-  hyperparameter search.
+  Sepsis 2019 auxiliary data bridging, end-to-end supervised fine-tuning, leakage-aware OOF stacking,
+  and systematic downstream hyperparameter search.
 </p>
 
 <img src="docs/figures/summary_dashboard.png" alt="Project summary dashboard" width="920">
@@ -104,6 +104,10 @@ Bridged PhysioNet 2019 sepsis cohort (40,331 stays, 18/21 shared channels)
 Systematic downstream model search
   -> HGB / ensemble / logistic variants on fused multi-view features
   -> explicit accuracy vs recall trade-off under 14.6% mortality prevalence
+
+OOF stacking committee + validation
+  -> 5-fold leakage-aware dev-set stacking over HGB and logistic branches
+  -> bootstrap CI, calibration audit, and meta-feature importance
 ```
 
 ## Visual Overview
@@ -184,6 +188,8 @@ Systematic downstream model search
 | Frozen S1.5 probe, accuracy threshold (`thr=0.85`) | 0.865 | 0.623 | 0.280 | 0.829 |
 | End-to-end fine-tune + Sepsis2019 auxiliary supervision | 0.795 | 0.753 | 0.692 | 0.842 |
 | Accuracy-search ensemble leader (`val acc` winner) | 0.871 | 0.660 | 0.361 | 0.863 |
+| OOF stacking committee, balanced threshold | 0.803 | 0.792 | 0.776 | 0.873 |
+| **OOF stacking committee, accuracy threshold** | **0.880** | 0.653 | 0.333 | **0.873** |
 | Majority-class baseline | 0.854 | 0.500 | 0.000 | - |
 
 Because held-out mortality prevalence is only `14.6%`, plain accuracy is misleading on its own. The new end-to-end fine-tuning path improves both the frozen-probe accuracy and AUROC without collapsing recall, while the accuracy-oriented searched ensemble pushes headline accuracy much higher by operating at a much lower positive rate.
@@ -197,8 +203,17 @@ Using more of the already-available cohort information than the embedding-only l
 - `HGB ensemble (fused + stats views)` reaches `balanced accuracy=0.785`, `recall=0.812`, `AUROC=0.865`
 - `35-run accuracy-oriented search` selects an ensemble with `test accuracy=0.871`, `precision=0.601`, `recall=0.361`, `AUROC=0.863`
 - The highest-AUROC searched configuration reaches `test accuracy=0.874`, `balanced accuracy=0.685`, `recall=0.417`, `AUROC=0.867`
+- `5-fold OOF stacking committee` reaches `test accuracy=0.880`, `precision=0.682`, `recall=0.333`, `AUROC=0.873`
+- The same stacking probabilities support a balance-oriented threshold with `test accuracy=0.803`, `balanced accuracy=0.792`, `recall=0.776`, `F1=0.536`
+- Bootstrap validation shows `test AUROC 95% CI = [0.858, 0.888]`; calibration is weaker (`Brier=0.144`, `ECE=0.222`), so the best-ranking model is not the best-calibrated one
 
 These models learn from more data modalities already present in the repository: 48h summary statistics, missingness patterns, proxy indicators, demographics, and optionally S1.5 embeddings.
+
+## OpenClaw-Inspired Extensions
+
+- `bio-machine-learning-model-validation` motivated the new leakage-aware `train+val` OOF stacking workflow and the explicit bootstrap confidence intervals added under [`data/s15_trainval/stacking_accuracy/`](data/s15_trainval/stacking_accuracy/).
+- `bio-machine-learning-prediction-explanation` motivated the new meta-feature importance and coefficient audit for the stacking model, saved in [`data/s15_trainval/stacking_accuracy/stacking_validation_report.json`](data/s15_trainval/stacking_accuracy/stacking_validation_report.json).
+- The database-access skill family informed a reproducible DuckDB readiness/profile report for the local MIMIC pipeline, saved under [`data/mimic_db_profile/`](data/mimic_db_profile/).
 
 ### Additional Data Integration
 

@@ -759,3 +759,64 @@ Non-blocking caveats:
 2. PhysioNet/CinC 2019 Sepsis metrics flagged as unresolved in Section 4.6
 3. Simulated data validation (ARI=0.245) is modest but honest
 4. 1 cosmetic overfull hbox in Table 1
+
+## 2026-03-24 — OpenClaw-Inspired Validation + DuckDB Profiling
+
+### Stage
+
+External skill transfer into the local project: database access workflow + model validation / explanation workflow
+
+### Objective
+
+Apply reusable ideas from the OpenClaw medical skills repository to this codebase in a way that materially changes the project artifacts: improve downstream accuracy, add stronger validation, and make DuckDB database inspection reproducible.
+
+### What Was Added
+
+- New model code:
+  - `s15/stacking_classifier.py` — 5-fold leakage-aware OOF stacking committee over `stats_hgb_d5`, `fused_hgb_d5`, and `fused_lr`
+  - `s15/stacking_validation.py` — bootstrap CI, calibration, and meta-feature importance
+- New entry scripts:
+  - `scripts/s15_train_stacking_classifier.py`
+  - `scripts/s15_validate_stacking_classifier.py`
+  - `scripts/mimic_db_profile.py`
+- New DuckDB profiling module:
+  - `src/mimic_db_profile.py`
+- New unit test:
+  - `tests/test_s15_stacking_classifier.py`
+
+### Commands Run
+
+```bash
+./.venv/bin/python tests/test_s15_stacking_classifier.py
+./.venv/bin/python tests/test_s15_advanced_classifier.py
+./.venv/bin/python scripts/s15_train_stacking_classifier.py --config config/s15_trainval_config.yaml --output-dir data/s15_trainval/stacking_accuracy --threshold-metric accuracy
+./.venv/bin/python scripts/s15_validate_stacking_classifier.py --config config/s15_trainval_config.yaml --model-dir data/s15_trainval/stacking_accuracy --bootstrap 500 --permutation-repeats 20
+./.venv/bin/python scripts/mimic_db_profile.py --output-dir data/mimic_db_profile
+```
+
+### Results
+
+- New best held-out accuracy in the repository:
+  - OOF stacking accuracy operating point: `accuracy=0.8797`, `balanced_accuracy=0.6533`, `precision=0.6818`, `recall=0.3333`, `AUROC=0.8728`
+- Stronger balance-aware operating point from the same model:
+  - balanced threshold: `accuracy=0.8031`, `balanced_accuracy=0.7919`, `recall=0.7761`, `F1=0.5357`, `AUROC=0.8728`
+- Validation artifacts added:
+  - Bootstrap AUROC 95% CI: `[0.8583, 0.8875]`
+  - Bootstrap accuracy 95% CI at the accuracy threshold: `[0.8702, 0.8894]`
+  - Calibration: `Brier=0.1435`, `ECE=0.2224`
+  - Meta-feature importance by AUROC drop: `fused_lr > fused_hgb_d5 > stats_hgb_d5`
+- DuckDB profile generated for `archive/db/mimic4.db`:
+  - `15` ICU stays, `5` Sepsis-3 stays, `9 / 9` required analysis tables present
+
+### Interpretation
+
+The stacking model improves both the top-line held-out accuracy and the top-line AUROC, which satisfies the user's request to push accuracy higher without inventing new data. At the same time, the new validation layer makes the trade-off explicit: the highest-accuracy threshold is recall-poor and the probability calibration is weak, so this operating point should be treated as a ranking-oriented model rather than a well-calibrated bedside risk score.
+
+### Files Updated
+
+- `README.md`
+- `docs/EXPERIMENT_REGISTRY.md`
+- `docs/RESEARCH_PAPER.md`
+- `docs/RESEARCH_PAPER.tex`
+- `docs/WORKLOG.md`
+- `docs/RESEARCH_PAPER.pdf` (after recompilation)
