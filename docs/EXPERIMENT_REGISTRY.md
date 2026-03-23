@@ -155,3 +155,27 @@ All experiments with their configurations, results, and artifact locations.
   - Per-window silhouette: within 0.001 across centers at all 5 positions
 - **Artifacts:** data/s3/cross_center_report.json
 - **Conclusion:** Temporal phenotype trajectories generalize from Center A to the independent Center B hospital. The encoder trained on Center A produces clinically consistent phenotypes on unseen data. This is the strongest cross-center evidence in the project.
+
+## E016 — Frozen S1.5 downstream mortality classifier
+- **Date:** 2026-03-23
+- **Method:** LogisticRegression on frozen `data/s15/embeddings_s15.npy`; train on train split, tune threshold on validation split by balanced accuracy, evaluate on held-out test split.
+- **Data:** Same S0 train/val/test split used throughout the project (Center A train+val, Center B test).
+- **Results:**
+  - Threshold selected on validation balanced accuracy: 0.575
+  - Val: accuracy=0.801, balanced_accuracy=0.747, F1=0.488, AUROC=0.826
+  - Test: accuracy=0.794, balanced_accuracy=0.738, recall=0.681, AUROC=0.829
+  - Majority-class baseline accuracy on test: 0.854
+- **Artifacts:** data/s15/mortality_classifier_report.json
+- **Conclusion:** The learned S1.5 embedding space supports downstream mortality discrimination, but raw accuracy alone is misleading because mortality prevalence is only about 14%.
+
+## E017 — Fresh S1.5 retraining + downstream mortality validation
+- **Date:** 2026-03-23
+- **Method:** Re-trained S1.5 from scratch in an isolated output directory, extracted new embeddings, then trained the same frozen-embedding LogisticRegression classifier. Also ran a threshold sensitivity check optimizing for validation accuracy instead of balanced accuracy.
+- **Data:** S0 processed tensors, same train/val/test split.
+- **Results:**
+  - Fresh S1.5 pretraining: best val_loss=0.230 (epoch 47), reproducing the original Stage 1.5 training regime
+  - Balanced-threshold classifier (`thr=0.55`): test accuracy=0.784, balanced_accuracy=0.745, precision=0.372, recall=0.691, F1=0.484, AUROC=0.829
+  - Accuracy-optimized threshold (`thr=0.85`): test accuracy=0.865, balanced_accuracy=0.623, recall=0.280, AUROC=0.829
+  - Majority-class baseline accuracy on test: 0.854
+- **Artifacts:** data/s15_trainval/pretrain_log.json, data/s15_trainval/mortality_classifier_report.json, data/s15_trainval_accuracy/mortality_classifier_report.json
+- **Conclusion:** A fresh retrain reproduces the representation quality of S1.5 and confirms that the main added value of the supervised validation is discrimination under imbalance-aware metrics, not headline accuracy.

@@ -26,8 +26,8 @@ duckdb>=0.9.0
 # --- Explainability (optional, for V2) ---
 # shap>=0.42.0
 
-# --- Deep Learning (for V2, not needed for MVP) ---
-# torch>=2.0.0
+# --- Deep Learning (required for S1 / S1.5 training and embedding extraction) ---
+torch>=2.0.0
 # pytorch-lightning>=2.0.0
 
 # --- Gradient Boosting (optional baseline) ---

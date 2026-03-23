@@ -8,6 +8,7 @@ How to run:
 """
 from __future__ import annotations
 
+import argparse
 import logging
 import sys
 from pathlib import Path
@@ -34,18 +35,26 @@ def get_device(pref="auto"):
     return "cpu"
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Extract S1.5 embeddings from pretrained encoder")
+    parser.add_argument("--config", default="config/s15_config.yaml")
+    parser.add_argument("--device", type=str, default=None)
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
     logging.basicConfig(level=logging.INFO,
                         format="[%(asctime)s] %(levelname)-8s %(name)s: %(message)s",
                         datefmt="%Y-%m-%d %H:%M:%S", stream=sys.stdout)
     logger = logging.getLogger("s15.extract")
 
-    with open(PROJECT_ROOT / "config" / "s15_config.yaml") as f:
+    with open(PROJECT_ROOT / args.config, encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
 
     s0_dir = PROJECT_ROOT / cfg["paths"]["s0_dir"]
     s15_dir = PROJECT_ROOT / cfg["paths"]["s15_dir"]
-    device = get_device(cfg.get("runtime", {}).get("device", "auto"))
+    device = args.device or get_device(cfg.get("runtime", {}).get("device", "auto"))
 
     # Load checkpoint
     ckpt_path = s15_dir / "checkpoints" / "pretrain_best.pt"

@@ -1,0 +1,43 @@
+# S1.5 Contrastive Window Pretraining Configuration
+
+encoder:
+  n_features: 21
+  d_model: 128
+  n_heads: 4
+  n_layers: 2
+  d_ff: 256
+  dropout: 0.2
+  max_seq_len: 48
+
+contrastive:
+  view_len: 30
+  mask_ratio: 0.15
+  temperature: 0.1
+  proj_dim: 64
+  max_lambda: 0.5
+  warmup_epochs: 10
+
+pretraining:
+  epochs: 50
+  batch_size: 64
+  lr: 1.0e-3
+  weight_decay: 1.0e-5
+  patience: 15
+  grad_clip: 1.0
+  seed: 42
+
+pca_baseline:
+  n_components: 32
+
+evaluation:
+  k_values: [2, 4]
+  n_seeds: 5
+
+paths:
+  s0_dir: data/s0
+  s1_dir: data/s1
+  s15_dir: data/s15_trainval
+
+runtime:
+  device: auto
+  log_level: INFO

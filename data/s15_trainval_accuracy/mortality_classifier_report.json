@@ -1,0 +1,224 @@
+{
+  "label_col": "mortality_inhospital",
+  "n_samples": 11986,
+  "embedding_dim": 128,
+  "classifier": {
+    "type": "logistic_regression",
+    "class_weight": "balanced",
+    "c_value": 1.0,
+    "max_iter": 1000,
+    "random_state": 42
+  },
+  "threshold_selection": {
+    "metric": "accuracy",
+    "selected_threshold": 0.85,
+    "search": [
+      {
+        "threshold": 0.05,
+        "accuracy": 0.2291
+      },
+      {
+        "threshold": 0.075,
+        "accuracy": 0.2998
+      },
+      {
+        "threshold": 0.1,
+        "accuracy": 0.3571
+      },
+      {
+        "threshold": 0.125,
+        "accuracy": 0.3982
+      },
+      {
+        "threshold": 0.15,
+        "accuracy": 0.436
+      },
+      {
+        "threshold": 0.175,
+        "accuracy": 0.4805
+      },
+      {
+        "threshold": 0.2,
+        "accuracy": 0.5067
+      },
+      {
+        "threshold": 0.225,
+        "accuracy": 0.5412
+      },
+      {
+        "threshold": 0.25,
+        "accuracy": 0.5712
+      },
+      {
+        "threshold": 0.275,
+        "accuracy": 0.5984
+      },
+      {
+        "threshold": 0.3,
+        "accuracy": 0.6296
+      },
+      {
+        "threshold": 0.325,
+        "accuracy": 0.6446
+      },
+      {
+        "threshold": 0.35,
+        "accuracy": 0.668
+      },
+      {
+        "threshold": 0.375,
+        "accuracy": 0.683
+      },
+      {
+        "threshold": 0.4,
+        "accuracy": 0.6997
+      },
+      {
+        "threshold": 0.425,
+        "accuracy": 0.7152
+      },
+      {
+        "threshold": 0.45,
+        "accuracy": 0.7341
+      },
+      {
+        "threshold": 0.475,
+        "accuracy": 0.7486
+      },
+      {
+        "threshold": 0.5,
+        "accuracy": 0.7625
+      },
+      {
+        "threshold": 0.525,
+        "accuracy": 0.7736
+      },
+      {
+        "threshold": 0.55,
+        "accuracy": 0.7925
+      },
+      {
+        "threshold": 0.575,
+        "accuracy": 0.8009
+      },
+      {
+        "threshold": 0.6,
+        "accuracy": 0.8126
+      },
+      {
+        "threshold": 0.625,
+        "accuracy": 0.8215
+      },
+      {
+        "threshold": 0.65,
+        "accuracy": 0.8337
+      },
+      {
+        "threshold": 0.675,
+        "accuracy": 0.8443
+      },
+      {
+        "threshold": 0.7,
+        "accuracy": 0.8532
+      },
+      {
+        "threshold": 0.725,
+        "accuracy": 0.8598
+      },
+      {
+        "threshold": 0.75,
+        "accuracy": 0.8565
+      },
+      {
+        "threshold": 0.775,
+        "accuracy": 0.8621
+      },
+      {
+        "threshold": 0.8,
+        "accuracy": 0.8687
+      },
+      {
+        "threshold": 0.825,
+        "accuracy": 0.8704
+      },
+      {
+        "threshold": 0.85,
+        "accuracy": 0.8732
+      },
+      {
+        "threshold": 0.875,
+        "accuracy": 0.871
+      },
+      {
+        "threshold": 0.9,
+        "accuracy": 0.8721
+      },
+      {
+        "threshold": 0.925,
+        "accuracy": 0.871
+      },
+      {
+        "threshold": 0.95,
+        "accuracy": 0.8648
+      }
+    ]
+  },
+  "splits": {
+    "train": {
+      "n_samples": 6191,
+      "positive_rate": 0.1404,
+      "predicted_positive_rate": 0.0691,
+      "accuracy": 0.879,
+      "balanced_accuracy": 0.6432,
+      "precision": 0.6402,
+      "recall": 0.3153,
+      "f1": 0.4225,
+      "confusion_matrix": {
+        "tn": 5168,
+        "fp": 154,
+        "fn": 595,
+        "tp": 274
+      },
+      "auroc": 0.8538
+    },
+    "val": {
+      "n_samples": 1798,
+      "positive_rate": 0.1407,
+      "predicted_positive_rate": 0.0695,
+      "accuracy": 0.8732,
+      "balanced_accuracy": 0.632,
+      "precision": 0.6,
+      "recall": 0.2964,
+      "f1": 0.3968,
+      "confusion_matrix": {
+        "tn": 1495,
+        "fp": 50,
+        "fn": 178,
+        "tp": 75
+      },
+      "auroc": 0.8257
+    },
+    "test": {
+      "n_samples": 3997,
+      "positive_rate": 0.1464,
+      "predicted_positive_rate": 0.0706,
+      "accuracy": 0.8651,
+      "balanced_accuracy": 0.6229,
+      "precision": 0.5816,
+      "recall": 0.2803,
+      "f1": 0.3783,
+      "confusion_matrix": {
+        "tn": 3294,
+        "fp": 118,
+        "fn": 421,
+        "tp": 164
+      },
+      "auroc": 0.8293
+    }
+  },
+  "baseline_accuracy": {
+    "train": 0.8596,
+    "val": 0.8593,
+    "test": 0.8536
+  }
+}
