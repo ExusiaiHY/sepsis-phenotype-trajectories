@@ -261,3 +261,15 @@ All experiments with their configurations, results, and artifact locations.
   - First-day vital/lab summary tables had 0.0 missingness for the profiled mock rows
 - **Artifacts:** data/mimic_db_profile/mimic_duckdb_profile.json, data/mimic_db_profile/mimic_duckdb_profile.md
 - **Conclusion:** The legacy DuckDB path is queryable and complete enough to support reproducible cohort inspection and analysis-table construction, even though the bundled database remains a small mock rather than a research-scale MIMIC extract.
+
+## E025 — Demo-ready MIMIC/eICU integration smoke validation
+- **Date:** 2026-03-24
+- **Method:** Added formal demo ingestion entry points for both external ICU sources. `scripts/prepare_mimic_demo.py` was run end-to-end on the local `archive/mimic-iv-mock` raw CSVs, rebuilding DuckDB tables, executing all MIMIC concepts SQL, and exporting patient-level analysis tables. `tests/test_eicu_loader.py` exercised the new raw-table eICU loader against a synthetic fixture shaped like the official demo tables, including vitals, labs, vasopressors, ventilation, and dialysis markers.
+- **Data:** Local MIMIC-IV mock raw CSVs for the MIMIC smoke test; synthetic two-patient eICU fixture for unit validation. Official PhysioNet demo files were not available from the current environment.
+- **Results:**
+  - MIMIC smoke path completed successfully: `31` raw tables imported, `63 / 63` concept SQL files executed, `15` ICU stays exported to `720` hourly time-series rows
+  - eICU loader built a valid `(2, 48, 17)` tensor and correctly recovered mortality, shock proxy, vasopressor exposure, ventilation intervals, dialysis proxy, and PaO2/FiO2 fallback
+  - New reproducible entry scripts added: `scripts/prepare_mimic_demo.py`, `scripts/prepare_eicu_demo.py`
+  - New raw-table module added: `src/eicu_loader.py`
+- **Artifacts:** `/tmp/mimic_demo_out/mimic_demo_report.json` from the smoke run, plus local test-only eICU outputs created during `tests/test_eicu_loader.py`
+- **Conclusion:** The repository is now formally wired for local MIMIC-IV-demo and eICU-CRD-demo files. The remaining blocker is data access, not missing integration code.

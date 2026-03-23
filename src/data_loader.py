@@ -25,6 +25,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from eicu_loader import load_eicu_from_config
+except ImportError:
+    pass
+
 
 # ============================================================
 # Clinical Reference Ranges (for simulated data)
@@ -259,7 +264,8 @@ def load_mimic_data(config: dict) -> tuple[np.ndarray, pd.DataFrame]:
 
     If files don't exist, prompts user to run build_analysis_table.py first.
     """
-    processed_dir = resolve_path(config["paths"]["processed_data"])
+    mimic_cfg = config["data"].get("mimic", {})
+    processed_dir = resolve_path(mimic_cfg.get("processed_dir") or config["paths"]["processed_data"])
 
     static_path = processed_dir / "patient_static.parquet"
     ts_path = processed_dir / "patient_timeseries.parquet"
@@ -355,11 +361,7 @@ def load_sepsis2019_data(config: dict) -> tuple[np.ndarray, pd.DataFrame]:
 
 def load_eicu_data(config: dict) -> tuple[np.ndarray, pd.DataFrame]:
     """Load eICU sepsis cohort for external validation."""
-    raise NotImplementedError(
-        "eICU data loading not yet implemented.\n"
-        "Please complete credentialing: https://eicu-crd.mit.edu/\n"
-        "eICU's multi-center nature makes it ideal for external validation."
-    )
+    return load_eicu_from_config(config)
 
 
 # ============================================================
@@ -493,7 +495,8 @@ def get_feature_names(config: dict) -> list[str]:
         from load_sepsis2019 import PROJECT_FEATURES
         return PROJECT_FEATURES
     if source == "mimic":
-        processed_dir = resolve_path(config["paths"]["processed_data"])
+        mimic_cfg = config["data"].get("mimic", {})
+        processed_dir = resolve_path(mimic_cfg.get("processed_dir") or config["paths"]["processed_data"])
         for ext in (".parquet", ".csv"):
             ts_path = processed_dir / f"patient_timeseries{ext}"
             if ts_path.exists():

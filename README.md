@@ -211,15 +211,20 @@ These models learn from more data modalities already present in the repository: 
 
 ## OpenClaw-Inspired Extensions
 
+- `exploratory-data-analysis` informed the new demo-readiness reports emitted by [`scripts/prepare_mimic_demo.py`](scripts/prepare_mimic_demo.py) and [`scripts/prepare_eicu_demo.py`](scripts/prepare_eicu_demo.py).
 - `bio-machine-learning-model-validation` motivated the new leakage-aware `train+val` OOF stacking workflow and the explicit bootstrap confidence intervals added under [`data/s15_trainval/stacking_accuracy/`](data/s15_trainval/stacking_accuracy/).
 - `bio-machine-learning-prediction-explanation` motivated the new meta-feature importance and coefficient audit for the stacking model, saved in [`data/s15_trainval/stacking_accuracy/stacking_validation_report.json`](data/s15_trainval/stacking_accuracy/stacking_validation_report.json).
 - The database-access skill family informed a reproducible DuckDB readiness/profile report for the local MIMIC pipeline, saved under [`data/mimic_db_profile/`](data/mimic_db_profile/).
+- `scientific-manuscript` informed the manuscript and documentation updates that now distinguish clearly between demo-ready integration code and real external-validation results.
 
 ### Additional Data Integration
 
 - `scripts/s19_prepare.py` bridges the local PhysioNet/CinC 2019 sepsis stubs into the same `continuous / masks / static / splits` layout used by `data/s0`
 - The bridge covers `40,331` ICU stays with `18 / 21` shared continuous channels; the missing overlap channels are `gcs`, `sodium`, and `pao2`
 - Preprocessing reuses the PhysioNet 2012 normalization statistics so the auxiliary source is numerically compatible with the pretrained S1.5 encoder
+- `scripts/prepare_mimic_demo.py` now provides a formal `raw CSV -> DuckDB -> concepts -> patient_static/patient_timeseries` entry point for local MIMIC-IV demo files
+- `scripts/prepare_eicu_demo.py` plus [`src/eicu_loader.py`](src/eicu_loader.py) now provide a formal `raw CSV -> 3D tensor + patient_info cache` entry point for local eICU demo files
+- As of `2026-03-24`, the official PhysioNet demo pages for MIMIC-IV-demo and eICU-CRD-demo returned region-restricted `Data Not Available` responses from this environment, so the repository ships the integration code and smoke tests but not real demo-derived metrics
 
 ## Repository Map
 
@@ -303,6 +308,19 @@ python scripts/s15_train_advanced_classifier.py --config config/s15_trainval_con
 python scripts/s15_train_advanced_classifier.py --config config/s15_trainval_config.yaml --model-type hgb_ensemble
 ```
 
+### 2.5 Prepare Demo-Ready MIMIC / eICU Inputs
+
+```bash
+# MIMIC-IV demo/raw path: produces patient_static + patient_timeseries
+python scripts/prepare_mimic_demo.py --data-dir data/external/mimic_iv_demo --output-dir data/processed_mimic_demo --db-path db/mimic4_demo.db
+
+# Local mock smoke test for the same path
+python scripts/prepare_mimic_demo.py --data-dir archive/mimic-iv-mock --output-dir /tmp/mimic_demo_out --db-path /tmp/mimic4_demo.db --format csv --overwrite-db
+
+# eICU demo/raw path: produces cached tensor + patient_info + readiness report
+python scripts/prepare_eicu_demo.py --data-dir data/external/eicu_demo --output-dir data/processed_eicu_demo
+```
+
 ### 3. Compile The Paper
 
 ```bash
@@ -355,6 +373,7 @@ The manuscript is currently **submission-ready**.
 - Temporal findings are described as **descriptive trajectories**, not causal treatment effects.
 - The stride=`12h` sensitivity analysis preserves the same phenotype risk ordering.
 - Cross-center results should be interpreted as **within-cohort multi-center validation**, not external database validation.
+- The MIMIC/eICU integration paths are now demo-ready, but the official demo files were not downloadable from this environment on `2026-03-24`; place local credentialed copies under `data/external/` before running the prep scripts.
 
 ## Selected References
 

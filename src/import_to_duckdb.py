@@ -22,9 +22,28 @@ from pathlib import Path
 import duckdb
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_MOCK_DIR = PROJECT_ROOT / "mimic-iv-mock"
 DEFAULT_DB_PATH = PROJECT_ROOT / "db" / "mimic4.db"
-CREATE_SQL_PATH = PROJECT_ROOT / "mimic-code-main" / "mimic-iv" / "buildmimic" / "postgres" / "create.sql"
+
+
+def _first_existing(candidates: list[Path]) -> Path:
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
+
+
+DEFAULT_MOCK_DIR = _first_existing(
+    [
+        PROJECT_ROOT / "mimic-iv-mock",
+        PROJECT_ROOT / "archive" / "mimic-iv-mock",
+    ]
+)
+CREATE_SQL_PATH = _first_existing(
+    [
+        PROJECT_ROOT / "mimic-code-main" / "mimic-iv" / "buildmimic" / "postgres" / "create.sql",
+        PROJECT_ROOT / "archive" / "mimic-code-main" / "mimic-iv" / "buildmimic" / "postgres" / "create.sql",
+    ]
+)
 
 
 def adapt_create_sql(sql_text: str) -> str:

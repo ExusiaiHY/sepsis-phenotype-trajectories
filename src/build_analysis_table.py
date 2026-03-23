@@ -30,8 +30,22 @@ import pandas as pd
 import duckdb
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB_PATH = PROJECT_ROOT / "db" / "mimic4.db"
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "data" / "processed"
+
+
+def _first_existing(candidates: list[Path]) -> Path:
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
+
+
+DEFAULT_DB_PATH = _first_existing(
+    [
+        PROJECT_ROOT / "db" / "mimic4.db",
+        PROJECT_ROOT / "archive" / "db" / "mimic4.db",
+    ]
+)
 
 
 # ============================================================

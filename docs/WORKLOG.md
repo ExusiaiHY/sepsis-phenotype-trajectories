@@ -820,3 +820,59 @@ The stacking model improves both the top-line held-out accuracy and the top-line
 - `docs/RESEARCH_PAPER.tex`
 - `docs/WORKLOG.md`
 - `docs/RESEARCH_PAPER.pdf` (after recompilation)
+
+## 2026-03-24 — Demo-Ready MIMIC / eICU Integration
+
+### Stage
+
+Formal external-dataset wiring for local demo files, with explicit honesty about the current access blocker
+
+### Objective
+
+Move the repo from "MIMIC partially wired, eICU stubbed" to "both sources have reproducible local ingestion entry points", while keeping the paper and docs clear that no real demo-derived validation metrics were produced from this environment.
+
+### OpenClaw Skills Applied
+
+- `exploratory-data-analysis` — informed the small readiness reports emitted by the new prep scripts
+- `bio-machine-learning-model-validation` — kept the new smoke validation grounded in explicit testable checks rather than narrative claims
+- `scientific-manuscript` — informed the manuscript wording for the new external-data caveat
+
+### What Was Added
+
+- New raw-table eICU loader:
+  - `src/eicu_loader.py`
+- New external-data entry scripts:
+  - `scripts/prepare_mimic_demo.py`
+  - `scripts/prepare_eicu_demo.py`
+- New unit test:
+  - `tests/test_eicu_loader.py`
+- Legacy path fixes:
+  - `src/import_to_duckdb.py`
+  - `src/run_concepts.py`
+  - `src/build_analysis_table.py`
+  - `src/data_loader.py`
+
+### Commands Run
+
+```bash
+./.venv/bin/python tests/test_eicu_loader.py
+./.venv/bin/python tests/test_s15_stacking_classifier.py
+./.venv/bin/python scripts/prepare_mimic_demo.py --data-dir archive/mimic-iv-mock --output-dir /tmp/mimic_demo_out --db-path /tmp/mimic4_demo.db --format csv --overwrite-db
+```
+
+### Results
+
+- eICU raw/demo integration is no longer a stub:
+  - synthetic fixture test produced a valid `(2, 48, 17)` tensor
+  - recovered treatment proxies: vasopressor, ventilation, dialysis
+  - recovered patient-level outcomes and PaO2/FiO2 fallback
+- MIMIC demo path now has a single formal entry point:
+  - `31` raw mock tables imported into DuckDB
+  - `63 / 63` concept SQL files executed successfully
+  - exported `15` ICU stays and `720` hourly rows to patient-level analysis tables
+- Documentation/manuscript now state the blocker explicitly:
+  - on `2026-03-24`, official PhysioNet demo pages for MIMIC-IV-demo 2.2 and eICU-CRD-demo 2.0.1 returned region-restricted `Data Not Available` responses from this environment
+
+### Interpretation
+
+The engineering blocker for external ICU integration has been removed. What remains is an access blocker: real official demo files still need to be placed locally before any honest MIMIC/eICU quantitative validation can be reported.

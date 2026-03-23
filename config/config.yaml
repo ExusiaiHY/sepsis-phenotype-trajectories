@@ -14,11 +14,17 @@ data:
     missing_rate: 0.15
     random_seed: 42
   mimic:
-    db_path: ''
+    raw_data_dir: data/external/mimic_iv_demo
+    processed_dir: data/processed_mimic_demo
+    db_path: db/mimic4_demo.db
     cohort_sql: ''
+    hours: 48
+    output_format: parquet
     sepsis_definition: sepsis3
   eicu:
-    db_path: ''
+    data_dir: data/external/eicu_demo
+    n_timesteps: 48
+    max_patients:
   physionet:
     data_dir: data/external
     n_hours: 48
