@@ -177,6 +177,15 @@ Frozen S1.5 embeddings
 
 Because held-out mortality prevalence is only `14.6%`, plain accuracy is misleading on its own. The accuracy-optimized operating point barely beats the majority baseline while missing most deaths, whereas the balanced threshold preserves the same AUROC with much stronger recall.
 
+### Improved Downstream Models
+
+Using more of the already-available cohort information than the embedding-only linear probe:
+
+- `HGB + statistics + masks + proxy + static` reaches `test accuracy=0.791`, `balanced accuracy=0.780`, `AUROC=0.862`
+- `HGB ensemble (fused + stats views)` reaches `balanced accuracy=0.785`, `recall=0.812`, `AUROC=0.865`
+
+These models learn from more data modalities already present in the repository: 48h summary statistics, missingness patterns, proxy indicators, demographics, and optionally S1.5 embeddings.
+
 ## Repository Map
 
 | Path | Role |
@@ -236,6 +245,7 @@ python scripts/s15_extract.py
 python scripts/s15_compare.py
 python scripts/s15_diagnostics.py
 python scripts/s15_train_classifier.py
+python scripts/s15_train_advanced_classifier.py --model-type hgb --feature-set stats_mask_proxy_static
 
 # Stage 2: temporal phenotype trajectory analysis
 python scripts/s2_extract_rolling.py
@@ -251,6 +261,8 @@ python scripts/s3_cross_center_validation.py
 python scripts/s15_pretrain.py --config config/s15_trainval_config.yaml --device cpu
 python scripts/s15_extract.py --config config/s15_trainval_config.yaml --device cpu
 python scripts/s15_train_classifier.py --config config/s15_trainval_config.yaml
+python scripts/s15_train_advanced_classifier.py --config config/s15_trainval_config.yaml --model-type hgb --feature-set stats_mask_proxy_static
+python scripts/s15_train_advanced_classifier.py --config config/s15_trainval_config.yaml --model-type hgb_ensemble
 ```
 
 ### 3. Compile The Paper

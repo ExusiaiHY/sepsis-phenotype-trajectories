@@ -179,3 +179,24 @@ All experiments with their configurations, results, and artifact locations.
   - Majority-class baseline accuracy on test: 0.854
 - **Artifacts:** data/s15_trainval/pretrain_log.json, data/s15_trainval/mortality_classifier_report.json, data/s15_trainval_accuracy/mortality_classifier_report.json
 - **Conclusion:** A fresh retrain reproduces the representation quality of S1.5 and confirms that the main added value of the supervised validation is discrimination under imbalance-aware metrics, not headline accuracy.
+
+## E018 — Advanced downstream mortality classifier with multi-modal feature fusion
+- **Date:** 2026-03-23
+- **Method:** HistGradientBoosting on richer S0-derived features: 48h statistical summaries, observation-density features, proxy indicator summaries, and non-leaky static metadata (age, sex, height, weight, ICU type).
+- **Data:** Same S0 train/val/test split; no extra patients added, but more of the existing cohort information is used than in the embedding-only linear probe.
+- **Results:**
+  - Val: accuracy=0.795, balanced_accuracy=0.795, recall=0.795, AUROC=0.865
+  - Test: accuracy=0.791, balanced_accuracy=0.780, precision=0.391, recall=0.764, F1=0.517, AUROC=0.862
+  - Improvement over E017 balanced-threshold logistic probe: +0.7pp accuracy, +3.5pp balanced accuracy, +3.3 AUROC points
+- **Artifacts:** data/s15_trainval/advanced_hgb/advanced_mortality_classifier_report.json
+- **Conclusion:** Using more available modalities and a nonlinear classifier improves both plain accuracy and imbalance-aware metrics over the embedding-only linear model.
+
+## E019 — Advanced downstream HGB ensemble (fused + stats views)
+- **Date:** 2026-03-23
+- **Method:** Two-view ensemble of HistGradientBoosting models: one on `fused_all` (S1.5 embeddings + statistics + masks + proxy + static) and one on `stats_mask_proxy_static`, with ensemble weight and threshold selected on validation balanced accuracy.
+- **Results:**
+  - Selected weights: fused=0.75, stats=0.25, threshold=0.07
+  - Val: accuracy=0.766, balanced_accuracy=0.801, recall=0.850, AUROC=0.871
+  - Test: accuracy=0.765, balanced_accuracy=0.785, recall=0.812, F1=0.503, AUROC=0.865
+- **Artifacts:** data/s15_trainval/advanced_hgb_ensemble/advanced_mortality_classifier_report.json
+- **Conclusion:** The ensemble gives the strongest balanced accuracy and AUROC in the repo so far, at the cost of lower plain accuracy due to a recall-oriented operating point.
