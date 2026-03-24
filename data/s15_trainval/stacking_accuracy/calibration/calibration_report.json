@@ -1,0 +1,886 @@
+{
+  "label_col": "mortality_inhospital",
+  "prior_rate": 0.142,
+  "n_bins": 10,
+  "methods": {
+    "uncalibrated": {
+      "calibration_params": {},
+      "threshold": 0.6,
+      "calibration_metrics": {
+        "brier": 0.1435,
+        "ece": 0.2224,
+        "mce": 0.4226,
+        "auroc": 0.8728,
+        "log_loss": 0.4734,
+        "mean_predicted_prob": 0.3687,
+        "observed_positive_rate": 0.1464
+      },
+      "classification_metrics": {
+        "threshold": 0.6,
+        "accuracy": 0.8461,
+        "balanced_accuracy": 0.7647,
+        "precision": 0.481,
+        "recall": 0.6496,
+        "f1": 0.5527,
+        "confusion_matrix": {
+          "tn": 3002,
+          "fp": 410,
+          "fn": 205,
+          "tp": 380
+        },
+        "auroc": 0.8728
+      },
+      "stratified_calibration": {
+        "low_risk": {
+          "count": 1526,
+          "mean_predicted_prob": 0.171,
+          "observed_positive_rate": 0.0111,
+          "brier": 0.0365
+        },
+        "moderate_risk": {
+          "count": 1489,
+          "mean_predicted_prob": 0.3073,
+          "observed_positive_rate": 0.0974,
+          "brier": 0.1299
+        },
+        "high_risk": {
+          "count": 982,
+          "mean_predicted_prob": 0.7691,
+          "observed_positive_rate": 0.4308,
+          "brier": 0.3302
+        }
+      },
+      "bins": [
+        {
+          "bin_start": 0.1,
+          "bin_end": 0.2,
+          "count": 1526,
+          "fraction": 0.3818,
+          "mean_predicted_prob": 0.171,
+          "observed_positive_rate": 0.0111,
+          "calibration_gap": 0.1599
+        },
+        {
+          "bin_start": 0.2,
+          "bin_end": 0.3,
+          "count": 801,
+          "fraction": 0.2004,
+          "mean_predicted_prob": 0.2392,
+          "observed_positive_rate": 0.0549,
+          "calibration_gap": 0.1843
+        },
+        {
+          "bin_start": 0.3,
+          "bin_end": 0.4,
+          "count": 403,
+          "fraction": 0.1008,
+          "mean_predicted_prob": 0.3447,
+          "observed_positive_rate": 0.1166,
+          "calibration_gap": 0.2281
+        },
+        {
+          "bin_start": 0.4,
+          "bin_end": 0.5,
+          "count": 285,
+          "fraction": 0.0713,
+          "mean_predicted_prob": 0.4458,
+          "observed_positive_rate": 0.1895,
+          "calibration_gap": 0.2563
+        },
+        {
+          "bin_start": 0.5,
+          "bin_end": 0.6,
+          "count": 192,
+          "fraction": 0.048,
+          "mean_predicted_prob": 0.5493,
+          "observed_positive_rate": 0.224,
+          "calibration_gap": 0.3254
+        },
+        {
+          "bin_start": 0.6,
+          "bin_end": 0.7,
+          "count": 185,
+          "fraction": 0.0463,
+          "mean_predicted_prob": 0.647,
+          "observed_positive_rate": 0.3189,
+          "calibration_gap": 0.3281
+        },
+        {
+          "bin_start": 0.7,
+          "bin_end": 0.8,
+          "count": 150,
+          "fraction": 0.0375,
+          "mean_predicted_prob": 0.7554,
+          "observed_positive_rate": 0.3533,
+          "calibration_gap": 0.4021
+        },
+        {
+          "bin_start": 0.8,
+          "bin_end": 0.9,
+          "count": 169,
+          "fraction": 0.0423,
+          "mean_predicted_prob": 0.8545,
+          "observed_positive_rate": 0.432,
+          "calibration_gap": 0.4226
+        },
+        {
+          "bin_start": 0.9,
+          "bin_end": 1.0,
+          "count": 286,
+          "fraction": 0.0716,
+          "mean_predicted_prob": 0.9523,
+          "observed_positive_rate": 0.6818,
+          "calibration_gap": 0.2705
+        }
+      ]
+    },
+    "temperature_scaling": {
+      "calibration_params": {
+        "temperature": 0.4306
+      },
+      "threshold": 0.6,
+      "calibration_metrics": {
+        "brier": 0.142,
+        "ece": 0.1366,
+        "mce": 0.5333,
+        "auroc": 0.8728,
+        "log_loss": 0.563,
+        "mean_predicted_prob": 0.283,
+        "observed_positive_rate": 0.1464
+      },
+      "classification_metrics": {
+        "threshold": 0.6,
+        "accuracy": 0.8316,
+        "balanced_accuracy": 0.7725,
+        "precision": 0.4508,
+        "recall": 0.6889,
+        "f1": 0.545,
+        "confusion_matrix": {
+          "tn": 2921,
+          "fp": 491,
+          "fn": 182,
+          "tp": 403
+        },
+        "auroc": 0.8728
+      },
+      "stratified_calibration": {
+        "low_risk": {
+          "count": 2576,
+          "mean_predicted_prob": 0.0506,
+          "observed_positive_rate": 0.0334,
+          "brier": 0.0319
+        },
+        "moderate_risk": {
+          "count": 439,
+          "mean_predicted_prob": 0.3289,
+          "observed_positive_rate": 0.1731,
+          "brier": 0.1684
+        },
+        "high_risk": {
+          "count": 982,
+          "mean_predicted_prob": 0.872,
+          "observed_positive_rate": 0.4308,
+          "brier": 0.4189
+        }
+      },
+      "bins": [
+        {
+          "bin_start": 0.0,
+          "bin_end": 0.1,
+          "count": 2233,
+          "fraction": 0.5587,
+          "mean_predicted_prob": 0.0364,
+          "observed_positive_rate": 0.0255,
+          "calibration_gap": 0.0109
+        },
+        {
+          "bin_start": 0.1,
+          "bin_end": 0.2,
+          "count": 343,
+          "fraction": 0.0858,
+          "mean_predicted_prob": 0.143,
+          "observed_positive_rate": 0.0845,
+          "calibration_gap": 0.0584
+        },
+        {
+          "bin_start": 0.2,
+          "bin_end": 0.3,
+          "count": 194,
+          "fraction": 0.0485,
+          "mean_predicted_prob": 0.249,
+          "observed_positive_rate": 0.1443,
+          "calibration_gap": 0.1046
+        },
+        {
+          "bin_start": 0.3,
+          "bin_end": 0.4,
+          "count": 134,
+          "fraction": 0.0335,
+          "mean_predicted_prob": 0.3447,
+          "observed_positive_rate": 0.1716,
+          "calibration_gap": 0.1731
+        },
+        {
+          "bin_start": 0.4,
+          "bin_end": 0.5,
+          "count": 111,
+          "fraction": 0.0278,
+          "mean_predicted_prob": 0.4497,
+          "observed_positive_rate": 0.2252,
+          "calibration_gap": 0.2244
+        },
+        {
+          "bin_start": 0.5,
+          "bin_end": 0.6,
+          "count": 88,
+          "fraction": 0.022,
+          "mean_predicted_prob": 0.5486,
+          "observed_positive_rate": 0.2273,
+          "calibration_gap": 0.3213
+        },
+        {
+          "bin_start": 0.6,
+          "bin_end": 0.7,
+          "count": 80,
+          "fraction": 0.02,
+          "mean_predicted_prob": 0.6506,
+          "observed_positive_rate": 0.225,
+          "calibration_gap": 0.4256
+        },
+        {
+          "bin_start": 0.7,
+          "bin_end": 0.8,
+          "count": 116,
+          "fraction": 0.029,
+          "mean_predicted_prob": 0.7488,
+          "observed_positive_rate": 0.2155,
+          "calibration_gap": 0.5333
+        },
+        {
+          "bin_start": 0.8,
+          "bin_end": 0.9,
+          "count": 116,
+          "fraction": 0.029,
+          "mean_predicted_prob": 0.85,
+          "observed_positive_rate": 0.3879,
+          "calibration_gap": 0.4621
+        },
+        {
+          "bin_start": 0.9,
+          "bin_end": 1.0,
+          "count": 582,
+          "fraction": 0.1456,
+          "mean_predicted_prob": 0.9803,
+          "observed_positive_rate": 0.5412,
+          "calibration_gap": 0.439
+        }
+      ]
+    },
+    "platt_scaling": {
+      "calibration_params": {
+        "a": 2.7193,
+        "b": -3.6884
+      },
+      "threshold": 0.15,
+      "calibration_metrics": {
+        "brier": 0.1065,
+        "ece": 0.0934,
+        "mce": 0.3995,
+        "auroc": 0.8728,
+        "log_loss": 0.4657,
+        "mean_predicted_prob": 0.1245,
+        "observed_positive_rate": 0.1464
+      },
+      "classification_metrics": {
+        "threshold": 0.15,
+        "accuracy": 0.8616,
+        "balanced_accuracy": 0.7476,
+        "precision": 0.5245,
+        "recall": 0.5863,
+        "f1": 0.5537,
+        "confusion_matrix": {
+          "tn": 3101,
+          "fp": 311,
+          "fn": 242,
+          "tp": 343
+        },
+        "auroc": 0.8728
+      },
+      "stratified_calibration": {
+        "low_risk": {
+          "count": 3392,
+          "mean_predicted_prob": 0.0112,
+          "observed_positive_rate": 0.0778,
+          "brier": 0.0725
+        },
+        "moderate_risk": {
+          "count": 142,
+          "mean_predicted_prob": 0.35,
+          "observed_positive_rate": 0.338,
+          "brier": 0.2282
+        },
+        "high_risk": {
+          "count": 463,
+          "mean_predicted_prob": 0.8855,
+          "observed_positive_rate": 0.5896,
+          "brier": 0.3181
+        }
+      },
+      "bins": [
+        {
+          "bin_start": 0.0,
+          "bin_end": 0.1,
+          "count": 3283,
+          "fraction": 0.8214,
+          "mean_predicted_prob": 0.0067,
+          "observed_positive_rate": 0.067,
+          "calibration_gap": 0.0603
+        },
+        {
+          "bin_start": 0.1,
+          "bin_end": 0.2,
+          "count": 109,
+          "fraction": 0.0273,
+          "mean_predicted_prob": 0.1454,
+          "observed_positive_rate": 0.4037,
+          "calibration_gap": 0.2582
+        },
+        {
+          "bin_start": 0.2,
+          "bin_end": 0.3,
+          "count": 47,
+          "fraction": 0.0118,
+          "mean_predicted_prob": 0.2478,
+          "observed_positive_rate": 0.3404,
+          "calibration_gap": 0.0926
+        },
+        {
+          "bin_start": 0.3,
+          "bin_end": 0.4,
+          "count": 45,
+          "fraction": 0.0113,
+          "mean_predicted_prob": 0.3505,
+          "observed_positive_rate": 0.3111,
+          "calibration_gap": 0.0394
+        },
+        {
+          "bin_start": 0.4,
+          "bin_end": 0.5,
+          "count": 50,
+          "fraction": 0.0125,
+          "mean_predicted_prob": 0.4455,
+          "observed_positive_rate": 0.36,
+          "calibration_gap": 0.0855
+        },
+        {
+          "bin_start": 0.5,
+          "bin_end": 0.6,
+          "count": 40,
+          "fraction": 0.01,
+          "mean_predicted_prob": 0.5525,
+          "observed_positive_rate": 0.425,
+          "calibration_gap": 0.1275
+        },
+        {
+          "bin_start": 0.6,
+          "bin_end": 0.7,
+          "count": 28,
+          "fraction": 0.007,
+          "mean_predicted_prob": 0.6515,
+          "observed_positive_rate": 0.3571,
+          "calibration_gap": 0.2944
+        },
+        {
+          "bin_start": 0.7,
+          "bin_end": 0.8,
+          "count": 36,
+          "fraction": 0.009,
+          "mean_predicted_prob": 0.7544,
+          "observed_positive_rate": 0.4722,
+          "calibration_gap": 0.2821
+        },
+        {
+          "bin_start": 0.8,
+          "bin_end": 0.9,
+          "count": 66,
+          "fraction": 0.0165,
+          "mean_predicted_prob": 0.854,
+          "observed_positive_rate": 0.4545,
+          "calibration_gap": 0.3995
+        },
+        {
+          "bin_start": 0.9,
+          "bin_end": 1.0,
+          "count": 293,
+          "fraction": 0.0733,
+          "mean_predicted_prob": 0.9765,
+          "observed_positive_rate": 0.6792,
+          "calibration_gap": 0.2973
+        }
+      ]
+    },
+    "isotonic": {
+      "calibration_params": {
+        "type": "isotonic_regression",
+        "n_knots": 28
+      },
+      "threshold": 0.12,
+      "calibration_metrics": {
+        "brier": 0.1075,
+        "ece": 0.0949,
+        "mce": 0.4543,
+        "auroc": 0.8383,
+        "log_loss": 1.8204,
+        "mean_predicted_prob": 0.1253,
+        "observed_positive_rate": 0.1464
+      },
+      "classification_metrics": {
+        "threshold": 0.12,
+        "accuracy": 0.8619,
+        "balanced_accuracy": 0.747,
+        "precision": 0.5253,
+        "recall": 0.5846,
+        "f1": 0.5534,
+        "confusion_matrix": {
+          "tn": 3103,
+          "fp": 309,
+          "fn": 243,
+          "tp": 342
+        },
+        "auroc": 0.8383
+      },
+      "stratified_calibration": {
+        "low_risk": {
+          "count": 3405,
+          "mean_predicted_prob": 0.0113,
+          "observed_positive_rate": 0.079,
+          "brier": 0.0735
+        },
+        "moderate_risk": {
+          "count": 98,
+          "mean_predicted_prob": 0.2936,
+          "observed_positive_rate": 0.2959,
+          "brier": 0.2099
+        },
+        "high_risk": {
+          "count": 494,
+          "mean_predicted_prob": 0.8776,
+          "observed_positive_rate": 0.581,
+          "brier": 0.3214
+        }
+      },
+      "bins": [
+        {
+          "bin_start": 0.0,
+          "bin_end": 0.1,
+          "count": 3290,
+          "fraction": 0.8231,
+          "mean_predicted_prob": 0.0071,
+          "observed_positive_rate": 0.0678,
+          "calibration_gap": 0.0607
+        },
+        {
+          "bin_start": 0.1,
+          "bin_end": 0.2,
+          "count": 115,
+          "fraction": 0.0288,
+          "mean_predicted_prob": 0.1304,
+          "observed_positive_rate": 0.4,
+          "calibration_gap": 0.2696
+        },
+        {
+          "bin_start": 0.2,
+          "bin_end": 0.3,
+          "count": 93,
+          "fraction": 0.0233,
+          "mean_predicted_prob": 0.2879,
+          "observed_positive_rate": 0.3011,
+          "calibration_gap": 0.0132
+        },
+        {
+          "bin_start": 0.3,
+          "bin_end": 0.4,
+          "count": 2,
+          "fraction": 0.0005,
+          "mean_predicted_prob": 0.334,
+          "observed_positive_rate": 0.0,
+          "calibration_gap": 0.334
+        },
+        {
+          "bin_start": 0.4,
+          "bin_end": 0.5,
+          "count": 3,
+          "fraction": 0.0008,
+          "mean_predicted_prob": 0.4444,
+          "observed_positive_rate": 0.3333,
+          "calibration_gap": 0.111
+        },
+        {
+          "bin_start": 0.5,
+          "bin_end": 0.6,
+          "count": 11,
+          "fraction": 0.0028,
+          "mean_predicted_prob": 0.5015,
+          "observed_positive_rate": 0.3636,
+          "calibration_gap": 0.1379
+        },
+        {
+          "bin_start": 0.6,
+          "bin_end": 0.7,
+          "count": 103,
+          "fraction": 0.0258,
+          "mean_predicted_prob": 0.6425,
+          "observed_positive_rate": 0.4175,
+          "calibration_gap": 0.2251
+        },
+        {
+          "bin_start": 0.7,
+          "bin_end": 0.8,
+          "count": 32,
+          "fraction": 0.008,
+          "mean_predicted_prob": 0.752,
+          "observed_positive_rate": 0.5625,
+          "calibration_gap": 0.1895
+        },
+        {
+          "bin_start": 0.8,
+          "bin_end": 0.9,
+          "count": 45,
+          "fraction": 0.0113,
+          "mean_predicted_prob": 0.8543,
+          "observed_positive_rate": 0.4,
+          "calibration_gap": 0.4543
+        },
+        {
+          "bin_start": 0.9,
+          "bin_end": 1.0,
+          "count": 303,
+          "fraction": 0.0758,
+          "mean_predicted_prob": 0.9878,
+          "observed_positive_rate": 0.6733,
+          "calibration_gap": 0.3145
+        }
+      ]
+    },
+    "bayesian_prior": {
+      "calibration_params": {
+        "strength": 0.4459,
+        "prior_rate": 0.142
+      },
+      "threshold": 0.4,
+      "calibration_metrics": {
+        "brier": 0.1036,
+        "ece": 0.1225,
+        "mce": 0.1425,
+        "auroc": 0.8728,
+        "log_loss": 0.362,
+        "mean_predicted_prob": 0.2684,
+        "observed_positive_rate": 0.1464
+      },
+      "classification_metrics": {
+        "threshold": 0.4,
+        "accuracy": 0.8611,
+        "balanced_accuracy": 0.7473,
+        "precision": 0.5229,
+        "recall": 0.5863,
+        "f1": 0.5528,
+        "confusion_matrix": {
+          "tn": 3099,
+          "fp": 313,
+          "fn": 242,
+          "tp": 343
+        },
+        "auroc": 0.8728
+      },
+      "stratified_calibration": {
+        "low_risk": {
+          "count": 2122,
+          "mean_predicted_prob": 0.1651,
+          "observed_positive_rate": 0.0226,
+          "brier": 0.042
+        },
+        "moderate_risk": {
+          "count": 1436,
+          "mean_predicted_prob": 0.301,
+          "observed_positive_rate": 0.1901,
+          "brier": 0.1572
+        },
+        "high_risk": {
+          "count": 439,
+          "mean_predicted_prob": 0.6613,
+          "observed_positive_rate": 0.6014,
+          "brier": 0.2255
+        }
+      },
+      "bins": [
+        {
+          "bin_start": 0.1,
+          "bin_end": 0.2,
+          "count": 2122,
+          "fraction": 0.5309,
+          "mean_predicted_prob": 0.1651,
+          "observed_positive_rate": 0.0226,
+          "calibration_gap": 0.1425
+        },
+        {
+          "bin_start": 0.2,
+          "bin_end": 0.3,
+          "count": 839,
+          "fraction": 0.2099,
+          "mean_predicted_prob": 0.243,
+          "observed_positive_rate": 0.1168,
+          "calibration_gap": 0.1262
+        },
+        {
+          "bin_start": 0.3,
+          "bin_end": 0.4,
+          "count": 380,
+          "fraction": 0.0951,
+          "mean_predicted_prob": 0.345,
+          "observed_positive_rate": 0.2526,
+          "calibration_gap": 0.0923
+        },
+        {
+          "bin_start": 0.4,
+          "bin_end": 0.5,
+          "count": 217,
+          "fraction": 0.0543,
+          "mean_predicted_prob": 0.4483,
+          "observed_positive_rate": 0.3641,
+          "calibration_gap": 0.0842
+        },
+        {
+          "bin_start": 0.5,
+          "bin_end": 0.6,
+          "count": 151,
+          "fraction": 0.0378,
+          "mean_predicted_prob": 0.5521,
+          "observed_positive_rate": 0.4503,
+          "calibration_gap": 0.1017
+        },
+        {
+          "bin_start": 0.6,
+          "bin_end": 0.7,
+          "count": 133,
+          "fraction": 0.0333,
+          "mean_predicted_prob": 0.6476,
+          "observed_positive_rate": 0.6015,
+          "calibration_gap": 0.0461
+        },
+        {
+          "bin_start": 0.7,
+          "bin_end": 0.8,
+          "count": 99,
+          "fraction": 0.0248,
+          "mean_predicted_prob": 0.7452,
+          "observed_positive_rate": 0.6869,
+          "calibration_gap": 0.0583
+        },
+        {
+          "bin_start": 0.8,
+          "bin_end": 0.9,
+          "count": 56,
+          "fraction": 0.014,
+          "mean_predicted_prob": 0.8403,
+          "observed_positive_rate": 0.8571,
+          "calibration_gap": 0.0169
+        }
+      ]
+    },
+    "composite_temp_bayesian": {
+      "calibration_params": {
+        "temperature": 0.4306,
+        "bayesian_strength": 0.5943,
+        "prior_rate": 0.142
+      },
+      "threshold": 0.43,
+      "calibration_metrics": {
+        "brier": 0.0952,
+        "ece": 0.0727,
+        "mce": 0.2362,
+        "auroc": 0.8728,
+        "log_loss": 0.3203,
+        "mean_predicted_prob": 0.219,
+        "observed_positive_rate": 0.1464
+      },
+      "classification_metrics": {
+        "threshold": 0.43,
+        "accuracy": 0.8626,
+        "balanced_accuracy": 0.7333,
+        "precision": 0.5296,
+        "recall": 0.5504,
+        "f1": 0.5398,
+        "confusion_matrix": {
+          "tn": 3126,
+          "fp": 286,
+          "fn": 263,
+          "tp": 322
+        },
+        "auroc": 0.8728
+      },
+      "stratified_calibration": {
+        "low_risk": {
+          "count": 2794,
+          "mean_predicted_prob": 0.0964,
+          "observed_positive_rate": 0.0426,
+          "brier": 0.0419
+        },
+        "moderate_risk": {
+          "count": 669,
+          "mean_predicted_prob": 0.3132,
+          "observed_positive_rate": 0.2511,
+          "brier": 0.1881
+        },
+        "high_risk": {
+          "count": 534,
+          "mean_predicted_prob": 0.7427,
+          "observed_positive_rate": 0.5581,
+          "brier": 0.2576
+        }
+      },
+      "bins": [
+        {
+          "bin_start": 0.0,
+          "bin_end": 0.1,
+          "count": 1905,
+          "fraction": 0.4766,
+          "mean_predicted_prob": 0.076,
+          "observed_positive_rate": 0.0178,
+          "calibration_gap": 0.0581
+        },
+        {
+          "bin_start": 0.1,
+          "bin_end": 0.2,
+          "count": 889,
+          "fraction": 0.2224,
+          "mean_predicted_prob": 0.1401,
+          "observed_positive_rate": 0.0956,
+          "calibration_gap": 0.0445
+        },
+        {
+          "bin_start": 0.2,
+          "bin_end": 0.3,
+          "count": 336,
+          "fraction": 0.0841,
+          "mean_predicted_prob": 0.2433,
+          "observed_positive_rate": 0.1964,
+          "calibration_gap": 0.0469
+        },
+        {
+          "bin_start": 0.3,
+          "bin_end": 0.4,
+          "count": 208,
+          "fraction": 0.052,
+          "mean_predicted_prob": 0.3469,
+          "observed_positive_rate": 0.2644,
+          "calibration_gap": 0.0825
+        },
+        {
+          "bin_start": 0.4,
+          "bin_end": 0.5,
+          "count": 125,
+          "fraction": 0.0313,
+          "mean_predicted_prob": 0.4451,
+          "observed_positive_rate": 0.376,
+          "calibration_gap": 0.0691
+        },
+        {
+          "bin_start": 0.5,
+          "bin_end": 0.6,
+          "count": 124,
+          "fraction": 0.031,
+          "mean_predicted_prob": 0.5473,
+          "observed_positive_rate": 0.379,
+          "calibration_gap": 0.1683
+        },
+        {
+          "bin_start": 0.6,
+          "bin_end": 0.7,
+          "count": 89,
+          "fraction": 0.0223,
+          "mean_predicted_prob": 0.6561,
+          "observed_positive_rate": 0.4382,
+          "calibration_gap": 0.2179
+        },
+        {
+          "bin_start": 0.7,
+          "bin_end": 0.8,
+          "count": 114,
+          "fraction": 0.0285,
+          "mean_predicted_prob": 0.7502,
+          "observed_positive_rate": 0.5526,
+          "calibration_gap": 0.1976
+        },
+        {
+          "bin_start": 0.8,
+          "bin_end": 0.9,
+          "count": 109,
+          "fraction": 0.0273,
+          "mean_predicted_prob": 0.8509,
+          "observed_positive_rate": 0.6147,
+          "calibration_gap": 0.2362
+        },
+        {
+          "bin_start": 0.9,
+          "bin_end": 1.0,
+          "count": 98,
+          "fraction": 0.0245,
+          "mean_predicted_prob": 0.9397,
+          "observed_positive_rate": 0.8367,
+          "calibration_gap": 0.103
+        }
+      ]
+    }
+  },
+  "ranking": [
+    {
+      "method": "composite_temp_bayesian",
+      "brier": 0.0952,
+      "ece": 0.0727,
+      "auroc": 0.8728,
+      "recall": 0.5504,
+      "composite_score": 0.0806
+    },
+    {
+      "method": "platt_scaling",
+      "brier": 0.1065,
+      "ece": 0.0934,
+      "auroc": 0.8728,
+      "recall": 0.5863,
+      "composite_score": 0.1126
+    },
+    {
+      "method": "isotonic",
+      "brier": 0.1075,
+      "ece": 0.0949,
+      "auroc": 0.8383,
+      "recall": 0.5846,
+      "composite_score": 0.1186
+    },
+    {
+      "method": "bayesian_prior",
+      "brier": 0.1036,
+      "ece": 0.1225,
+      "auroc": 0.8728,
+      "recall": 0.5863,
+      "composite_score": 0.1388
+    },
+    {
+      "method": "temperature_scaling",
+      "brier": 0.142,
+      "ece": 0.1366,
+      "auroc": 0.8728,
+      "recall": 0.6889,
+      "composite_score": 0.1913
+    },
+    {
+      "method": "uncalibrated",
+      "brier": 0.1435,
+      "ece": 0.2224,
+      "auroc": 0.8728,
+      "recall": 0.6496,
+      "composite_score": 0.2786
+    }
+  ],
+  "recommendation": "composite_temp_bayesian"
+}
