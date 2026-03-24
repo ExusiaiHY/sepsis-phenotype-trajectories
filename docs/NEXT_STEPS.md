@@ -6,6 +6,8 @@ Manuscript is **SUBMISSION-READY WITH MINOR NON-BLOCKING CAVEATS**. Full scienti
 
 2026-03-23 update: supplementary downstream mortality validation on frozen S1.5 embeddings was added to the repo and manuscript, and the paper PDF was recompiled.
 
+2026-03-24 update: Stage 4 / Stage 5 follow-up research framework is now implemented in code. The repo contains treatment-feature extraction for MIMIC/eICU, a treatment-aware S1.5 fusion model, causal analysis utilities (PSM / DML causal-forest-style / RDD), a distilled realtime student, note-embedding utilities, and a bedside HTML dashboard prototype. What remains is full-dataset execution and real clinical validation, not framework implementation.
+
 ## Completed Stages
 
 - S0: Data layer refactor + real outcomes (DONE)
@@ -24,9 +26,12 @@ Manuscript is **SUBMISSION-READY WITH MINOR NON-BLOCKING CAVEATS**. Full scienti
 3. Simulated data validation (ARI=0.245) is modest but honestly reported
 4. 1 cosmetic overfull hbox in Table 1
 
-## Available Future Stages (not started)
+## Available Future Stages
 
-- S4: Treatment heterogeneity (requires treatment variables; only proxies for PhysioNet 2012)
-- S5: Bedside real-time classifier (early-window phenotype assignment; 48h frozen-embedding mortality prototype now exists)
-- External database validation (requires eICU or MIMIC-IV access)
+- S4: Treatment heterogeneity
+  Framework implemented in `s4/`; full-cohort MIMIC/eICU execution and formal result reporting still pending
+- S5: Bedside real-time classifier
+  Distilled student + dashboard prototype implemented in `s5/`; bedside deployment validation still pending
+- External database validation
+  Full external temporal transfer is done; treatment-aware and note-aware full-dataset reruns remain pending
 - Updated supplementary survival curves with S1.5 temporal phenotypes

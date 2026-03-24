@@ -1,0 +1,50 @@
+# Stage 4: treatment-aware temporal phenotyping + causal analysis
+
+data:
+  source: mimic
+  n_hours: 48
+  max_patients:
+  sepsis3_only: true
+  tag: eicu_demo
+
+paths:
+  s0_dir: data/external_temporal/mimic/s0
+  prepared_dir: data/processed_mimic_real
+  raw_dir: mimic-iv-3.1
+  treatment_dir: data/s4/mimic_treatments
+  output_dir: data/s4/mimic_treatment_aware
+  pretrained_checkpoint: data/s15/checkpoints/pretrain_best.pt
+  note_embeddings:
+  phenotype_labels:
+
+training:
+  label_col: mortality_inhospital
+  batch_size: 128
+  epochs: 12
+  lr_encoder: 2.0e-4
+  lr_head: 1.0e-3
+  weight_decay: 1.0e-4
+  patience: 4
+  freeze_base_epochs: 1
+  grad_clip: 1.0
+  threshold_metric: balanced_accuracy
+  monitor_metric: auroc
+  seed: 42
+
+model:
+  d_model: 128
+  n_heads: 4
+  n_layers: 2
+  d_ff: 256
+  dropout: 0.2
+  treatment_layers: 1
+  head_hidden_dim: 128
+  head_dropout: 0.2
+
+causal:
+  outcome_col: mortality_inhospital
+  horizons: [6, 24]
+  max_embedding_dims: 16
+
+runtime:
+  device: auto
