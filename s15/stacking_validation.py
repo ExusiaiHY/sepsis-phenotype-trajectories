@@ -1,9 +1,13 @@
 """
 stacking_validation.py - Validation utilities for the OOF stacking classifier.
+
+Includes integrated post-hoc calibration analysis using s15.calibration.
+Note: pickle is used for loading existing model artifacts (project convention).
 """
 from __future__ import annotations
 
 import json
+import logging
 import pickle
 from pathlib import Path
 
@@ -19,7 +23,16 @@ from sklearn.metrics import (
 )
 
 from s15.advanced_classifier import _classification_metrics, build_feature_views
+from s15.calibration import (
+    CompositeCalibration,
+    PlattScaling,
+    calibration_metrics,
+    select_calibrated_threshold,
+    threshold_metrics,
+)
 from s15.stacking_classifier import predict_stacking_probabilities
+
+logger = logging.getLogger("s15.stacking_validation")
 
 
 def validate_stacking_classifier(
@@ -34,10 +47,12 @@ def validate_stacking_classifier(
     n_bins: int = 10,
     permutation_repeats: int = 20,
     seed: int = 42,
+    run_calibration: bool = True,
 ) -> dict:
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Load model artifact (pickle: existing project format)
     with open(model_path, "rb") as f:
         model_bundle = pickle.load(f)
 
@@ -67,13 +82,24 @@ def validate_stacking_classifier(
     test_probs = split_probs["test"]
     test_meta = split_meta["test"]
 
+    # Use unified calibration_metrics from s15.calibration
+    test_cal = calibration_metrics(test_y, test_probs, n_bins=n_bins)
+
     report = {
         "label_col": resolved_label_col,
         "model_path": str(model_path),
         "threshold_metric": model_bundle["threshold_metric"],
         "threshold": round(float(threshold), 4),
         "splits": split_metrics,
-        "test_calibration": _calibration_report(test_y, test_probs, n_bins=n_bins),
+        "test_calibration": {
+            "brier": round(test_cal["brier"], 4),
+            "ece": round(test_cal["ece"], 4),
+            "mce": round(test_cal["mce"], 4),
+            "mean_predicted_probability": round(test_cal["mean_predicted_prob"], 4),
+            "observed_positive_rate": round(test_cal["observed_positive_rate"], 4),
+            "stratified": test_cal["stratified"],
+            "bins": test_cal["bins"],
+        },
         "test_bootstrap": _bootstrap_metrics(
             y_true=test_y,
             probs=test_probs,
@@ -91,10 +117,55 @@ def validate_stacking_classifier(
         ),
     }
 
+    # Integrated post-hoc calibration analysis
+    if run_calibration:
+        val_probs = split_probs["val"]
+        val_y = labels[split_arrays["val"]]
+        cal_results = _run_posthoc_calibration(
+            val_probs=val_probs, val_y=val_y,
+            test_probs=test_probs, test_y=test_y,
+            n_bins=n_bins,
+        )
+        report["posthoc_calibration"] = cal_results
+
     report_path = output_dir / "stacking_validation_report.json"
     with open(report_path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
     return report
+
+
+def _run_posthoc_calibration(
+    *,
+    val_probs: np.ndarray,
+    val_y: np.ndarray,
+    test_probs: np.ndarray,
+    test_y: np.ndarray,
+    n_bins: int,
+) -> dict:
+    """Run Platt scaling and composite calibration, return comparison."""
+    methods = {
+        "platt_scaling": PlattScaling(),
+        "composite_temp_bayesian": CompositeCalibration(prior_rate=0.142),
+    }
+    results = {}
+    for name, calibrator in methods.items():
+        calibrator.fit(val_probs, val_y)
+        cal_test = calibrator.predict(test_probs)
+        cal_val = calibrator.predict(val_probs)
+        threshold, _ = select_calibrated_threshold(val_y, cal_val)
+        cal_met = calibration_metrics(test_y, cal_test, n_bins=n_bins)
+        cls_met = threshold_metrics(test_y, cal_test, threshold)
+        results[name] = {
+            "brier": round(cal_met["brier"], 4),
+            "ece": round(cal_met["ece"], 4),
+            "auroc": round(cal_met["auroc"], 4) if cal_met["auroc"] else None,
+            "threshold": round(threshold, 4),
+            "recall": cls_met["recall"],
+            "f1": cls_met["f1"],
+        }
+        logger.info("Post-hoc %s: Brier=%.4f ECE=%.4f", name,
+                     cal_met["brier"], cal_met["ece"])
+    return results
 
 
 def _bootstrap_metrics(
@@ -146,42 +217,6 @@ def _bootstrap_metrics(
             "n_bootstrap": int(len(arr)),
         }
     return report
-
-
-def _calibration_report(y_true: np.ndarray, probs: np.ndarray, *, n_bins: int) -> dict:
-    bins = np.linspace(0.0, 1.0, n_bins + 1)
-    ece = 0.0
-    bin_rows = []
-
-    for lo, hi in zip(bins[:-1], bins[1:]):
-        if hi == 1.0:
-            mask = (probs >= lo) & (probs <= hi)
-        else:
-            mask = (probs >= lo) & (probs < hi)
-        if not mask.any():
-            continue
-
-        frac = float(mask.mean())
-        mean_prob = float(probs[mask].mean())
-        positive_rate = float(y_true[mask].mean())
-        ece += abs(positive_rate - mean_prob) * frac
-        bin_rows.append(
-            {
-                "bin_start": round(float(lo), 4),
-                "bin_end": round(float(hi), 4),
-                "count": int(mask.sum()),
-                "mean_predicted_prob": round(mean_prob, 4),
-                "observed_positive_rate": round(positive_rate, 4),
-            }
-        )
-
-    return {
-        "brier": round(float(brier_score_loss(y_true, probs)), 4),
-        "ece": round(float(ece), 4),
-        "mean_predicted_probability": round(float(np.mean(probs)), 4),
-        "observed_positive_rate": round(float(np.mean(y_true)), 4),
-        "bins": bin_rows,
-    }
 
 
 def _meta_feature_importance(

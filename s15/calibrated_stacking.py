@@ -45,6 +45,8 @@ from s15.calibration import (
 
 logger = logging.getLogger("s15.calibrated_stacking")
 
+# Optimal hyperparameters from calibration hparam search:
+# depth=3, lr=0.03, iter=300 yields best Brier+ECE with AUROC>=0.85
 CALIBRATED_BASE_SPECS = [
     {
         "name": "stats_hgb_d3",
@@ -52,7 +54,7 @@ CALIBRATED_BASE_SPECS = [
         "model_type": "hgb",
         "hgb_max_depth": 3,
         "hgb_learning_rate": 0.03,
-        "hgb_max_iter": 200,
+        "hgb_max_iter": 300,
     },
     {
         "name": "fused_hgb_d3",
@@ -60,7 +62,7 @@ CALIBRATED_BASE_SPECS = [
         "model_type": "hgb",
         "hgb_max_depth": 3,
         "hgb_learning_rate": 0.03,
-        "hgb_max_iter": 200,
+        "hgb_max_iter": 300,
     },
     {
         "name": "fused_lr",
@@ -68,7 +70,7 @@ CALIBRATED_BASE_SPECS = [
         "model_type": "logreg",
         "hgb_max_depth": 3,
         "hgb_learning_rate": 0.03,
-        "hgb_max_iter": 200,
+        "hgb_max_iter": 300,
     },
 ]
 
@@ -173,7 +175,7 @@ def train_calibrated_stacking(
         ("sc", StandardScaler()),
         ("clf", LogisticRegression(
             max_iter=2000,
-            C=0.1,
+            C=0.05,  # Optimal from hparam search
             random_state=seed,
         )),
     ])
