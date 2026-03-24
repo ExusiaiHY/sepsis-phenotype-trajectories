@@ -36,6 +36,63 @@ TABLE_CANDIDATES = {
 
 VASOPRESSOR_PATTERN = r"norepinephrine|epinephrine|vasopressin|phenylephrine|dopamine|dobutamine"
 
+TABLE_REQUIRED_COLUMNS = {
+    "patient": {
+        "patientunitstayid",
+        "uniquepid",
+        "gender",
+        "age",
+        "hospitalid",
+        "unittype",
+        "hospitaldischargestatus",
+        "unitdischargeoffset",
+        "apacheadmissiondx",
+    },
+    "lab": {"patientunitstayid", "labresultoffset", "labname", "labresult"},
+    "vitalperiodic": {
+        "patientunitstayid",
+        "observationoffset",
+        "heartrate",
+        "systemicsystolic",
+        "systemicdiastolic",
+        "systemicmean",
+        "respiration",
+        "sao2",
+        "temperature",
+    },
+    "vitalaperiodic": {
+        "patientunitstayid",
+        "observationoffset",
+        "noninvasivesystolic",
+        "noninvasivediastolic",
+        "noninvasivemean",
+    },
+    "infusiondrug": {"patientunitstayid", "infusionoffset", "drugname", "drugrate"},
+    "intakeoutput": {"patientunitstayid", "intakeoutputoffset", "dialysistotal", "celllabel", "cellpath"},
+    "respiratorycare": {
+        "patientunitstayid",
+        "respcarestatusoffset",
+        "ventstartoffset",
+        "ventendoffset",
+        "airwaytype",
+    },
+    "apacheapsvar": {
+        "patientunitstayid",
+        "vent",
+        "dialysis",
+        "heartrate",
+        "meanbp",
+        "temperature",
+        "respiratoryrate",
+        "creatinine",
+        "bilirubin",
+        "wbc",
+        "pao2",
+        "fio2",
+    },
+    "apachepredvar": {"patientunitstayid", "ventday1"},
+}
+
 
 def load_eicu_from_config(config: dict) -> tuple[np.ndarray, pd.DataFrame]:
     """Load eICU raw/demo files according to config."""
@@ -183,8 +240,14 @@ def _read_table(data_dir: Path, table_name: str) -> pd.DataFrame:
     for candidate in TABLE_CANDIDATES[table_name]:
         path = data_dir / candidate
         if path.exists():
-            df = pd.read_csv(path, low_memory=False)
+            required = TABLE_REQUIRED_COLUMNS.get(table_name)
+            usecols = None
+            if required:
+                usecols = lambda col: str(col).strip().lower() in required
+            logger.info("Reading eICU table %s from %s", table_name, path.name)
+            df = pd.read_csv(path, low_memory=False, usecols=usecols)
             df.columns = [str(col).strip().lower() for col in df.columns]
+            logger.info("Loaded eICU table %s: %s rows x %s cols", table_name, len(df), len(df.columns))
             return df
     return pd.DataFrame()
 

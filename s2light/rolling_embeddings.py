@@ -56,9 +56,9 @@ def extract_rolling_embeddings(
 
     d_model = cfg["d_model"]
 
-    # Load data
-    continuous = np.load(s0_dir / "processed" / "continuous.npy")
-    masks = np.load(s0_dir / "processed" / "masks_continuous.npy")
+    # Load data lazily; large external cohorts should not fully materialize here.
+    continuous = np.load(s0_dir / "processed" / "continuous.npy", mmap_mode="r")
+    masks = np.load(s0_dir / "processed" / "masks_continuous.npy", mmap_mode="r")
     n_patients = continuous.shape[0]
 
     # Per-window observation density (before encoding)
@@ -67,27 +67,37 @@ def extract_rolling_embeddings(
         window_mask = masks[:, start:start + window_len, :]
         window_obs_density[:, wi] = window_mask.mean(axis=(1, 2))
 
-    # Extract embeddings
-    all_embeddings = np.zeros((n_patients, n_windows, d_model), dtype=np.float32)
+    # Extract embeddings directly into an on-disk array to keep memory bounded.
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    all_embeddings = np.lib.format.open_memmap(
+        output_path,
+        mode="w+",
+        dtype=np.float32,
+        shape=(n_patients, n_windows, d_model),
+    )
 
     with torch.no_grad():
         for wi, start in enumerate(starts):
             logger.info(f"  Window {wi} [{start}, {start + window_len})...")
             for batch_start in range(0, n_patients, batch_size):
                 batch_end = min(batch_start + batch_size, n_patients)
-                x = torch.from_numpy(
-                    continuous[batch_start:batch_end, start:start + window_len, :]
-                ).float().to(device)
-                m = torch.from_numpy(
-                    masks[batch_start:batch_end, start:start + window_len, :]
-                ).float().to(device)
+                x_np = np.array(
+                    continuous[batch_start:batch_end, start:start + window_len, :],
+                    dtype=np.float32,
+                    copy=True,
+                )
+                m_np = np.array(
+                    masks[batch_start:batch_end, start:start + window_len, :],
+                    dtype=np.float32,
+                    copy=True,
+                )
+                x = torch.from_numpy(x_np).to(device)
+                m = torch.from_numpy(m_np).to(device)
                 emb = encoder(x, m)
                 all_embeddings[batch_start:batch_end, wi, :] = emb.cpu().numpy()
 
-    # Save
-    output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    np.save(output_path, all_embeddings)
+    all_embeddings.flush()
 
     meta = {
         "n_patients": n_patients,
@@ -102,4 +112,4 @@ def extract_rolling_embeddings(
     }
 
     logger.info(f"Rolling embeddings saved: {all_embeddings.shape} -> {output_path}")
-    return all_embeddings, meta
+    return np.load(output_path, mmap_mode="r"), meta

@@ -273,3 +273,38 @@ All experiments with their configurations, results, and artifact locations.
   - New raw-table module added: `src/eicu_loader.py`
 - **Artifacts:** `/tmp/mimic_demo_out/mimic_demo_report.json` from the smoke run, plus local test-only eICU outputs created during `tests/test_eicu_loader.py`
 - **Conclusion:** The repository is now formally wired for local MIMIC-IV-demo and eICU-CRD-demo files. The remaining blocker is data access, not missing integration code.
+
+## E026 — Unified full-data MIMIC-IV / eICU transfer runs with isolated outputs
+- **Date:** 2026-03-24
+- **Method:** Ran the legacy V1 static clustering/evaluation pipeline through the unified `src/main.py` entry on full credentialed local MIMIC-IV 3.1 and eICU-CRD 2.0 extracts. The MIMIC run reused prepared analysis tables and wrote tagged outputs via `--tag mimic_real`. The eICU run reused the cached tensor in `data/processed_eicu_real` and wrote to explicit isolated output directories via `--output-reports-dir outputs/reports/eicu_real --output-figures-dir outputs/figures/eicu_real`.
+- **Data:** Full local MIMIC-IV extract (`94,458` ICU stays; `41,295` Sepsis-3 stays) and full local eICU extract (`200,859` ICU stays).
+- **Results:**
+  - MIMIC-IV: silhouette=`0.1035`, CH=`7971.51`, DB=`2.7268`, valid survival rows=`94,435`
+  - MIMIC-IV risk structure: dominant cluster `51.0%` of stays with `27.7%` mortality; smaller shock-enriched cluster `7.0%` of stays with `79.8%` mortality and `77.4%` shock
+  - eICU: silhouette=`0.2135`, CH=`14461.68`, DB=`2.3771`, valid survival rows=`199,646`
+  - eICU risk structure: dominant cluster `67.8%` of stays with `4.3%` mortality; shock-enriched cluster `22.5%` of stays with `21.1%` mortality and `46.2%` shock
+  - Output isolation confirmed: MIMIC and eICU reports were written to separate directories without filename collisions
+- **Artifacts:** `db/mimic4_real.db`, `data/processed_mimic_real/`, `data/processed_eicu_real/`, `outputs/reports/mimic_real/evaluation_report_mimic_real.json`, `outputs/reports/eicu_real/evaluation_report.json`
+- **Conclusion:** The unified entry can now execute real full-database MIMIC-IV and eICU transfer runs end-to-end. These results broaden external evidence for ingestion and static risk structure, but they are not yet a full external replication of the Stage 3 temporal trajectory workflow.
+
+## E027 — External temporal S1.5 + Stage 3 smoke validation on real MIMIC-IV / eICU subsets
+- **Date:** 2026-03-24
+- **Method:** Implemented `scripts/run_external_temporal_stage3.py`, which prepares source-specific external S0 bundles with `s0/external_temporal_builder.py`, reuses `data/s0/processed/preprocess_stats.json`, extracts frozen S1.5 embeddings from `data/s15/checkpoints/pretrain_best.pt`, then runs rolling-window Stage 3 clustering, transition analysis, and figures. Executed real-data smoke runs with `--max-patients 256` for both sources.
+- **Data:** Prepared full local MIMIC-IV analysis tables under `data/processed_mimic_real/` and cached full local eICU tensor under `data/processed_eicu_real/`, subsetted to the first `256` stays per source for engineering validation.
+- **Results:**
+  - MIMIC-IV subset: pre-imputation missing rate `56.5%`, overall window silhouette `0.123`, stable fraction `50.0%`, non-self transitions `13.8%`
+  - eICU subset: pre-imputation missing rate `84.5%`, overall window silhouette `0.249`, stable fraction `36.7%`, non-self transitions `18.4%`
+  - Both runs produced the full external artifact tree: `s0/`, `s15/embeddings_s15.npy`, `s2/rolling_embeddings.npy`, `s2/trajectory_stats.json`, and Stage 3 figures
+- **Artifacts:** `data/external_temporal_smoke/mimic/`, `data/external_temporal_smoke/eicu/`, `data/external_temporal_smoke/external_temporal_runs.json`
+- **Conclusion:** The external temporal transfer path now works end-to-end on both databases. The remaining gap is full-cohort runtime, not missing integration code.
+
+## E028 — Full-cohort external temporal S1.5 + Stage 3 replication on local MIMIC-IV / eICU
+- **Date:** 2026-03-24
+- **Method:** Executed `scripts/run_external_temporal_stage3.py` on the full prepared MIMIC-IV and eICU cohorts, reusing the PhysioNet 2012 preprocessing statistics and frozen S1.5 checkpoint for both sources. During the full run we fixed `--device auto` handling so PyTorch receives a valid `map_location`, and updated the runner so per-source summaries merge into `data/external_temporal/external_temporal_runs.json` instead of overwriting each other.
+- **Data:** Full local MIMIC-IV 3.1 prepared tables (`94,458` ICU stays) and full local eICU-CRD 2.0 cached tensor (`200,859` ICU stays), aligned into `data/external_temporal/<source>/s0`.
+- **Results:**
+  - MIMIC-IV: mapped `15 / 21` channels, pre-imputation missing rate `55.5%`, overall window silhouette `0.1192`, stable fraction `50.9%`, single-transition fraction `41.3%`, multi-transition fraction `7.7%`, non-self transitions `14.3%`, stable-phenotype mortality range `17.1 pp`, top non-self transition `0 -> 3` with `16,718` events
+  - eICU: mapped `12 / 21` channels, pre-imputation missing rate `81.4%`, overall window silhouette `0.1925`, stable fraction `43.1%`, single-transition fraction `45.8%`, multi-transition fraction `11.2%`, non-self transitions `17.3%`, stable-phenotype mortality range `12.2 pp`, top non-self transition `3 -> 1` with `26,561` events
+  - Both full runs produced the complete artifact tree: `s0/`, `s15/embeddings_s15.npy`, `s2/rolling_embeddings.npy`, `s2/window_labels.npy`, `s2/trajectory_stats.json`, `s2/sanity_checks.json`, `s2/figures/`, per-source `run_summary.json`, and merged `data/external_temporal/external_temporal_runs.json`
+- **Artifacts:** `data/external_temporal/mimic/`, `data/external_temporal/eicu/`, `data/external_temporal/external_temporal_runs.json`
+- **Conclusion:** The repository now contains a full-cohort external temporal reproduction for both credentialed databases. The evidence is supplementary frozen-transfer validation under partial feature overlap, not source-specific retraining.

@@ -78,6 +78,23 @@ def generate_manifest(
                 cohort_summary["mortality_rate"] = None
                 cohort_summary["mortality_n_available"] = 0
 
+    notes = config.get("manifest", {}).get("notes")
+    if notes is None:
+        notes = [
+            "This manifest records the exact data pipeline configuration and outputs.",
+            "No V1 performance metrics are included.",
+            "V1 clustering quality metrics are unresolved pending rerun and are NOT referenced here.",
+        ]
+        source = str(config.get("data", {}).get("source", ""))
+        if source == "physionet2012":
+            notes.extend(
+                [
+                    "Intervention channels (antibiotics_on, rrt_on) are unavailable for PhysioNet 2012.",
+                    "vasopressor_proxy and mechvent_proxy are PROXY indicators, not true treatment records.",
+                    "sepsis_onset_hour is NaN for PhysioNet 2012; anchor_time_type is icu_admission.",
+                ]
+            )
+
     manifest = {
         "generated_at": datetime.now().isoformat(),
         "python_version": sys.version,
@@ -88,14 +105,7 @@ def generate_manifest(
         "preprocess_stats": _filter_stats(preprocess_stats),
         "cohort_summary": cohort_summary,
         "file_checksums": checksums,
-        "notes": [
-            "This manifest records the exact data pipeline configuration and outputs.",
-            "No V1 performance metrics are included.",
-            "V1 clustering quality metrics are unresolved pending rerun and are NOT referenced here.",
-            "Intervention channels (antibiotics_on, rrt_on) are unavailable for PhysioNet 2012.",
-            "vasopressor_proxy and mechvent_proxy are PROXY indicators, not true treatment records.",
-            "sepsis_onset_hour is NaN for PhysioNet 2012; anchor_time_type is icu_admission.",
-        ],
+        "notes": notes,
     }
 
     manifest_path = s0_dir / "data_manifest.json"

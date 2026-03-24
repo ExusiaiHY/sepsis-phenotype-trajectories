@@ -876,3 +876,176 @@ Move the repo from "MIMIC partially wired, eICU stubbed" to "both sources have r
 ### Interpretation
 
 The engineering blocker for external ICU integration has been removed. What remains is an access blocker: real official demo files still need to be placed locally before any honest MIMIC/eICU quantitative validation can be reported.
+
+## 2026-03-24 — Unified Full-Data MIMIC / eICU Runs + Output Isolation
+
+### Stage
+
+Legacy V1 pipeline: unified external-data entry, isolated artifact outputs, real full-database transfer runs, manuscript/GitHub sync
+
+### Objective
+
+Move the external-data path from "integration code exists" to "real MIMIC-IV and eICU runs completed through one public entry point", while fixing the report/figure overwrite problem and updating the paper plus GitHub-facing docs to match the new evidence.
+
+### Files Changed
+
+- `src/main.py` — added unified CLI overrides for `--tag`, `--output-reports-dir`, `--output-figures-dir`, plus output-aware external-source handling
+- `src/visualization.py` — tagged figure filenames
+- `src/utils.py` — path normalization + artifact tag helpers
+- `README.md` — unified real-data commands, isolated-output docs, real MIMIC/eICU summary table, updated manuscript metadata
+- `docs/user_manual.md` — unified entry instructions and tagged-output behavior
+- `docs/RESEARCH_PAPER.md` — added supplementary full-database MIMIC/eICU transfer results and updated limitations/future-work wording
+- `docs/RESEARCH_PAPER.tex` — synced LaTeX manuscript and recompiled PDF
+- `docs/EXPERIMENT_REGISTRY.md` — added E026
+- `docs/WORKLOG.md` — this entry
+
+### Commands Run
+
+```bash
+./.venv/bin/python src/main.py --n-patients 20 --skip-vis --reduction pca --k 3 --tag smoke_tag
+./.venv/bin/python src/main.py --n-patients 20 --skip-vis --reduction pca --k 3 --tag smoke_flat --output-reports-dir outputs/reports/manual --output-figures-dir outputs/figures/manual
+./.venv/bin/python src/main.py --source mimic --processed-dir data/processed_mimic_real --db-path db/mimic4_real.db --reduction pca --k 4 --skip-vis --tag mimic_real
+./.venv/bin/python src/main.py --source eicu --processed-dir data/processed_eicu_real --reduction pca --k 4 --skip-vis --output-reports-dir outputs/reports/eicu_real --output-figures-dir outputs/figures/eicu_real
+./.venv/bin/python -m compileall src/main.py src/visualization.py src/utils.py
+cd docs && pdflatex -interaction=nonstopmode RESEARCH_PAPER.tex
+cd docs && pdflatex -interaction=nonstopmode RESEARCH_PAPER.tex
+```
+
+### Results
+
+- Output isolation verified in both supported modes:
+  - `--tag` now writes to `outputs/reports/<tag>/` and `outputs/figures/<tag>/` with tagged filenames
+  - explicit `--output-reports-dir` / `--output-figures-dir` overrides now avoid collisions as well
+- Real MIMIC-IV run completed through `src/main.py`:
+  - reused `data/processed_mimic_real`
+  - `94,458` ICU stays loaded, including `41,295` Sepsis-3 stays
+  - metrics: silhouette `0.1035`, CH `7971.51`, DB `2.7268`
+  - valid survival rows: `94,435`
+  - new isolated artifacts: `outputs/reports/mimic_real/evaluation_report_mimic_real.json`
+- Real eICU run completed through `src/main.py`:
+  - reused `data/processed_eicu_real/time_series_eicu_demo.npy`
+  - `200,859` ICU stays loaded
+  - metrics: silhouette `0.2135`, CH `14461.68`, DB `2.3771`
+  - valid survival rows after the survival-cleanup patch: `199,646`
+  - new isolated artifacts: `outputs/reports/eicu_real/evaluation_report.json`
+- Manuscript recompiled successfully:
+  - `docs/RESEARCH_PAPER.pdf` now `19` pages
+  - new Table 6 added for supplementary external-database transfer runs
+  - only non-blocking underfull hbox warnings remained in the new wide table
+
+### Interpretation
+
+The repository now has a single practical entry for both credentialed external databases, and the result is no longer hypothetical: full MIMIC-IV and eICU runs completed locally with preserved, non-overwriting outputs. Scientifically, these new external results strengthen the paper only at the level of static/descriptive transfer evidence. The core Stage 3 temporal claim is still the PhysioNet 2012 cross-center analysis, and that distinction is now explicit throughout the docs and manuscript.
+
+## 2026-03-24 — External Temporal Stage 3 Entry + Real-Data Smoke Validation
+
+### Stage
+
+External temporal transfer: unified S1.5 + Stage 3 entry for MIMIC-IV / eICU
+
+### Objective
+
+Move external validation from "legacy static transfer only" to "the full frozen S1.5 + Stage 3 trajectory workflow is runnable on prepared MIMIC-IV / eICU artifacts from one public entry point", then confirm that path end-to-end on real local subsets.
+
+### Files Changed
+
+- `s0/external_temporal_builder.py` — new external S0 builder mapping prepared MIMIC-IV / eICU data into the 21-channel S0 schema
+- `s0/manifest.py` — source-aware manifest notes so external bundles are not mislabeled as PhysioNet-only
+- `scripts/run_external_temporal_stage3.py` — new unified external temporal runner
+- `scripts/s15_extract.py` — configurable checkpoint path, larger-batch extraction, memmap-friendly loading
+- `scripts/s2_extract_rolling.py` — configurable external config path and batch size
+- `scripts/s2_cluster_and_analyze.py` — configurable external config path and scalable clustering options
+- `s2light/rolling_embeddings.py` — memmap-based rolling embedding output
+- `s2light/temporal_clustering.py` — fit subsampling, silhouette subsampling, batched prediction for larger cohorts
+- `README.md`, `docs/RESEARCH_PAPER.md`, `docs/RESEARCH_PAPER.tex`, `docs/EXPERIMENT_REGISTRY.md`, `s0/README.md` — workflow and evidence updates
+
+### Commands Run
+
+```bash
+./.venv/bin/python -m py_compile s0/external_temporal_builder.py s0/manifest.py scripts/s15_extract.py scripts/s2_extract_rolling.py scripts/s2_cluster_and_analyze.py scripts/run_external_temporal_stage3.py s2light/rolling_embeddings.py s2light/temporal_clustering.py
+./.venv/bin/python scripts/run_external_temporal_stage3.py --source mimic --max-patients 256 --output-root data/external_temporal_smoke --device cpu
+./.venv/bin/python scripts/run_external_temporal_stage3.py --source eicu --max-patients 256 --output-root data/external_temporal_smoke --device cpu
+./.venv/bin/python scripts/run_external_temporal_stage3.py --source mimic --max-patients 16 --output-root data/external_temporal_smoke2 --device cpu
+```
+
+### Results
+
+- Real-data smoke path completed end-to-end for both external databases:
+  - MIMIC-IV subset (`256` stays): pre-imputation missing rate `56.5%`, overall window silhouette `0.123`, stable fraction `50.0%`, non-self transitions `13.8%`
+  - eICU subset (`256` stays): pre-imputation missing rate `84.5%`, overall window silhouette `0.249`, stable fraction `36.7%`, non-self transitions `18.4%`
+- Both runs produced the full external artifact tree:
+  - `s0/raw_aligned`, `s0/processed`, `s0/static.csv`, `s0/splits.json`, `s0/data_manifest.json`
+  - `s15/embeddings_s15.npy`
+  - `s2/rolling_embeddings.npy`, `s2/window_labels.npy`, `s2/trajectory_stats.json`, `s2/figures/`
+- The new path is source-agnostic at the public entry level:
+  - one script handles `mimic`, `eicu`, or `all`
+  - external preprocessing reuses the PhysioNet 2012 reference statistics
+  - large-cohort clustering now supports fit subsampling and sampled silhouette scoring
+
+### Interpretation
+
+The repo no longer stops at static external transfer. A full frozen-S1.5 temporal transfer path now exists for MIMIC-IV and eICU, and it has been verified on real local subsets from both datasets. The remaining step is full-cohort runtime, not missing architecture or missing entry points.
+
+## 2026-03-24 — External Temporal Full-Cohort Runs + Manuscript Sync
+
+### Stage
+
+External temporal transfer: full MIMIC-IV / eICU cohort execution, artifact consolidation, paper and GitHub sync
+
+### Objective
+
+Finish the S1.5 + Stage 3 external reproduction honestly at full cohort scale for both credentialed databases, then propagate the final evidence into the manuscript and repository-facing documentation.
+
+### Files Changed
+
+- `scripts/s15_extract.py` — normalized `--device auto` before checkpoint loading so `torch.load(..., map_location=...)` receives a valid device
+- `scripts/s2_extract_rolling.py` — normalized `--device auto` for the rolling-extraction path as well
+- `scripts/run_external_temporal_stage3.py` — preserved per-source summaries by merging into `data/external_temporal/external_temporal_runs.json`
+- `README.md` — replaced subset smoke wording with full-cohort external temporal results
+- `docs/RESEARCH_PAPER.md` — synced methods, results, limitations, and conclusions to the full runs
+- `docs/RESEARCH_PAPER.tex` — added the full-cohort external temporal table, tightened the layout, and recompiled the PDF
+- `docs/EXPERIMENT_REGISTRY.md` — added E028
+- `docs/WORKLOG.md` — this entry
+- `docs/user_manual.md` — documented the external temporal command path for full MIMIC-IV / eICU runs
+
+### Commands Run
+
+```bash
+./.venv/bin/python -m py_compile s0/external_temporal_builder.py s0/manifest.py scripts/s15_extract.py scripts/s2_extract_rolling.py scripts/s2_cluster_and_analyze.py scripts/run_external_temporal_stage3.py s2light/rolling_embeddings.py s2light/temporal_clustering.py
+./.venv/bin/python scripts/run_external_temporal_stage3.py --source mimic --skip-s0 --device auto
+./.venv/bin/python scripts/run_external_temporal_stage3.py --source eicu --device auto
+./.venv/bin/python scripts/run_external_temporal_stage3.py --source mimic --skip-s15 --skip-s2 --device auto
+cd docs && pdflatex -interaction=nonstopmode RESEARCH_PAPER.tex
+cd docs && pdflatex -interaction=nonstopmode RESEARCH_PAPER.tex
+```
+
+### Results
+
+- Full MIMIC-IV external temporal run completed:
+  - `94,458` ICU stays
+  - `15 / 21` mapped continuous channels
+  - pre-imputation missing rate `55.5%`
+  - overall window silhouette `0.1192`
+  - stable / single / multi fractions `50.9% / 41.3% / 7.7%`
+  - non-self transition fraction `14.3%`
+  - stable-phenotype mortality range `17.1 pp`
+  - top non-self transition `0 -> 3` with `16,718` events
+- Full eICU external temporal run completed:
+  - `200,859` ICU stays
+  - `12 / 21` mapped continuous channels
+  - pre-imputation missing rate `81.4%`
+  - overall window silhouette `0.1925`
+  - stable / single / multi fractions `43.1% / 45.8% / 11.2%`
+  - non-self transition fraction `17.3%`
+  - stable-phenotype mortality range `12.2 pp`
+  - top non-self transition `3 -> 1` with `26,561` events
+- Artifact structure is now complete and non-overwriting:
+  - per-source bundles under `data/external_temporal/mimic/` and `data/external_temporal/eicu/`
+  - merged run index at `data/external_temporal/external_temporal_runs.json`
+- Manuscript sync completed:
+  - `docs/RESEARCH_PAPER.pdf` rebuilt successfully after the final external-results edits
+  - the new supplementary external temporal table no longer overflows the page width
+
+### Interpretation
+
+The external temporal claim is now backed by actual full-cohort execution on both credentialed databases, not just subset smoke tests. Scientifically, the interpretation remains conservative: these are frozen-transfer temporal replications under partial channel overlap, so the central quantitative claim still comes from the internal PhysioNet 2012 cross-center validation.

@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>Self-Supervised Temporal Phenotype Trajectory Analysis of ICU Sepsis Patients</h1>
+<h1></h1>
 
 <p>
   <strong>Wang Ruike</strong><br>
@@ -10,7 +10,7 @@
 <p>
   <a href="docs/RESEARCH_PAPER.pdf"><img src="https://img.shields.io/badge/Research%20Paper-PDF-B31B1B?style=for-the-badge" alt="Research Paper PDF"></a>
   <a href="docs/RESEARCH_PAPER.md"><img src="https://img.shields.io/badge/Manuscript-Markdown-1F6FEB?style=for-the-badge" alt="Manuscript Markdown"></a>
-  <a href="docs/EXPERIMENT_REGISTRY.md"><img src="https://img.shields.io/badge/Experiments-E001--E024-0E8A16?style=for-the-badge" alt="Experiment Registry"></a>
+  <a href="docs/EXPERIMENT_REGISTRY.md"><img src="https://img.shields.io/badge/Experiments-E001--E026-0E8A16?style=for-the-badge" alt="Experiment Registry"></a>
   <a href="docs/DECISIONS.md"><img src="https://img.shields.io/badge/Design%20Log-D001--D016-6F42C1?style=for-the-badge" alt="Design Decisions"></a>
 </p>
 
@@ -54,7 +54,7 @@ The strongest result is not just that four phenotypes exist, but that their temp
 - The most frequent transitions move toward lower-risk states.
 - The same mortality ordering is preserved on held-out Center B within the PhysioNet 2012 multi-center cohort.
 
-> Caveat: this is cross-center validation within the same source dataset, not full external validation on an independently collected ICU database.
+> Caveat: the published main temporal claim is still the internal PhysioNet cross-center study. The repository now also includes full-cohort external temporal transfer runs on MIMIC-IV and eICU through [`scripts/run_external_temporal_stage3.py`](scripts/run_external_temporal_stage3.py); these are frozen-transfer analyses using the PhysioNet-trained S1.5 encoder and reference preprocessing statistics, not source-specific retraining studies.
 
 ## Three-Stage Pipeline
 
@@ -109,6 +109,43 @@ OOF stacking committee + validation
   -> 5-fold leakage-aware dev-set stacking over HGB and logistic branches
   -> bootstrap CI, calibration audit, and meta-feature importance
 ```
+
+## External Temporal Reproduction
+
+The repository now has a dedicated external temporal entry:
+
+```bash
+cd project
+./.venv/bin/python scripts/run_external_temporal_stage3.py --source all
+```
+
+That single script will:
+
+- prepare source-specific external artifacts if needed
+- build `data/external_temporal/<source>/s0` via [`s0/external_temporal_builder.py`](s0/external_temporal_builder.py)
+- reuse [`data/s0/processed/preprocess_stats.json`](data/s0/processed/preprocess_stats.json) so external inputs stay aligned to the PhysioNet-trained encoder
+- extract frozen S1.5 embeddings with [`data/s15/checkpoints/pretrain_best.pt`](data/s15/checkpoints/pretrain_best.pt)
+- run rolling-window Stage 3 clustering, transition analysis, and figures into `data/external_temporal/<source>/s2`
+
+Full external temporal runs completed on `2026-03-24`:
+
+| Source | Cohort | Missing Rate | Overall Window Silhouette | Stable Fraction | Non-self Transitions | Stable-Phenotype Mortality Range |
+|--------|-------:|-------------:|--------------------------:|----------------:|---------------------:|---------------------------------:|
+| MIMIC-IV | `94,458` | `55.5%` | `0.119` | `50.9%` | `14.3%` | `17.1 pp` |
+| eICU | `200,859` | `81.4%` | `0.193` | `43.1%` | `17.3%` | `12.2 pp` |
+
+Cluster IDs are learned independently within each external source, so stable-phenotype labels are not directly comparable across databases. These numbers are best interpreted as supplementary frozen-transfer evidence for temporal structure under partial feature overlap.
+
+## Legacy Full-Database Static Transfer Runs
+
+The unified `src/main.py` entry still handles raw credentialed MIMIC-IV and eICU extracts directly for the legacy static V1 pipeline. Those runs remain useful as supplementary full-cohort external risk-structure comparisons.
+
+| Database | Cohort | Silhouette | Largest low-risk cluster | Higher-risk / shock-enriched cluster |
+|----------|--------|-----------:|--------------------------|--------------------------------------|
+| MIMIC-IV 3.1 | `94,458` ICU stays; `41,295` Sepsis-3 stays | `0.104` | `51.0%` of stays, `27.7%` mortality, `3.1%` shock | `7.0%` of stays, `79.8%` mortality, `77.4%` shock |
+| eICU-CRD 2.0 | `200,859` ICU stays | `0.214` | `67.8%` of stays, `4.3%` mortality, `0.6%` shock | `22.5%` of stays, `21.1%` mortality, `46.2%` shock |
+
+Cluster IDs are learned independently in each database, so label numbers are not directly comparable across sources. Absolute ICU LOS scales also differ across the two legacy loaders, so the safer comparison is relative severity structure rather than raw LOS magnitudes.
 
 ## Visual Overview
 
@@ -215,16 +252,18 @@ These models learn from more data modalities already present in the repository: 
 - `bio-machine-learning-model-validation` motivated the new leakage-aware `train+val` OOF stacking workflow and the explicit bootstrap confidence intervals added under [`data/s15_trainval/stacking_accuracy/`](data/s15_trainval/stacking_accuracy/).
 - `bio-machine-learning-prediction-explanation` motivated the new meta-feature importance and coefficient audit for the stacking model, saved in [`data/s15_trainval/stacking_accuracy/stacking_validation_report.json`](data/s15_trainval/stacking_accuracy/stacking_validation_report.json).
 - The database-access skill family informed a reproducible DuckDB readiness/profile report for the local MIMIC pipeline, saved under [`data/mimic_db_profile/`](data/mimic_db_profile/).
-- `scientific-manuscript` informed the manuscript and documentation updates that now distinguish clearly between demo-ready integration code and real external-validation results.
+- `scientific-manuscript` informed the manuscript and documentation updates that now distinguish clearly between internal temporal validation, the new external temporal transfer entry, and the older full-database static transfer runs on MIMIC-IV / eICU.
 
 ### Additional Data Integration
 
 - `scripts/s19_prepare.py` bridges the local PhysioNet/CinC 2019 sepsis stubs into the same `continuous / masks / static / splits` layout used by `data/s0`
 - The bridge covers `40,331` ICU stays with `18 / 21` shared continuous channels; the missing overlap channels are `gcs`, `sodium`, and `pao2`
 - Preprocessing reuses the PhysioNet 2012 normalization statistics so the auxiliary source is numerically compatible with the pretrained S1.5 encoder
-- `scripts/prepare_mimic_demo.py` now provides a formal `raw CSV -> DuckDB -> concepts -> patient_static/patient_timeseries` entry point for local MIMIC-IV demo files
-- `scripts/prepare_eicu_demo.py` plus [`src/eicu_loader.py`](src/eicu_loader.py) now provide a formal `raw CSV -> 3D tensor + patient_info cache` entry point for local eICU demo files
-- As of `2026-03-24`, the official PhysioNet demo pages for MIMIC-IV-demo and eICU-CRD-demo returned region-restricted `Data Not Available` responses from this environment, so the repository ships the integration code and smoke tests but not real demo-derived metrics
+- `src/main.py` now provides a single public `raw CSV -> prepared artifacts -> clustering/evaluation` entry for both MIMIC-IV and eICU
+- `scripts/run_external_temporal_stage3.py` now provides the corresponding `prepared artifacts -> external S0 -> frozen S1.5 -> Stage 3 trajectories` entry for both MIMIC-IV and eICU
+- The local full-data transfer runs completed on `2026-03-24`: MIMIC-IV processed `94,458` ICU stays (`41,295` Sepsis-3) and eICU processed `200,859` ICU stays
+- Full real-data external temporal runs also completed on `2026-03-24` under `data/external_temporal/`: MIMIC-IV (`94,458` stays) reached overall window silhouette `0.119`, stable fraction `50.9%`, non-self transitions `14.3%`; eICU (`200,859` stays) reached silhouette `0.193`, stable fraction `43.1%`, non-self transitions `17.3%`
+- `--tag`, `--output-reports-dir`, and `--output-figures-dir` now isolate run artifacts so MIMIC and eICU reports no longer overwrite each other
 
 ## Repository Map
 
@@ -308,18 +347,20 @@ python scripts/s15_train_advanced_classifier.py --config config/s15_trainval_con
 python scripts/s15_train_advanced_classifier.py --config config/s15_trainval_config.yaml --model-type hgb_ensemble
 ```
 
-### 2.5 Prepare Demo-Ready MIMIC / eICU Inputs
+### 2.5 Run Credentialed MIMIC-IV / eICU Through The Unified Entry
 
 ```bash
-# MIMIC-IV demo/raw path: produces patient_static + patient_timeseries
-python scripts/prepare_mimic_demo.py --data-dir data/external/mimic_iv_demo --output-dir data/processed_mimic_demo --db-path db/mimic4_demo.db
+# Full MIMIC-IV raw CSVs -> DuckDB -> concepts -> analysis tables -> clustering/evaluation
+python src/main.py --source mimic --data-dir /path/to/mimic-iv-3.1 --processed-dir data/processed_mimic_real --db-path db/mimic4_real.db --reduction pca --k 4 --skip-vis --tag mimic_real
 
-# Local mock smoke test for the same path
-python scripts/prepare_mimic_demo.py --data-dir archive/mimic-iv-mock --output-dir /tmp/mimic_demo_out --db-path /tmp/mimic4_demo.db --format csv --overwrite-db
+# Add --overwrite-db when you want to rebuild the DuckDB import from raw CSVs
+python src/main.py --source mimic --data-dir /path/to/mimic-iv-3.1 --processed-dir data/processed_mimic_real --db-path db/mimic4_real.db --reduction pca --k 4 --skip-vis --tag mimic_real --overwrite-db
 
-# eICU demo/raw path: produces cached tensor + patient_info + readiness report
-python scripts/prepare_eicu_demo.py --data-dir data/external/eicu_demo --output-dir data/processed_eicu_demo
+# Full eICU raw CSVs -> cached tensor -> clustering/evaluation
+python src/main.py --source eicu --data-dir /path/to/eicu-2.0 --processed-dir data/processed_eicu_real --reduction pca --k 4 --skip-vis --tag eicu_real
 ```
+
+`--tag` writes reports to `outputs/reports/<tag>/` and figures to `outputs/figures/<tag>/`, while also suffixing filenames. If you prefer fixed directories, pass `--output-reports-dir` and `--output-figures-dir` explicitly.
 
 ### 3. Compile The Paper
 
@@ -363,8 +404,8 @@ Raw challenge files are stored under [`data/external/`](data/external). Large de
 The manuscript is currently **submission-ready**.
 
 - Compiled PDF: [`docs/RESEARCH_PAPER.pdf`](docs/RESEARCH_PAPER.pdf)
-- Current size: `17` pages
-- Main content: `6` tables, `4` main figures, `5` supplementary figures
+- Current size: `19` pages
+- Main content: `7` tables, `4` main figures, `5` supplementary figures
 - Claims are tied back to logged experiments in [`docs/EXPERIMENT_REGISTRY.md`](docs/EXPERIMENT_REGISTRY.md)
 
 ## Reproducibility Notes
@@ -373,7 +414,7 @@ The manuscript is currently **submission-ready**.
 - Temporal findings are described as **descriptive trajectories**, not causal treatment effects.
 - The stride=`12h` sensitivity analysis preserves the same phenotype risk ordering.
 - Cross-center results should be interpreted as **within-cohort multi-center validation**, not external database validation.
-- The MIMIC/eICU integration paths are now demo-ready, but the official demo files were not downloadable from this environment on `2026-03-24`; place local credentialed copies under `data/external/` before running the prep scripts.
+- Full credentialed MIMIC-IV and eICU runs were completed locally on `2026-03-24`; use `--tag` or explicit `--output-reports-dir` / `--output-figures-dir` overrides to keep each run isolated.
 
 ## Selected References
 

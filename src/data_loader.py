@@ -361,6 +361,21 @@ def load_sepsis2019_data(config: dict) -> tuple[np.ndarray, pd.DataFrame]:
 
 def load_eicu_data(config: dict) -> tuple[np.ndarray, pd.DataFrame]:
     """Load eICU sepsis cohort for external validation."""
+    eicu_cfg = config["data"].get("eicu", {})
+    processed_dir_value = eicu_cfg.get("processed_dir")
+    tag = eicu_cfg.get("tag", "eicu_demo")
+
+    if processed_dir_value:
+        processed_dir = resolve_path(processed_dir_value)
+        ts_path = processed_dir / f"time_series_{tag}.npy"
+        info_path = processed_dir / f"patient_info_{tag}.csv"
+        if ts_path.exists() and info_path.exists():
+            logger.info("Loading cached eICU data: %s", ts_path.name)
+            time_series_3d = np.load(ts_path)
+            patient_info = pd.read_csv(info_path)
+            logger.info("eICU cached data loaded: %s", time_series_3d.shape)
+            return time_series_3d, patient_info
+
     return load_eicu_from_config(config)
 
 

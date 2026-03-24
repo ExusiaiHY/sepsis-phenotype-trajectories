@@ -136,9 +136,28 @@ def ensure_dir(path: str | Path) -> Path:
     return p
 
 
-def resolve_path(relative: str) -> Path:
+def resolve_path(relative: str | Path) -> Path:
     """Convert a config-relative path to an absolute path under project root."""
-    return get_project_root() / relative
+    path = Path(relative)
+    if path.is_absolute():
+        return path
+    return get_project_root() / path
+
+
+def sanitize_tag(tag: str | None) -> str | None:
+    """Normalize a CLI tag for use in file names and output directories."""
+    if tag is None:
+        return None
+
+    cleaned = tag.strip()
+    for old, new in ((" ", "_"), ("/", "_"), ("\\", "_")):
+        cleaned = cleaned.replace(old, new)
+    return cleaned or None
+
+
+def build_output_name(name: str, tag: str | None = None) -> str:
+    """Return a tagged artifact stem while preserving the untagged default name."""
+    return f"{name}_{tag}" if tag else name
 
 
 # ============================================================

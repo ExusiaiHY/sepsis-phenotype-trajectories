@@ -8,6 +8,7 @@ How to run:
 """
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import sys
@@ -21,32 +22,48 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 
+def resolve_project_path(path_value: str) -> Path:
+    path = Path(path_value)
+    return path if path.is_absolute() else (PROJECT_ROOT / path)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Cluster and analyze rolling-window embeddings")
+    parser.add_argument("--config", default="config/s2_config.yaml")
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
     logging.basicConfig(level=logging.INFO,
                         format="[%(asctime)s] %(levelname)-8s %(name)s: %(message)s",
                         datefmt="%Y-%m-%d %H:%M:%S", stream=sys.stdout)
     logger = logging.getLogger("s2")
 
-    with open(PROJECT_ROOT / "config" / "s2_config.yaml") as f:
+    config_path = Path(args.config)
+    if not config_path.is_absolute():
+        config_path = PROJECT_ROOT / config_path
+    with open(config_path) as f:
         cfg = yaml.safe_load(f)
 
-    s0_dir = PROJECT_ROOT / cfg["paths"]["s0_dir"]
-    s2_dir = PROJECT_ROOT / cfg["paths"]["s2_dir"]
+    s0_dir = resolve_project_path(cfg["paths"]["s0_dir"])
+    s2_dir = resolve_project_path(cfg["paths"]["s2_dir"])
     fig_dir = s2_dir / "figures"
     fig_dir.mkdir(parents=True, exist_ok=True)
 
     rw = cfg["rolling_windows"]
-    k = cfg["clustering"]["k"]
+    clustering_cfg = cfg["clustering"]
+    k = clustering_cfg["k"]
 
     # Load data
-    rolling_emb = np.load(s2_dir / "rolling_embeddings.npy")
+    rolling_emb = np.load(s2_dir / "rolling_embeddings.npy", mmap_mode="r")
     static = pd.read_csv(s0_dir / "static.csv")
     with open(s0_dir / "splits.json") as f:
         splits = json.load(f)
     with open(s2_dir / "rolling_meta.json") as f:
         rolling_meta = json.load(f)
 
-    masks = np.load(s0_dir / "processed" / "masks_continuous.npy")
+    masks = np.load(s0_dir / "processed" / "masks_continuous.npy", mmap_mode="r")
 
     logger.info(f"Rolling embeddings: {rolling_emb.shape}")
     logger.info(f"Static: {len(static)} patients")
@@ -62,8 +79,12 @@ def main():
 
     window_labels, cluster_quality, km = fit_and_assign(
         rolling_emb, splits, k=k,
-        n_init=cfg["clustering"]["n_init"],
-        seed=cfg["clustering"]["seed"],
+        n_init=clustering_cfg["n_init"],
+        seed=clustering_cfg["seed"],
+        fit_sample_size=clustering_cfg.get("fit_sample_size"),
+        silhouette_sample_size=clustering_cfg.get("silhouette_sample_size"),
+        overall_silhouette_sample_size=clustering_cfg.get("overall_silhouette_sample_size"),
+        predict_batch_size=clustering_cfg.get("predict_batch_size"),
     )
 
     np.save(s2_dir / "window_labels.npy", window_labels)

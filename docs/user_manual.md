@@ -101,16 +101,20 @@ project/
 
 The system includes a built-in simulated data generator, allowing it to run without any external data. The simulated data is generated based on clinically reasonable parameter settings, producing time-series data for patients with 4 sepsis subtypes.
 
-### 5.2 Real Data Interface (Active)
+### 5.2 Real Data Interface (Unified Entry)
 
-The repository now supports two formal demo-ready entry points:
+The repository now supports a single public entry point for both credentialed external databases:
 
-- `python scripts/prepare_mimic_demo.py --data-dir data/external/mimic_iv_demo --output-dir data/processed_mimic_demo --db-path db/mimic4_demo.db`
-- `python scripts/prepare_eicu_demo.py --data-dir data/external/eicu_demo --output-dir data/processed_eicu_demo`
+- `python src/main.py --source mimic ...`
+- `python src/main.py --source eicu ...`
 
-Use `archive/mimic-iv-mock` as a local smoke-test substitute for the MIMIC path if you do not yet have credentialed demo files.
+For MIMIC-IV, the entry automatically handles `raw CSV -> DuckDB -> concepts -> patient_static / patient_timeseries -> clustering/evaluation`.
 
-After preparation, the data consumed by the legacy V1 pipeline has the following standard format:
+For eICU, the entry automatically handles `raw CSV -> cached tensor / patient_info -> clustering/evaluation`.
+
+Use `archive/mimic-iv-mock` as a local smoke-test substitute for the MIMIC path if you do not yet have credentialed files.
+
+After automatic preparation, the data consumed by the legacy V1 pipeline has the following standard format:
 
 **Time-Series Data (3D Tensor):**
 - Shape: `(n_patients, n_timesteps, n_features)`
@@ -151,7 +155,9 @@ data:
     output_format: parquet
   eicu:
     data_dir: data/external/eicu_demo
+    processed_dir: data/processed_eicu_demo
     n_timesteps: 48
+    tag: eicu_demo
 ```
 
 ### 6.2 Preprocessing Configuration
@@ -205,6 +211,16 @@ Running with default configuration will generate a complete analysis for 500 sim
 | `--k` | Specify number of clusters (skips automatic search) | Auto |
 | `--reduction` | Dimensionality reduction method (umap/tsne/pca) | umap |
 | `--seed` | Random seed | 42 |
+| `--source` | Data source (simulated/mimic/eicu/physionet2012/sepsis2019) | simulated |
+| `--data-dir` | Raw data directory override for the selected source | Config value |
+| `--processed-dir` | Prepared artifact directory override for the selected source | Config value |
+| `--db-path` | DuckDB path override for MIMIC | Config value |
+| `--hours` | Override extracted hours / timesteps for MIMIC or eICU | Config value |
+| `--max-patients` | Optional eICU preparation/loading cap | None |
+| `--overwrite-db` | Rebuild the MIMIC DuckDB import from raw CSVs | No |
+| `--tag` | Run tag for isolated outputs and tagged cache files | None |
+| `--output-reports-dir` | Explicit report directory override | outputs/reports |
+| `--output-figures-dir` | Explicit figure directory override | outputs/figures |
 | `--skip-vis` | Skip visualization generation | No |
 | `--compare-methods` | Run multi-method clustering comparison | No |
 
@@ -225,16 +241,25 @@ python src/main.py --n-patients 200 --skip-vis
 # Run clustering method comparison
 python src/main.py --compare-methods
 
-# Prepare MIMIC demo-ready analysis tables
-python scripts/prepare_mimic_demo.py --data-dir data/external/mimic_iv_demo --output-dir data/processed_mimic_demo --db-path db/mimic4_demo.db
+# Run full MIMIC-IV from raw CSVs with isolated outputs
+python src/main.py --source mimic --data-dir /path/to/mimic-iv-3.1 --processed-dir data/processed_mimic_real --db-path db/mimic4_real.db --reduction pca --k 4 --skip-vis --tag mimic_real
 
-# Prepare eICU demo-ready cached tensors
-python scripts/prepare_eicu_demo.py --data-dir data/external/eicu_demo --output-dir data/processed_eicu_demo
+# Rebuild the MIMIC DuckDB import when needed
+python src/main.py --source mimic --data-dir /path/to/mimic-iv-3.1 --processed-dir data/processed_mimic_real --db-path db/mimic4_real.db --reduction pca --k 4 --skip-vis --tag mimic_real --overwrite-db
+
+# Run full eICU from raw CSVs with isolated outputs
+python src/main.py --source eicu --data-dir /path/to/eicu-2.0 --processed-dir data/processed_eicu_real --reduction pca --k 4 --skip-vis --tag eicu_real
+
+# Run the frozen S1.5 + Stage 3 external temporal pipeline on both full external cohorts
+python scripts/run_external_temporal_stage3.py --source all --device auto
+
+# Or run one external source explicitly
+python scripts/run_external_temporal_stage3.py --source mimic --device auto
 ```
 
 ## 8. Output Description
 
-### 8.1 Visualization Charts (outputs/figures/)
+### 8.1 Visualization Charts (`outputs/figures/` or tagged subdirectories)
 
 | File | Description |
 |------|-------------|
@@ -246,12 +271,16 @@ python scripts/prepare_eicu_demo.py --data-dir data/external/eicu_demo --output-
 | trajectory_comparison.png | Key variable trajectory comparison across subtypes |
 | summary_dashboard.png | Comprehensive results dashboard (2x2 layout) |
 
-### 8.2 Evaluation Reports (outputs/reports/)
+When `--tag` is provided, figures are saved under `outputs/figures/<tag>/` and filenames are suffixed, for example `cluster_scatter_mimic_real.png`.
+
+### 8.2 Evaluation Reports (`outputs/reports/` or tagged subdirectories)
 
 | File | Format | Content |
 |------|--------|---------|
 | evaluation_report.json | JSON | Complete evaluation data (machine-parseable) |
 | evaluation_summary.txt | Plain text | Human-readable evaluation summary |
+
+When `--tag` is provided, reports are saved under `outputs/reports/<tag>/` and filenames are suffixed, for example `evaluation_report_mimic_real.json`.
 
 ### 8.3 Cached Data (data/processed/)
 
@@ -259,6 +288,8 @@ python scripts/prepare_eicu_demo.py --data-dir data/external/eicu_demo --output-
 |------|-------------|
 | time_series_preprocessed.npy | Preprocessed 3D time-series tensor |
 | patient_info_preprocessed.csv | Patient information table |
+
+When `--tag` is provided, the preprocessed cache filenames are also suffixed, for example `time_series_preprocessed_mimic_real.npy`.
 
 ## 9. Frequently Asked Questions
 
@@ -276,27 +307,35 @@ A: UMAP may be slow with large datasets (>5000 patients). You can use `--reducti
 
 **Q4: How to use real MIMIC-IV data?**
 
-A: Complete PhysioNet credentialing, place the demo/full CSV files under `data/external/mimic_iv_demo/`, then run:
+A: Complete PhysioNet credentialing, place the full CSV files in a local directory, then run:
 
 ```bash
-python scripts/prepare_mimic_demo.py --data-dir data/external/mimic_iv_demo --output-dir data/processed_mimic_demo --db-path db/mimic4_demo.db
-python src/main.py --source mimic
+python src/main.py --source mimic --data-dir /path/to/mimic-iv-3.1 --processed-dir data/processed_mimic_real --db-path db/mimic4_real.db --reduction pca --k 4 --skip-vis --tag mimic_real
 ```
 
-If you only want a smoke test of the integration path, run the same command with `--data-dir archive/mimic-iv-mock`.
+Add `--overwrite-db` if you need to rebuild the DuckDB database from raw CSVs. If you only want a smoke test of the integration path, use `--data-dir archive/mimic-iv-mock`.
 
 **Q5: How to use eICU data?**
 
-A: Place the eICU demo/full CSV files under `data/external/eicu_demo/`, then run:
+A: Place the eICU CSV files in a local directory, then run:
 
 ```bash
-python scripts/prepare_eicu_demo.py --data-dir data/external/eicu_demo --output-dir data/processed_eicu_demo
-python src/main.py --source eicu
+python src/main.py --source eicu --data-dir /path/to/eicu-2.0 --processed-dir data/processed_eicu_real --reduction pca --k 4 --skip-vis --tag eicu_real
 ```
 
 The eICU loader reads raw tables directly, so no DuckDB build step is required.
 
-**Q5: Clustering results differ between runs**
+**Q6: How to reproduce the full external Stage 3 temporal trajectories on MIMIC-IV / eICU?**
+
+A: First prepare the source-specific real-data artifacts with `src/main.py` as above. Then run:
+
+```bash
+python scripts/run_external_temporal_stage3.py --source all --device auto
+```
+
+This command builds `data/external_temporal/<source>/s0`, reuses `data/s0/processed/preprocess_stats.json`, extracts frozen S1.5 embeddings, and writes Stage 3 artifacts including `trajectory_stats.json`, `sanity_checks.json`, figures, and the merged run index `data/external_temporal/external_temporal_runs.json`.
+
+**Q7: Clustering results differ between runs**
 
 A: Ensure that a random seed is set (default is 42). All random processes are managed uniformly through `set_global_seed()`.
 
@@ -304,6 +343,6 @@ A: Ensure that a random seed is set (default is 42). All random processes are ma
 
 1. For the first run, it is recommended to use the default configuration with a smaller number of patients (e.g., 200-300) for validation.
 2. After modifying the configuration file, no reinstallation is needed; changes take effect immediately upon the next run.
-3. Results in the outputs directory will be overwritten on subsequent runs; back up manually if you need to preserve them.
+3. Results in the default outputs directory will be overwritten on subsequent runs unless you use `--tag` or explicit output directory overrides.
 4. Simulated data is intended for development and validation only; real data should be used for publications or formal reports.
 5. The survival analysis feature requires the lifelines library; if not installed, the system will automatically fall back to a simplified analysis.

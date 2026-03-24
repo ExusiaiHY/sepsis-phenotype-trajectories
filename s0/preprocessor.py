@@ -45,6 +45,7 @@ def preprocess_raw_aligned(
     max_forward_fill_hours: int = 6,
     outlier_sigma: float = 4.0,
     normalization: str = "standard",
+    reference_stats_path: Path | None = None,
 ) -> dict:
     """
     Preprocess raw_aligned data and save to processed directory.
@@ -77,11 +78,24 @@ def preprocess_raw_aligned(
                 continue
             _forward_fill_inplace(continuous[p, :, f], max_gap=max_forward_fill_hours)
 
-    # --- Step 2: Global median imputation ---
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        feature_medians = np.nanmedian(continuous.reshape(-1, n_features), axis=0)
-    feature_medians = np.nan_to_num(feature_medians, nan=0.0)
+    # --- Step 2: Load reference preprocessing stats if requested ---
+    reference_stats = None
+    if reference_stats_path is not None:
+        reference_stats_path = Path(reference_stats_path)
+        if not reference_stats_path.exists():
+            raise FileNotFoundError(f"Reference preprocessing stats not found: {reference_stats_path}")
+        with open(reference_stats_path) as f:
+            reference_stats = json.load(f)
+        logger.info("Using reference preprocessing stats from %s", reference_stats_path)
+
+    # --- Step 3: Global median imputation ---
+    if reference_stats is not None:
+        feature_medians = np.asarray(reference_stats["feature_medians"], dtype=np.float32)
+    else:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            feature_medians = np.nanmedian(continuous.reshape(-1, n_features), axis=0)
+        feature_medians = np.nan_to_num(feature_medians, nan=0.0)
 
     for f in range(n_features):
         if not CONTINUOUS_SCHEMA[f].imputation_allowed:
@@ -89,13 +103,18 @@ def preprocess_raw_aligned(
         nan_mask = np.isnan(continuous[:, :, f])
         continuous[:, :, f] = np.where(nan_mask, feature_medians[f], continuous[:, :, f])
 
-    # --- Step 3: Outlier clipping ---
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        flat = continuous.reshape(-1, n_features)
-        feat_means = np.nanmean(flat, axis=0)
-        feat_stds = np.nanstd(flat, axis=0)
+    # --- Step 4: Outlier clipping ---
+    if reference_stats is not None:
+        feat_means = np.asarray(reference_stats["norm_means"], dtype=np.float32)
+        feat_stds = np.asarray(reference_stats["norm_stds"], dtype=np.float32)
         feat_stds = np.where(feat_stds < 1e-8, 1.0, feat_stds)
+    else:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            flat = continuous.reshape(-1, n_features)
+            feat_means = np.nanmean(flat, axis=0)
+            feat_stds = np.nanstd(flat, axis=0)
+            feat_stds = np.where(feat_stds < 1e-8, 1.0, feat_stds)
 
     for f in range(n_features):
         group = CONTINUOUS_SCHEMA[f].normalization_group
@@ -105,12 +124,17 @@ def preprocess_raw_aligned(
         upper = feat_means[f] + outlier_sigma * feat_stds[f]
         continuous[:, :, f] = np.clip(continuous[:, :, f], lower, upper)
 
-    # --- Step 4: Standardization ---
-    # Recompute stats after clipping
-    flat = continuous.reshape(-1, n_features)
-    norm_means = np.mean(flat, axis=0)
-    norm_stds = np.std(flat, axis=0)
-    norm_stds = np.where(norm_stds < 1e-8, 1.0, norm_stds)
+    # --- Step 5: Standardization ---
+    if reference_stats is not None:
+        norm_means = np.asarray(reference_stats["norm_means"], dtype=np.float32)
+        norm_stds = np.asarray(reference_stats["norm_stds"], dtype=np.float32)
+        norm_stds = np.where(norm_stds < 1e-8, 1.0, norm_stds)
+    else:
+        # Recompute stats after clipping
+        flat = continuous.reshape(-1, n_features)
+        norm_means = np.mean(flat, axis=0)
+        norm_stds = np.std(flat, axis=0)
+        norm_stds = np.where(norm_stds < 1e-8, 1.0, norm_stds)
 
     if normalization == "standard":
         for f in range(n_features):
@@ -140,6 +164,7 @@ def preprocess_raw_aligned(
         "max_forward_fill_hours": max_forward_fill_hours,
         "outlier_sigma": outlier_sigma,
         "normalization": normalization,
+        "reference_stats_path": str(reference_stats_path) if reference_stats_path is not None else None,
         "feature_medians": feature_medians.tolist(),
         "norm_means": norm_means.tolist(),
         "norm_stds": norm_stds.tolist(),

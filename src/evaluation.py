@@ -160,6 +160,42 @@ def survival_analysis(
     result = {"per_cluster": {}}
     n_clusters = len(np.unique(labels))
 
+    if time_col not in patient_info.columns or event_col not in patient_info.columns:
+        logger.warning(
+            "Survival analysis skipped: missing required columns %s / %s",
+            time_col,
+            event_col,
+        )
+        result["lifelines_available"] = False
+        result["n_valid_survival_rows"] = 0
+        return result
+
+    durations = pd.to_numeric(patient_info[time_col], errors="coerce")
+    events = pd.to_numeric(patient_info[event_col], errors="coerce")
+    valid_mask = durations.notna() & events.notna() & (durations > 0)
+    result["n_valid_survival_rows"] = int(valid_mask.sum())
+
+    def _add_simplified_survival_stats() -> None:
+        """Populate coarse survival comparisons when KM/log-rank cannot run."""
+        if valid_mask.any():
+            contingency = pd.crosstab(labels[valid_mask.values], events.loc[valid_mask].astype(int))
+            if contingency.shape[0] >= 2 and contingency.shape[1] >= 1:
+                chi2, p_val, dof, expected = stats.chi2_contingency(contingency)
+                result["chi2_test"] = {
+                    "chi2": round(chi2, 4),
+                    "p_value": round(p_val, 6),
+                    "dof": dof,
+                }
+
+        groups = [durations.loc[(labels == k) & valid_mask.values].values for k in range(n_clusters)]
+        groups = [g for g in groups if len(g) > 0]
+        if len(groups) >= 2:
+            h_stat, p_val = stats.kruskal(*groups)
+            result["kruskal_wallis_los"] = {
+                "h_statistic": round(h_stat, 4),
+                "p_value": round(p_val, 6),
+            }
+
     # Per-cluster outcome statistics
     for k in range(n_clusters):
         mask = labels == k
@@ -179,13 +215,17 @@ def survival_analysis(
         p_matrix = np.ones((n_clusters, n_clusters))
         for i in range(n_clusters):
             for j in range(i + 1, n_clusters):
-                mask_i = labels == i
-                mask_j = labels == j
+                mask_i = (labels == i) & valid_mask.values
+                mask_j = (labels == j) & valid_mask.values
+                if mask_i.sum() == 0 or mask_j.sum() == 0:
+                    p_matrix[i, j] = np.nan
+                    p_matrix[j, i] = np.nan
+                    continue
                 lr = logrank_test(
-                    patient_info.loc[mask_i, time_col],
-                    patient_info.loc[mask_j, time_col],
-                    event_observed_A=patient_info.loc[mask_i, event_col],
-                    event_observed_B=patient_info.loc[mask_j, event_col],
+                    durations.loc[mask_i],
+                    durations.loc[mask_j],
+                    event_observed_A=events.loc[mask_i],
+                    event_observed_B=events.loc[mask_j],
                 )
                 p_matrix[i, j] = lr.p_value
                 p_matrix[j, i] = lr.p_value
@@ -199,10 +239,17 @@ def survival_analysis(
         km_data = {}
         kmf = KaplanMeierFitter()
         for k in range(n_clusters):
-            mask = labels == k
+            mask = (labels == k) & valid_mask.values
+            if mask.sum() == 0:
+                km_data[k] = {
+                    "timeline": [],
+                    "survival_function": [],
+                    "median_survival": None,
+                }
+                continue
             kmf.fit(
-                patient_info.loc[mask, time_col],
-                event_observed=patient_info.loc[mask, event_col],
+                durations.loc[mask],
+                event_observed=events.loc[mask],
                 label=f"Cluster {k}",
             )
             km_data[k] = {
@@ -216,24 +263,11 @@ def survival_analysis(
     except ImportError:
         logger.warning("lifelines not installed, using simplified survival analysis")
         result["lifelines_available"] = False
-
-        if event_col in patient_info.columns:
-            contingency = pd.crosstab(labels, patient_info[event_col])
-            chi2, p_val, dof, expected = stats.chi2_contingency(contingency)
-            result["chi2_test"] = {
-                "chi2": round(chi2, 4),
-                "p_value": round(p_val, 6),
-                "dof": dof,
-            }
-
-        if time_col in patient_info.columns:
-            groups = [patient_info.loc[labels == k, time_col].values
-                      for k in range(n_clusters)]
-            h_stat, p_val = stats.kruskal(*groups)
-            result["kruskal_wallis_los"] = {
-                "h_statistic": round(h_stat, 4),
-                "p_value": round(p_val, 6),
-            }
+        _add_simplified_survival_stats()
+    except Exception as exc:
+        logger.warning("lifelines survival analysis failed, using simplified survival analysis: %s", exc)
+        result["lifelines_available"] = False
+        _add_simplified_survival_stats()
 
     return result
 

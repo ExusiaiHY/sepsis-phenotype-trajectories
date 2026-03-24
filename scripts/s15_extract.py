@@ -23,6 +23,11 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from s1.encoder import ICUTransformerEncoder
 
 
+def resolve_project_path(path_value: str) -> Path:
+    path = Path(path_value)
+    return path if path.is_absolute() else (PROJECT_ROOT / path)
+
+
 def get_device(pref="auto"):
     if pref != "auto":
         return pref
@@ -39,6 +44,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Extract S1.5 embeddings from pretrained encoder")
     parser.add_argument("--config", default="config/s15_config.yaml")
     parser.add_argument("--device", type=str, default=None)
+    parser.add_argument("--batch-size", type=int, default=None)
     return parser.parse_args()
 
 
@@ -49,15 +55,23 @@ def main():
                         datefmt="%Y-%m-%d %H:%M:%S", stream=sys.stdout)
     logger = logging.getLogger("s15.extract")
 
-    with open(PROJECT_ROOT / args.config, encoding="utf-8") as f:
+    config_path = Path(args.config)
+    if not config_path.is_absolute():
+        config_path = PROJECT_ROOT / config_path
+
+    with open(config_path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
 
-    s0_dir = PROJECT_ROOT / cfg["paths"]["s0_dir"]
-    s15_dir = PROJECT_ROOT / cfg["paths"]["s15_dir"]
-    device = args.device or get_device(cfg.get("runtime", {}).get("device", "auto"))
+    s0_dir = resolve_project_path(cfg["paths"]["s0_dir"])
+    s15_dir = resolve_project_path(cfg["paths"]["s15_dir"])
+    s15_dir.mkdir(parents=True, exist_ok=True)
+    requested_device = args.device if args.device is not None else cfg.get("runtime", {}).get("device", "auto")
+    device = get_device(requested_device)
+    batch_size = int(args.batch_size or cfg.get("runtime", {}).get("batch_size", 128))
 
     # Load checkpoint
-    ckpt_path = s15_dir / "checkpoints" / "pretrain_best.pt"
+    ckpt_override = cfg["paths"].get("s15_checkpoint")
+    ckpt_path = resolve_project_path(ckpt_override) if ckpt_override else (s15_dir / "checkpoints" / "pretrain_best.pt")
     if not ckpt_path.exists():
         logger.error(f"No checkpoint at {ckpt_path}. Run s15_pretrain.py first.")
         sys.exit(1)
@@ -73,25 +87,26 @@ def main():
 
     encoder.load_state_dict(ckpt["encoder_state_dict"])
     encoder.train(False)
+    d_model = int(enc_cfg["d_model"])
 
     # Load data
-    continuous = np.load(s0_dir / "processed" / "continuous.npy")
-    masks = np.load(s0_dir / "processed" / "masks_continuous.npy")
+    continuous = np.load(s0_dir / "processed" / "continuous.npy", mmap_mode="r")
+    masks = np.load(s0_dir / "processed" / "masks_continuous.npy", mmap_mode="r")
     n_patients = continuous.shape[0]
 
     logger.info(f"Extracting S1.5 embeddings for {n_patients} patients...")
 
-    all_emb = []
-    batch_size = 128
+    embeddings = np.empty((n_patients, d_model), dtype=np.float32)
     with torch.no_grad():
         for start in range(0, n_patients, batch_size):
             end = min(start + batch_size, n_patients)
-            x = torch.from_numpy(continuous[start:end]).float().to(device)
-            m = torch.from_numpy(masks[start:end]).float().to(device)
+            x_np = np.array(continuous[start:end], dtype=np.float32, copy=True)
+            m_np = np.array(masks[start:end], dtype=np.float32, copy=True)
+            x = torch.from_numpy(x_np).to(device)
+            m = torch.from_numpy(m_np).to(device)
             emb = encoder(x, m)
-            all_emb.append(emb.cpu().numpy())
+            embeddings[start:end] = emb.cpu().numpy().astype(np.float32, copy=False)
 
-    embeddings = np.concatenate(all_emb, axis=0)
     out_path = s15_dir / "embeddings_s15.npy"
     np.save(out_path, embeddings)
     logger.info(f"S1.5 embeddings saved: {embeddings.shape} → {out_path}")

@@ -19,6 +19,9 @@ python3.14 scripts/s0_prepare.py
 
 # 4. Run with random split instead of cross-center
 python3.14 scripts/s0_prepare.py --split-method random
+
+# 5. Build external temporal S0 bundles for prepared MIMIC-IV / eICU artifacts
+./.venv/bin/python scripts/run_external_temporal_stage3.py --source mimic
 ```
 
 ## Output Structure
@@ -86,4 +89,4 @@ features = extract_features(ts_3d, config, feature_names)
 
 - No V1 performance metrics are carried into S0 outputs.
 - Sepsis 2019 silhouette values are unresolved pending rerun and are not referenced.
-- The MIMIC-IV and eICU extractors are not yet implemented; the schema is ready for them.
+- External MIMIC-IV / eICU temporal S0 builders now exist via `s0/external_temporal_builder.py` and `scripts/run_external_temporal_stage3.py`.

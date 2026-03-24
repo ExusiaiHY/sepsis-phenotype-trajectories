@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 from pathlib import Path
 
-from utils import setup_logger, resolve_path, ensure_dir
+from utils import setup_logger, resolve_path, ensure_dir, build_output_name
 
 logger = setup_logger(__name__)
 
@@ -53,7 +53,8 @@ def _save_fig(fig, name: str, config: dict) -> str:
     """Save figure to output directory."""
     out_dir = ensure_dir(resolve_path(config["paths"]["output_figures"]))
     fmt = config["visualization"].get("save_format", "png")
-    path = out_dir / f"{name}.{fmt}"
+    tag = config.get("runtime", {}).get("output_tag")
+    path = out_dir / f"{build_output_name(name, tag)}.{fmt}"
     fig.savefig(path, bbox_inches="tight", dpi=config["visualization"]["dpi"])
     plt.close(fig)
     logger.info(f"Figure saved: {path}")
