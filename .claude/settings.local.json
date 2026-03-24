@@ -7,7 +7,19 @@
       "Bash(gh *)",
       "Bash(du *)",
       "Bash(find *)",
-      "Bash(wc *)"
+      "Bash(wc *)",
+      "Bash(ngrok version:*)",
+      "Bash(brew install:*)",
+      "WebFetch(domain:open.feishu.cn)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "Bash(python3 -m venv .venv)",
+      "Bash(source .venv/bin/activate)",
+      "Bash(pip install:*)",
+      "Bash(python main.py)",
+      "Bash(echo $ALL_PROXY $HTTPS_PROXY $HTTP_PROXY $all_proxy $https_proxy $http_proxy)",
+      "Bash(networksetup -getsocksfirewallproxy Wi-Fi)",
+      "Bash(python test_minimal.py)"
     ]
   },
   "hooks": {
