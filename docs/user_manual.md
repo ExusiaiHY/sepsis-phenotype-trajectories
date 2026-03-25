@@ -1,41 +1,43 @@
 # Software User Manual
 
-# ICU Sepsis Dynamic Subtype Discovery and Analysis System
+# ICU Sepsis Temporal Phenotype Trajectory Analysis System
 
 ---
 
 ## 1. Software Overview
 
-This software is a dynamic subtype discovery and analysis system designed for time-series data of ICU sepsis patients. Based on electronic health record (EHR) time-series data, the system performs standardized preprocessing, statistical feature extraction, dimensionality reduction, and cluster analysis to automatically discover dynamic subtypes among sepsis patients, providing comprehensive evaluation metrics and visualization reports.
+This software implements a three-stage computational framework for self-supervised temporal phenotype trajectory analysis of ICU sepsis patients. Applied to the PhysioNet 2012 multi-center ICU database (11,986 patients), the system performs:
 
-Key features include:
+- **Stage 0**: Multi-center data extraction, preprocessing (forward fill, median imputation, outlier clipping, Z-score normalization), and cross-center split generation
+- **Stage 1.5**: Self-supervised Transformer encoder training via masked value prediction + temporal contrastive learning
+- **Stage 2--3**: Rolling-window embedding extraction, temporal clustering, and descriptive phenotype trajectory analysis
+- **Downstream**: Leakage-aware OOF stacking mortality classifier with probability calibration optimization
+- **External Transfer**: Frozen-transfer temporal analysis on MIMIC-IV and eICU-CRD
 
-- Loading and preprocessing of simulated or real ICU sepsis patient time-series data
-- Feature extraction across multiple time windows with multiple statistical measures
-- Automatic optimal cluster number search and multi-method clustering comparison
-- Clustering quality evaluation, survival stratification analysis, and subtype clinical profiling
-- Automatic generation of 7 types of visualization charts
-- Structured evaluation report output (JSON + plain text)
+Key capabilities:
+
+- Self-supervised representation learning from sparse, multi-center ICU time-series with explicit missingness modeling
+- Descriptive temporal phenotype trajectories revealing within-stay dynamics (35.2% of patients undergo phenotype transitions)
+- Calibrated mortality prediction (Brier 0.090, ECE 0.023, AUROC 0.873, Recall 83.8%)
+- Cross-center validation and external database transfer
 
 ## 2. System Requirements
 
 | Item | Requirement |
 |------|-------------|
 | Operating System | macOS / Linux / Windows |
-| Python Version | 3.9 or above |
-| Memory | 4 GB minimum (8 GB recommended) |
-| Disk Space | 500 MB minimum (including dependencies) |
-| GPU | Not required (MVP version) |
+| Python Version | 3.9 or above (tested with 3.14) |
+| Memory | 8 GB minimum (16 GB recommended for external cohorts) |
+| Disk Space | 2 GB minimum (including dependencies and data) |
+| GPU | Optional (accelerates Stage 1.5 pretraining; CPU works) |
 
 ## 3. Installation Steps
 
 ### 3.1 Obtain the Project Code
 
-Copy the project directory to your local working directory, or obtain it as follows:
-
 ```bash
-# Assuming the project is located at the following path
-cd /path/to/project
+git clone https://github.com/ExusiaiHY/sepsis-phenotype-trajectories.git
+cd sepsis-phenotype-trajectories
 ```
 
 ### 3.2 Install Python Dependencies
@@ -44,305 +46,335 @@ cd /path/to/project
 pip install -r requirements.txt
 ```
 
-Key dependencies include:
+Key dependencies:
 
-| Package | Version Requirement | Purpose |
-|---------|---------------------|---------|
-| numpy | >=1.24.0 | Numerical computation |
-| pandas | >=2.0.0 | Data processing |
-| scipy | >=1.10.0 | Scientific computation |
-| pyyaml | >=6.0 | Configuration file parsing |
-| scikit-learn | >=1.3.0 | Clustering and evaluation |
-| umap-learn | >=0.5.3 | Dimensionality reduction |
-| matplotlib | >=3.7.0 | Visualization |
-| lifelines | >=0.27.0 | Survival analysis (recommended) |
+| Package | Purpose |
+|---------|---------|
+| numpy, pandas, scipy | Numerical computation and data processing |
+| scikit-learn | Clustering, classification, evaluation |
+| torch (PyTorch) | Transformer encoder training |
+| pyyaml | Configuration file parsing |
+| matplotlib | Visualization |
+| lifelines | Survival analysis (optional) |
+| umap-learn | Legacy V1 dimensionality reduction (optional) |
 
 ### 3.3 Verify Installation
 
 ```bash
-cd src
-python main.py --n-patients 100 --skip-vis
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE python3 scripts/s0_smoke_test.py
 ```
-
-If the output displays "All processes completed!", the installation was successful.
 
 ## 4. Project Directory Structure
 
 ```
 project/
-├── config/
-│   └── config.yaml          # Global configuration file (hyperparameters, paths, variable definitions)
-├── data/
-│   ├── external/             # External datasets (PhysioNet / MIMIC / eICU)
-│   ├── processed/            # Preprocessed cached data
-│   ├── processed_mimic_demo/ # MIMIC demo analysis tables
-│   └── processed_eicu_demo/  # eICU demo cached tensors
-├── docs/                     # Project documentation
-├── scripts/                  # Reproducible entry scripts
-├── outputs/                  # Auto-generated outputs
-├── src/                      # Source code directory
-│   ├── main.py               # Main entry program
-│   ├── data_loader.py        # Data loading and simulated data generation
-│   ├── eicu_loader.py        # eICU raw/demo loader
-│   ├── preprocess.py         # Preprocessing module
-│   ├── feature_engineering.py # Feature extraction module
-│   ├── representation_model.py # Representation learning module
-│   ├── clustering.py         # Cluster analysis module
-│   ├── evaluation.py         # Evaluation module
-│   ├── visualization.py      # Visualization module
-│   └── utils.py              # Common utility module
-├── requirements.txt          # Python dependency list
-└── README.md                 # Project overview
+├── config/                     # YAML configuration files
+│   ├── s0_config.yaml          # Data extraction & preprocessing
+│   ├── s1_config.yaml          # Masked pretraining (Stage 1)
+│   ├── s15_config.yaml         # Contrastive pretraining (Stage 1.5)
+│   ├── s15_trainval_config.yaml # S1.5 with trainval paths
+│   ├── s2_config.yaml          # Rolling window & temporal clustering
+│   └── config.yaml             # Legacy V1 pipeline config
+├── s0/                         # Stage 0: Data pipeline
+│   ├── physionet2012_extractor.py   # PhysioNet 2012 data extraction
+│   ├── preprocessor.py              # Forward fill, median, clip, Z-score
+│   ├── schema.py                    # 21-feature + proxy + static schema
+│   ├── splits.py                    # Cross-center and random splits
+│   ├── external_temporal_builder.py # MIMIC-IV / eICU to S0 format
+│   └── dataset.py                   # PyTorch Dataset wrapper
+├── s1/                         # Stage 1: Masked pretraining
+│   ├── encoder.py              # ICUTransformerEncoder (2-layer, 4-head, d=128)
+│   ├── pretrain.py             # Masked value prediction training
+│   └── extract_embeddings.py   # Patient embedding extraction
+├── s15/                        # Stage 1.5: Contrastive + downstream
+│   ├── contrastive_encoder.py  # NT-Xent + projection head
+│   ├── pretrain_contrastive.py # Combined masked + contrastive training
+│   ├── classification_eval.py  # Frozen embedding classifier
+│   ├── advanced_classifier.py  # Multi-view HGB/LR classifiers
+│   ├── stacking_classifier.py  # OOF stacking mortality classifier
+│   ├── stacking_validation.py  # Bootstrap CI + calibration analysis
+│   ├── calibration.py          # Post-hoc calibration methods (5 calibrators)
+│   ├── calibrated_stacking.py  # Calibration-aware stacking classifier
+│   ├── calibration_losses.py   # FocalLoss, BrierLoss, SoftECELoss
+│   ├── finetune_supervised.py  # End-to-end attention-pooled fine-tuning
+│   └── sepsis2019_bridge.py    # PhysioNet 2019 auxiliary bridge
+├── s2light/                    # Stage 2-3: Temporal analysis
+│   ├── rolling_embeddings.py   # Rolling-window embedding extraction
+│   ├── temporal_clustering.py  # Per-window KMeans clustering
+│   ├── transition_analysis.py  # Trajectory classification & transitions
+│   └── visualization.py       # Sankey diagrams, prevalence plots
+├── scripts/                    # Entry-point runner scripts
+│   ├── s0_prepare.py           # Prepare PhysioNet 2012 data
+│   ├── s1_pretrain.py          # Stage 1 masked pretraining
+│   ├── s15_pretrain.py         # Stage 1.5 contrastive pretraining
+│   ├── s15_extract.py          # Extract S1.5 embeddings
+│   ├── s15_train_stacking_classifier.py     # Train OOF stacking
+│   ├── s15_validate_stacking_classifier.py  # Validate + calibration
+│   ├── s15_calibrate.py                     # Post-hoc calibration
+│   ├── s15_train_calibrated_stacking.py     # Train calibrated model
+│   ├── s15_calibration_hparam_search.py     # Hparam search (30 configs)
+│   ├── s15_calibration_comparison.py        # 8-model comparison
+│   ├── s2_extract_rolling.py   # Extract rolling-window embeddings
+│   ├── s2_cluster_and_analyze.py # Temporal clustering + analysis
+│   ├── s3_cross_center_validation.py # Cross-center validation
+│   └── run_external_temporal_stage3.py # External temporal transfer
+├── src/                        # Legacy V1 static pipeline
+│   └── main.py                 # Legacy entry point (simulated/MIMIC/eICU)
+├── docs/                       # Documentation
+├── data/                       # Data artifacts (gitignored for large files)
+├── outputs/                    # Generated figures and reports
+└── tests/                      # Pytest test suite
 ```
 
 ## 5. Input Data Format
 
-### 5.1 Simulated Data (Default)
+### 5.1 PhysioNet 2012 (Primary)
 
-The system includes a built-in simulated data generator, allowing it to run without any external data. The simulated data is generated based on clinically reasonable parameter settings, producing time-series data for patients with 4 sepsis subtypes.
+Place the PhysioNet 2012 data files in `data/raw_aligned/`:
+- `set-a/`, `set-b/`, `set-c/` directories with patient `.txt` files
+- `Outcomes-a.txt`, `Outcomes-b.txt`, `Outcomes-c.txt`
 
-### 5.2 Real Data Interface (Unified Entry)
-
-The repository now supports a single public entry point for both credentialed external databases:
-
-- `python src/main.py --source mimic ...`
-- `python src/main.py --source eicu ...`
-
-For MIMIC-IV, the entry automatically handles `raw CSV -> DuckDB -> concepts -> patient_static / patient_timeseries -> clustering/evaluation`.
-
-For eICU, the entry automatically handles `raw CSV -> cached tensor / patient_info -> clustering/evaluation`.
-
-Use `archive/mimic-iv-mock` as a local smoke-test substitute for the MIMIC path if you do not yet have credentialed files.
-
-After automatic preparation, the data consumed by the legacy V1 pipeline has the following standard format:
-
-**Time-Series Data (3D Tensor):**
-- Shape: `(n_patients, n_timesteps, n_features)`
-- Data type: `float64`
-- Missing values: represented by `NaN`
-
-**Patient Information Table (DataFrame):**
-
-| Column Name | Type | Description |
-|-------------|------|-------------|
-| patient_id | str | Unique patient identifier |
-| mortality_28d | int | 28-day mortality (0/1) |
-| icu_los | float | ICU length of stay (hours) |
-| shock_onset | int | Whether shock occurred (0/1) |
-| age | int | Age |
-| gender | str | Gender (M/F) |
-
-## 6. Configuration File
-
-The configuration file is located at `config/config.yaml` and uses the YAML format. The main configuration items are as follows:
-
-### 6.1 Data Source Configuration
-
-```yaml
-data:
-  source: "simulated"  # Options: "simulated" | "mimic" | "eicu" | "physionet2012" | "sepsis2019"
-  simulated:
-    n_patients: 500     # Number of simulated patients
-    n_timesteps: 48     # Time window (hours)
-    n_subtypes: 4       # Number of subtypes
-    missing_rate: 0.15  # Overall missing rate
-    random_seed: 42
-  mimic:
-    raw_data_dir: data/external/mimic_iv_demo
-    processed_dir: data/processed_mimic_demo
-    db_path: db/mimic4_demo.db
-    hours: 48
-    output_format: parquet
-  eicu:
-    data_dir: data/external/eicu_demo
-    processed_dir: data/processed_eicu_demo
-    n_timesteps: 48
-    tag: eicu_demo
+Run data preparation:
+```bash
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE python3 scripts/s0_prepare.py
 ```
 
-### 6.2 Preprocessing Configuration
+This produces:
+- `data/s0/processed/continuous.npy` -- (11986, 48, 21) preprocessed tensor
+- `data/s0/processed/masks_continuous.npy` -- (11986, 48, 21) observation masks
+- `data/s0/processed/proxy_indicators.npy` -- (11986, 48, 2) proxy features
+- `data/s0/static.csv` -- Patient demographics + mortality labels
+- `data/s0/splits.json` -- Train/val/test indices (cross-center split)
 
-```yaml
-preprocess:
-  missing_strategy: "forward_fill_then_median"  # Missing value imputation strategy
-  outlier_method: "clip"      # Outlier handling method
-  outlier_sigma: 4.0          # Outlier threshold
-  normalization: "standard"   # Normalization method
+### 5.2 External Databases (Supplementary)
+
+For MIMIC-IV or eICU frozen-transfer analysis:
+```bash
+python3 scripts/run_external_temporal_stage3.py --source mimic --device auto
+python3 scripts/run_external_temporal_stage3.py --source eicu --device auto
 ```
 
-### 6.3 Clustering Configuration
+## 6. Configuration Files
+
+All configuration is in `config/` using YAML format.
+
+### 6.1 Encoder Configuration (`s15_config.yaml`)
 
 ```yaml
+encoder:
+  n_features: 21       # Input feature channels
+  d_model: 128          # Transformer hidden dimension
+  n_heads: 4            # Attention heads
+  n_layers: 2           # Transformer layers
+  d_ff: 256             # Feed-forward dimension
+  dropout: 0.2
+  max_seq_len: 48       # Hours in observation window
+
+contrastive:
+  view_len: 30          # Stochastic window length (hours)
+  mask_ratio: 0.15      # Masked value prediction ratio
+  temperature: 0.1      # NT-Xent temperature
+  proj_dim: 64          # Projection head output
+  max_lambda: 0.5       # Maximum contrastive weight
+  warmup_epochs: 10     # Lambda warmup period
+
+pretraining:
+  epochs: 50
+  batch_size: 64
+  lr: 1.0e-3
+  weight_decay: 1.0e-5
+  patience: 15
+  grad_clip: 1.0
+  seed: 42
+```
+
+### 6.2 Rolling Window Configuration (`s2_config.yaml`)
+
+```yaml
+rolling:
+  window_len: 24        # Window size in hours
+  stride: 6             # Stride between windows
+  seq_len: 48           # Total sequence length
+
 clustering:
-  method: "kmeans"            # Clustering method
-  k_range: [2, 8]            # K value search range
-  optimal_k_criterion: "silhouette"  # Criterion for optimal K selection
-```
-
-### 6.4 Dimensionality Reduction Configuration
-
-```yaml
-reduction:
-  method: "umap"              # Reduction method: "umap" | "tsne" | "pca"
-  n_components: 2
-  umap:
-    n_neighbors: 15
-    min_dist: 0.1
+  k: 4                  # Number of temporal phenotypes
 ```
 
 ## 7. How to Run
 
-### 7.1 Basic Execution
-
+**Important**: Always prefix Python commands with:
 ```bash
-cd project/src
-python main.py
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE
 ```
 
-Running with default configuration will generate a complete analysis for 500 simulated patients.
-
-### 7.2 Command-Line Arguments
-
-| Argument | Description | Default |
-|----------|-------------|---------|
-| `--config` | Custom configuration file path | config/config.yaml |
-| `--n-patients` | Number of simulated patients | 500 |
-| `--method` | Clustering method (kmeans/gmm/hierarchical/spectral) | kmeans |
-| `--k` | Specify number of clusters (skips automatic search) | Auto |
-| `--reduction` | Dimensionality reduction method (umap/tsne/pca) | umap |
-| `--seed` | Random seed | 42 |
-| `--source` | Data source (simulated/mimic/eicu/physionet2012/sepsis2019) | simulated |
-| `--data-dir` | Raw data directory override for the selected source | Config value |
-| `--processed-dir` | Prepared artifact directory override for the selected source | Config value |
-| `--db-path` | DuckDB path override for MIMIC | Config value |
-| `--hours` | Override extracted hours / timesteps for MIMIC or eICU | Config value |
-| `--max-patients` | Optional eICU preparation/loading cap | None |
-| `--overwrite-db` | Rebuild the MIMIC DuckDB import from raw CSVs | No |
-| `--tag` | Run tag for isolated outputs and tagged cache files | None |
-| `--output-reports-dir` | Explicit report directory override | outputs/reports |
-| `--output-figures-dir` | Explicit figure directory override | outputs/figures |
-| `--skip-vis` | Skip visualization generation | No |
-| `--compare-methods` | Run multi-method clustering comparison | No |
-
-### 7.3 Usage Examples
+### 7.1 Full Pipeline (Stages 0 to 3)
 
 ```bash
 cd project
 
-# Generate 1000 patients using GMM clustering
-python src/main.py --n-patients 1000 --method gmm
+# Stage 0: Data preparation
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE python3 scripts/s0_prepare.py
 
-# Specify K=4 with t-SNE dimensionality reduction
-python src/main.py --k 4 --reduction tsne
+# Stage 1.5: Self-supervised pretraining
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE python3 scripts/s15_pretrain.py
 
-# Quick run (skip visualization)
-python src/main.py --n-patients 200 --skip-vis
+# Extract embeddings
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE python3 scripts/s15_extract.py
 
-# Run clustering method comparison
-python src/main.py --compare-methods
+# Stage 2: Rolling-window embeddings
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE python3 scripts/s2_extract_rolling.py
 
-# Run full MIMIC-IV from raw CSVs with isolated outputs
-python src/main.py --source mimic --data-dir /path/to/mimic-iv-3.1 --processed-dir data/processed_mimic_real --db-path db/mimic4_real.db --reduction pca --k 4 --skip-vis --tag mimic_real
+# Stage 3: Temporal clustering + trajectory analysis
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE python3 scripts/s2_cluster_and_analyze.py
 
-# Rebuild the MIMIC DuckDB import when needed
-python src/main.py --source mimic --data-dir /path/to/mimic-iv-3.1 --processed-dir data/processed_mimic_real --db-path db/mimic4_real.db --reduction pca --k 4 --skip-vis --tag mimic_real --overwrite-db
+# Cross-center validation
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE python3 scripts/s3_cross_center_validation.py
+```
 
-# Run full eICU from raw CSVs with isolated outputs
-python src/main.py --source eicu --data-dir /path/to/eicu-2.0 --processed-dir data/processed_eicu_real --reduction pca --k 4 --skip-vis --tag eicu_real
+### 7.2 Mortality Prediction with Calibration
 
-# Run the frozen S1.5 + Stage 3 external temporal pipeline on both full external cohorts
-python scripts/run_external_temporal_stage3.py --source all --device auto
+```bash
+# Train OOF stacking classifier
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE \
+  python3 scripts/s15_train_stacking_classifier.py
 
-# Or run one external source explicitly
-python scripts/run_external_temporal_stage3.py --source mimic --device auto
+# Validate with bootstrap CIs and calibration analysis
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE \
+  python3 scripts/s15_validate_stacking_classifier.py \
+    --model-dir data/s15_trainval/stacking_accuracy
+
+# Post-hoc calibration (applies 5 methods to existing model)
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE \
+  python3 scripts/s15_calibrate.py \
+    --model-dir data/s15_trainval/stacking_accuracy
+
+# Train calibrated stacking model (recommended)
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE \
+  python3 scripts/s15_train_calibrated_stacking.py
+
+# Run hyperparameter search for calibration optimization
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE \
+  python3 scripts/s15_calibration_hparam_search.py
+
+# Full 8-model comparison report
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE \
+  python3 scripts/s15_calibration_comparison.py
+```
+
+### 7.3 External Temporal Transfer
+
+```bash
+# Run frozen S1.5 + Stage 3 on MIMIC-IV and eICU
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE \
+  python3 scripts/run_external_temporal_stage3.py --source all --device auto
+```
+
+### 7.4 Legacy V1 Pipeline (Simulated Data)
+
+```bash
+cd project
+python src/main.py --n-patients 500 --method kmeans
 ```
 
 ## 8. Output Description
 
-### 8.1 Visualization Charts (`outputs/figures/` or tagged subdirectories)
+### 8.1 Stage 1.5 Outputs (`data/s15_trainval/`)
 
 | File | Description |
 |------|-------------|
-| missing_pattern.png | Missing rate distribution for each variable |
-| cluster_scatter.png | Cluster scatter plot after UMAP/t-SNE dimensionality reduction |
-| k_selection.png | Optimal K selection curves (Silhouette Score / CH Index / DB Index) |
-| subtype_heatmap.png | Subtype feature profile heatmap |
-| survival_curves.png | Kaplan-Meier survival curves for each subtype |
-| trajectory_comparison.png | Key variable trajectory comparison across subtypes |
-| summary_dashboard.png | Comprehensive results dashboard (2x2 layout) |
+| `checkpoints/pretrain_best.pt` | Best pretraining checkpoint |
+| `embeddings_s15.npy` | Patient embeddings (11986, 128) |
+| `pretrain_log.json` | Training loss history |
 
-When `--tag` is provided, figures are saved under `outputs/figures/<tag>/` and filenames are suffixed, for example `cluster_scatter_mimic_real.png`.
-
-### 8.2 Evaluation Reports (`outputs/reports/` or tagged subdirectories)
-
-| File | Format | Content |
-|------|--------|---------|
-| evaluation_report.json | JSON | Complete evaluation data (machine-parseable) |
-| evaluation_summary.txt | Plain text | Human-readable evaluation summary |
-
-When `--tag` is provided, reports are saved under `outputs/reports/<tag>/` and filenames are suffixed, for example `evaluation_report_mimic_real.json`.
-
-### 8.3 Cached Data (data/processed/)
+### 8.2 Stacking Classifier Outputs (`data/s15_trainval/stacking_accuracy/`)
 
 | File | Description |
 |------|-------------|
-| time_series_preprocessed.npy | Preprocessed 3D time-series tensor |
-| patient_info_preprocessed.csv | Patient information table |
+| `stacking_mortality_classifier.pkl` | Trained model bundle |
+| `stacking_mortality_classifier_report.json` | Training report with operating points |
+| `stacking_validation_report.json` | Bootstrap CIs + calibration + importance |
 
-When `--tag` is provided, the preprocessed cache filenames are also suffixed, for example `time_series_preprocessed_mimic_real.npy`.
+### 8.3 Calibration Outputs
+
+| Directory | Key Files |
+|-----------|-----------|
+| `stacking_accuracy/calibration/` | `calibration_report.json`, `calibrators.pkl`, `test_probs_*.npy` |
+| `calibrated_stacking/` | `calibrated_stacking_classifier.pkl`, `calibrated_stacking_report.json` |
+| `calibration_hparam_search/` | `hparam_search_report.json` |
+| `calibration_comparison/` | `calibration_comparison_report.json` |
+
+### 8.4 Temporal Analysis Outputs (`data/s2light/`)
+
+| File | Description |
+|------|-------------|
+| `rolling_embeddings.npy` | (11986, 5, 128) per-window embeddings |
+| `cluster_assignments.npy` | (11986, 5) per-window cluster labels |
+| `trajectory_stats.json` | Stability, transitions, mortality stratification |
+
+### 8.5 Visualization Outputs (`outputs/figures/`)
+
+| File | Description |
+|------|-------------|
+| `per_window_prevalence.png` | Phenotype prevalence across rolling windows |
+| `sankey_transitions.png` | Phenotype transition flow diagram |
+| `mortality_by_trajectory.png` | Mortality rates by trajectory category |
+| `pipeline_diagram.png` | Three-stage framework architecture |
 
 ## 9. Frequently Asked Questions
 
 **Q1: "ModuleNotFoundError" occurs at runtime**
 
-A: Please verify that all dependencies are installed: `pip install -r requirements.txt`
+A: Install all dependencies: `pip install -r requirements.txt`. For PyTorch, follow pytorch.org for your platform.
 
-**Q2: Chinese characters are displayed as squares**
+**Q2: Pretraining is slow on CPU**
 
-A: The system automatically adapts to Chinese fonts on macOS (PingFang SC), Windows (Microsoft YaHei), and Linux (WenQuanYi Micro Hei). If the issue persists, install the corresponding font or modify the `_setup_style` function in `visualization.py`.
+A: Stage 1.5 pretraining benefits from GPU acceleration. On CPU it takes about 25 min, vs about 8 min on GPU. Use `--device cpu` or `--device cuda` to control.
 
-**Q3: UMAP dimensionality reduction is slow**
+**Q3: How to reproduce the calibration optimization?**
 
-A: UMAP may be slow with large datasets (>5000 patients). You can use `--reduction pca` as an alternative, or reduce the number of patients for quick validation.
-
-**Q4: How to use real MIMIC-IV data?**
-
-A: Complete PhysioNet credentialing, place the full CSV files in a local directory, then run:
-
+A: Run the full calibration pipeline:
 ```bash
-python src/main.py --source mimic --data-dir /path/to/mimic-iv-3.1 --processed-dir data/processed_mimic_real --db-path db/mimic4_real.db --reduction pca --k 4 --skip-vis --tag mimic_real
+# 1. Train original stacking model (if not already done)
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE python3 scripts/s15_train_stacking_classifier.py
+
+# 2. Apply post-hoc calibration to original model
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE python3 scripts/s15_calibrate.py --model-dir data/s15_trainval/stacking_accuracy
+
+# 3. Train calibrated stacking model (structural fix)
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE python3 scripts/s15_train_calibrated_stacking.py
+
+# 4. Compare all methods
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE python3 scripts/s15_calibration_comparison.py
 ```
 
-Add `--overwrite-db` if you need to rebuild the DuckDB database from raw CSVs. If you only want a smoke test of the integration path, use `--data-dir archive/mimic-iv-mock`.
+**Q4: How to use a custom mortality prior for Bayesian calibration?**
 
-**Q5: How to use eICU data?**
+A: Pass `--prior-rate 0.20` to `scripts/s15_calibrate.py` to use 20% instead of 14.2%.
 
-A: Place the eICU CSV files in a local directory, then run:
+**Q5: What threshold should I use for clinical deployment?**
 
+A: The calibrated model supports multiple operating points:
+- **Triage (high sensitivity)**: threshold=0.05, captures >90% of deaths
+- **Balanced**: threshold=0.09, recall 83.8%, balanced accuracy 80.1%
+- **Resource allocation (high specificity)**: threshold=0.30, precision approximately 60%
+
+**Q6: Results differ between runs**
+
+A: Ensure `seed: 42` in config files. All random processes use deterministic seeding.
+
+**Q7: How to run external temporal transfer on MIMIC-IV / eICU?**
+
+A: First prepare the source-specific data with `src/main.py`, then:
 ```bash
-python src/main.py --source eicu --data-dir /path/to/eicu-2.0 --processed-dir data/processed_eicu_real --reduction pca --k 4 --skip-vis --tag eicu_real
+OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE \
+  python3 scripts/run_external_temporal_stage3.py --source all --device auto
 ```
-
-The eICU loader reads raw tables directly, so no DuckDB build step is required.
-
-**Q6: How to reproduce the full external Stage 3 temporal trajectories on MIMIC-IV / eICU?**
-
-A: First prepare the source-specific real-data artifacts with `src/main.py` as above. Then run:
-
-```bash
-python scripts/run_external_temporal_stage3.py --source all --device auto
-```
-
-This command builds `data/external_temporal/<source>/s0`, reuses `data/s0/processed/preprocess_stats.json`, extracts frozen S1.5 embeddings, and writes Stage 3 artifacts including `trajectory_stats.json`, `sanity_checks.json`, figures, and the merged run index `data/external_temporal/external_temporal_runs.json`.
-
-**Q7: Clustering results differ between runs**
-
-A: Ensure that a random seed is set (default is 42). All random processes are managed uniformly through `set_global_seed()`.
 
 ## 10. Important Notes
 
-1. For the first run, it is recommended to use the default configuration with a smaller number of patients (e.g., 200-300) for validation.
-2. After modifying the configuration file, no reinstallation is needed; changes take effect immediately upon the next run.
-3. Results in the default outputs directory will be overwritten on subsequent runs unless you use `--tag` or explicit output directory overrides.
-4. Simulated data is intended for development and validation only; real data should be used for publications or formal reports.
-5. The survival analysis feature requires the lifelines library; if not installed, the system will automatically fall back to a simplified analysis.
+1. Always use `OMP_NUM_THREADS=1 KMP_DUPLICATE_LIB_OK=TRUE` prefix for Python commands to avoid threading conflicts
+2. The calibrated stacking model (`data/s15_trainval/calibrated_stacking/`) is the recommended model for clinical applications
+3. All mortality outcomes use verified PhysioNet Outcomes files (14.2% in-hospital mortality rate)
+4. External transfer results (MIMIC-IV, eICU) use the frozen PhysioNet-trained encoder and should be interpreted as supplementary frozen-transfer analyses
+5. Model artifacts use serialized format for sklearn compatibility -- only load model files produced by this project
+6. Large data files (`.npy`, `.pt`) are gitignored; re-run the pipeline to regenerate them

@@ -1,5 +1,6 @@
 \documentclass[11pt,a4paper]{article}
 
+% ---- Packages ----
 \usepackage[margin=1in]{geometry}
 \usepackage{graphicx}
 \usepackage{booktabs}
@@ -14,310 +15,424 @@
 \usepackage{tabularx}
 \usepackage{titlesec}
 
+% ---- Page style ----
 \pagestyle{fancy}
 \fancyhf{}
 \fancyhead[L]{\small Software Evaluation Report}
-\fancyhead[R]{\small ICU Sepsis Subtype Discovery}
+\fancyhead[R]{\small ICU Sepsis Temporal Phenotyping}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
+% ---- Code listing style ----
 \lstset{
   basicstyle=\ttfamily\small,
   breaklines=true,
   frame=single,
   backgroundcolor=\color{gray!5},
+  columns=fullflexible,
 }
 
-\graphicspath{{../outputs/figures/}}
+% ---- Graphics path ----
+\graphicspath{{figures/}}
 
 \title{%
-  \Large\bfseries Software Evaluation Report\\[4pt]
-  \large ICU Sepsis Dynamic Subtype Discovery and Analysis System
+  \Large\bfseries Software Evaluation Report\\[6pt]
+  \large ICU Sepsis Temporal Phenotype Trajectory Analysis System
 }
 \author{Wang Ruike}
-\date{\today}
+\date{}
 
 \begin{document}
+
 \maketitle
 \tableofcontents
 \newpage
 
-% ============================================================
+%% ====================================================================
 \section{Software Objectives}
+%% ====================================================================
 
-This software aims to provide dynamic subtype discovery and analysis capabilities for ICU sepsis patients based on time-series data. The specific objectives include:
+This software implements a three-stage computational framework for self-supervised temporal phenotype trajectory analysis of ICU sepsis patients. The specific objectives include:
 
 \begin{enumerate}[nosep]
-  \item Performing standardized preprocessing on multidimensional ICU time-series data, including handling of missing values and outliers.
-  \item Extracting clinically meaningful statistical features and derived indicators from time-series data.
-  \item Discovering clinically distinguishable sepsis subtypes through cluster analysis.
-  \item Providing a comprehensive evaluation metric framework to validate the statistical validity and clinical significance of subtype discovery results.
-  \item Generating intuitive visualization reports to facilitate result interpretation.
+  \item Performing standardized preprocessing on multi-center ICU time-series data (PhysioNet 2012, 11,986 patients), including structured missingness handling, outlier clipping, and Z-score normalization
+  \item Training a Transformer-based self-supervised encoder via masked value prediction and temporal contrastive learning (Stage 2)
+  \item Extracting rolling-window embeddings and performing descriptive temporal phenotype trajectory analysis via per-window clustering (Stage 3)
+  \item Building a leakage-aware OOF stacking mortality classifier with probability calibration optimization
+  \item Providing comprehensive evaluation covering clustering quality, mortality stratification, cross-center validation, calibration analysis, and bootstrap confidence intervals
+  \item Supporting frozen-transfer temporal analysis on external databases (MIMIC-IV, eICU-CRD)
 \end{enumerate}
 
-% ============================================================
+%% ====================================================================
 \section{Testing Environment}
+%% ====================================================================
 
 \begin{table}[H]
 \centering
-\caption{Test environment configuration.}
 \begin{tabular}{ll}
 \toprule
 \textbf{Item} & \textbf{Configuration} \\
 \midrule
 Operating System & macOS Darwin 25.3.0 \\
-Python Version & 3.9.6 \\
+Python Version & 3.14.0a2 \\
 CPU & Apple Silicon \\
 Memory & 8 GB \\
-Key Dependencies & scikit-learn 1.6.1, numpy 2.0.2, pandas 2.2.3 \\
+Key Dependencies & scikit-learn 1.6.1, numpy 2.2.1, pandas 2.2.3, PyTorch 2.5.1, scipy 1.15.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-% ============================================================
+%% ====================================================================
 \section{Test Data Description}
+%% ====================================================================
 
-The evaluation used the system's built-in simulated data generator to produce test data with the following characteristics:
+\subsection{Primary Dataset: PhysioNet 2012 Multi-Center ICU Database}
 
 \begin{table}[H]
 \centering
-\caption{Simulated data parameters.}
 \begin{tabular}{ll}
 \toprule
 \textbf{Parameter} & \textbf{Value} \\
 \midrule
-Number of Patients & 500 \\
-Time Window & 48 hours \\
-Feature Dimensions & 17 (7 vitals + 7 labs + 3 treatments) \\
-Sepsis Subtypes & 4 ($\alpha$: 35\%, $\beta$: 25\%, $\gamma$: 25\%, $\delta$: 15\%) \\
-Vital Signs Missing Rate & $\sim$4.5\% \\
-Laboratory Missing Rate & $\sim$82\% \\
-Treatment Missing Rate & 0\% \\
+Total Patients & 11,986 (after quality filtering from 12,000) \\
+Center A (set-a + set-b) & 7,989 patients (training + validation) \\
+Center B (set-c) & 3,997 patients (held-out test) \\
+Time Window & 48 hours (hourly resolution) \\
+Continuous Features & 21 (vital signs + laboratory + blood gas) \\
+Observation Masks & Binary per-variable per-hour (21 channels) \\
+Proxy Indicators & 2 (MAP $<$ 65, FiO2 $>$ 0.21) \\
+Static Features & 14 (age, sex, ICU type, height, weight, etc.) \\
+In-Hospital Mortality & 14.2\% (verified from PhysioNet Outcomes files) \\
+Overall Missing Rate & 73.3\% \\
+Core Hemodynamic Missingness & 9.8\%--11.9\% (HR, SBP, DBP, MAP) \\
+Laboratory Missingness & 93.8\% mean (bilirubin 98.3\%, lactate 95.9\%) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The simulated data was generated based on an AR(1) autoregressive model, incorporating realistic temporal correlations, inter-subtype differences, and clinically grounded missing data patterns. Each subtype was configured with literature-supported parameters (e.g., high lactate, low blood pressure, and high vasopressor usage for the $\delta$ subtype).
-
-% ============================================================
-\section{Functional Test Results}
-
-\subsection{Core Functionality Tests}
+\subsection{Supplementary External Datasets}
 
 \begin{table}[H]
-\centering\small
-\caption{Core functionality test results.}
-\begin{tabularx}{\textwidth}{lXlc}
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Database} & \textbf{Cohort Size} & \textbf{Mapped Channels} & \textbf{Purpose} \\
+\midrule
+MIMIC-IV 3.1 & 94,458 ICU stays & 15/21 & Frozen-transfer temporal replication \\
+eICU-CRD 2.0 & 200,859 ICU stays & 12/21 & Frozen-transfer temporal replication \\
+PhysioNet/CinC 2019 & 40,331 sepsis stays & 18/21 & Auxiliary supervision bridge \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Legacy Simulated Data (V1 Pipeline)}
+
+The system also includes a built-in simulated data generator (500 patients, 4 subtypes, AR(1) dynamics) for development validation of the legacy static clustering pipeline.
+
+%% ====================================================================
+\section{Functional Test Results}
+%% ====================================================================
+
+\subsection{Stage 0: Data Pipeline Tests}
+
+\begin{table}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llll}
 \toprule
 \textbf{Function} & \textbf{Test Method} & \textbf{Result} & \textbf{Status} \\
 \midrule
-Data Generation & Generated 500 patients & Shape (500, 48, 17) & Passed \\
-Missing Analysis & Checked missing rates & Vitals 4.5\%, labs 82\% & Passed \\
-Outlier Handling & $4\sigma$ clipping & Reasonable clip count & Passed \\
-Missing Imputation & Forward fill + median & No residual NaN & Passed \\
-Standardization & z-score & Range [$-$4.0, 4.0] & Passed \\
-Feature Extraction & Multi-window stats & 311 features, no NaN & Passed \\
-PCA Representation & Reduced to 32 dims & 84.0\%--85.6\% var. & Passed \\
-UMAP Reduction & Reduced to 2D & Coords generated & Passed \\
-K-Means Clustering & $K$=2--8 search & All K metrics valid & Passed \\
-Survival Analysis & K-M + log-rank & Significant separation & Passed \\
-Report Generation & JSON + TXT & Files generated & Passed \\
-Figure Generation & 7 PNG types & All generated & Passed \\
+PhysioNet 2012 Extraction & Extract set-a/b/c & (11986, 48, 21) continuous tensor + masks & Passed \\
+Outcome Label Verification & Audit vs.\ Outcomes files & 14.2\% mortality, PPV audit passed & Passed \\
+Forward Fill Imputation & Max 6h gap fill & Applied correctly, masks preserved & Passed \\
+Global Median Imputation & Per-feature median & No residual NaN after imputation & Passed \\
+Outlier Clipping & 4-sigma clipping & Values within $\pm$4$\sigma$ range & Passed \\
+Z-score Normalization & Per-feature standardization & Mean $\approx$ 0, std $\approx$ 1 per feature & Passed \\
+Cross-Center Split & center\_a $\to$ train+val, center\_b $\to$ test & Stratified by mortality, correct indices & Passed \\
+External Cohort Alignment & MIMIC-IV / eICU $\to$ S0 schema & Channel mapping + reuse of preprocessing stats & Passed \\
 \bottomrule
-\end{tabularx}
+\end{tabular}%
+}
 \end{table}
 
-\subsection{Boundary Condition Tests}
+\subsection{Stage 1--1.5: Self-Supervised Pretraining Tests}
 
 \begin{table}[H]
-\centering\small
-\caption{Boundary condition test results.}
-\begin{tabular}{llp{6cm}}
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llll}
 \toprule
-\textbf{Scenario} & \textbf{Test Method} & \textbf{Result} \\
+\textbf{Function} & \textbf{Test Method} & \textbf{Result} & \textbf{Status} \\
 \midrule
-Small Sample & \texttt{--n-patients 50} & Ran normally \\
-Large Sample & \texttt{--n-patients 2000} & Ran normally ($\sim$15\,s) \\
-Specified K & \texttt{--k 4} & Skipped auto-search \\
-Different Method & \texttt{--method gmm} & GMM ran normally \\
-Skip Visualization & \texttt{--skip-vis} & Ran in $\sim$3\,s \\
-Method Comparison & \texttt{--compare-methods} & 3-method table output \\
+Masked Value Prediction & 15\% mask, MSE on observed & Reconstruction loss converges & Passed \\
+Temporal Contrastive Learning & NT-Xent ($\tau$=0.1), stochastic 30h views & cos\_pos $>$ cos\_neg, alignment improves & Passed \\
+Combined Training & L\_masked + $\lambda$(t)$\cdot$L\_contrastive, $\lambda$ warmup & Total loss monotonically decreases & Passed \\
+Encoder Embedding Quality & 128d patient embeddings & Center stability L1=0.016, density $|r|$=0.148 & Passed \\
+Representation Comparison & PCA vs S1 vs S1.5 vs S1.6 & S1.5 best on center stability + density robustness & Passed \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
-% ============================================================
+\subsection{Stage 2--3: Temporal Clustering and Trajectory Tests}
+
+\begin{table}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llll}
+\toprule
+\textbf{Function} & \textbf{Test Method} & \textbf{Result} & \textbf{Status} \\
+\midrule
+Rolling Window Extraction & 24h window, 6h stride, 5 windows & (11986, 5, 128) embedding tensor & Passed \\
+Per-Window KMeans (K=4) & Fit on train windows, apply to all & 59,930 window assignments & Passed \\
+Trajectory Classification & Stable / single-transition / multi-transition & 64.8\% / 29.3\% / 5.9\% & Passed \\
+Mortality Stratification & Stable phenotype mortality rates & 4.0\%, 9.7\%, 22.5\%, 31.7\% (range 27.7pp) & Passed \\
+Stride Sensitivity & Stride=12h (3 windows, 50\% overlap) & Identical mortality ordering, range 28.0pp & Passed \\
+Cross-Center Validation & Train Center A, test Center B & All 6 criteria satisfied & Passed \\
+External Temporal Transfer & MIMIC-IV + eICU frozen S1.5 & Meaningful clusters and transitions recovered & Passed \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\subsection{Downstream Mortality Classification Tests}
+
+\begin{table}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llll}
+\toprule
+\textbf{Function} & \textbf{Test Method} & \textbf{Result} & \textbf{Status} \\
+\midrule
+Frozen S1.5 Probe & Logistic regression on embeddings & AUROC 0.829, balanced acc 0.745 & Passed \\
+Advanced Classifier & HGB on fused features & AUROC 0.862, balanced acc 0.780 & Passed \\
+OOF Stacking Committee & 5-fold CV, 3 base learners, meta-LR & AUROC 0.873, accuracy 0.880 & Passed \\
+Bootstrap Confidence Intervals & 500 bootstrap samples & AUROC 95\% CI: 0.858--0.888 & Passed \\
+Calibration Analysis & 10-bin ECE, Brier score & Original: Brier 0.144, ECE 0.222 & Passed \\
+\textbf{Calibration Optimization} & \textbf{Calibrated stacking + Platt scaling} & \textbf{Brier 0.090, ECE 0.023, AUROC 0.873} & \textbf{Passed} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\subsection{Calibration Pipeline Tests}
+
+\begin{table}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llll}
+\toprule
+\textbf{Function} & \textbf{Test Method} & \textbf{Result} & \textbf{Status} \\
+\midrule
+Temperature Scaling & Fit T on val logits & T=0.43, ECE 0.222$\to$0.137 & Passed \\
+Platt Scaling & Logistic regression on logits & a=2.72, b=$-$3.69, ECE$\to$0.093 & Passed \\
+Isotonic Regression & Non-parametric calibration & ECE$\to$0.095, AUROC reduced to 0.838 & Passed \\
+Bayesian Prior Calibration & 14.2\% mortality prior & strength=0.45, ECE$\to$0.123 & Passed \\
+Composite (Temp+Bayesian) & Two-stage calibration & ECE$\to$0.073, Brier$\to$0.095 & Passed \\
+Calibrated Stacking & Structural fix + Platt & \textbf{ECE 0.023, Brier 0.090, AUROC 0.873} & Passed \\
+Hparam Search & 30 configs, depth$\times$lr$\times$iter$\times$C & Optimal: d=3, lr=0.03, iter=300, C=0.05 & Passed \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+%% ====================================================================
 \section{Model Performance Evaluation}
+%% ====================================================================
 
-\subsection{Clustering Performance}
+\subsection{Self-Supervised Representation Quality (Stage 2)}
 
 \begin{table}[H]
 \centering
-\caption{Optimal K search results (500 patients, K-Means).}
-\begin{tabular}{cccc}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccc}
 \toprule
-\textbf{K} & \textbf{Silhouette} & \textbf{CH Index} & \textbf{DB Index} \\
+\textbf{Method} & \textbf{Silhouette} & \textbf{Mort.\ Range} & \textbf{Center L1 $\downarrow$} & \textbf{Mort.\ Probe} & $|\boldsymbol{r}|_{\textbf{density}}$ $\downarrow$ \\
 \midrule
-2 & \textbf{0.4355} & \textbf{164.65} & 0.945 \\
-3 & 0.3012 & 121.32 & 1.203 \\
-4 & 0.2689 & 108.45 & 1.145 \\
-5 & 0.2231 & 95.67 & 1.289 \\
-6 & 0.1987 & 88.12 & 1.367 \\
-7 & 0.1756 & 82.34 & 1.423 \\
-8 & 0.1534 & 77.89 & 1.489 \\
+PCA (32d) & 0.061 & 29.2\% & 0.027 & 0.825 & 0.231 \\
+S1: masked (128d) & 0.087 & 17.6\% & 0.024 & 0.825 & 0.247 \\
+\textbf{S1.5: mask+contr.\ (128d)} & \textbf{0.080} & \textbf{24.6\%} & \textbf{0.016} & \textbf{0.830} & \textbf{0.148} \\
+S1.6: $\lambda$=0.2 (128d) & 0.079 & 25.1\% & 0.021 & 0.825 & 0.148 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+S1.5 was selected for temporal analysis based on best center stability (L1=0.016) and lowest missingness sensitivity ($|r|$=0.148).
+
+\subsection{Temporal Phenotype Trajectories (Stage 3)}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Metric} & \textbf{Primary (stride=6h)} & \textbf{Sensitivity (stride=12h)} \\
+\midrule
+Stable patient fraction & 64.8\% & 65.6\% \\
+Non-self transition rate & 10.4\% & 19.1\% \\
+Mortality ordering & {[P0, P3, P1, P2]} & {[P0, P3, P1, P2]} \\
+Highest-risk phenotype & P2 (31.7\%) & P2 (31.9\%) \\
+Stable mortality range & 27.7 pp & 28.0 pp \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The silhouette score is highest at $K=2$, indicating that the most natural partition in the statistical feature space is into two groups: ``severe'' vs.\ ``mild.''
-
-\textbf{External validation (vs.\ true 4 subtypes):}
+\subsection{Downstream Mortality Classification}
 
 \begin{table}[H]
 \centering
-\caption{External validation metrics.}
-\begin{tabular}{lll}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccc}
 \toprule
-\textbf{Metric} & \textbf{Value} & \textbf{Description} \\
+\textbf{Model / Operating Point} & \textbf{Acc.} & \textbf{Bal.\ Acc.} & \textbf{Prec.} & \textbf{Recall} & \textbf{F1} & \textbf{AUROC} \\
 \midrule
-ARI & 0.2448 & Moderate correspondence \\
-NMI & 0.4999 & $\sim$50\% mutual information captured \\
+Frozen S1.5 probe & 0.784 & 0.745 & 0.372 & 0.691 & 0.484 & 0.829 \\
+Feature-fusion HGB & 0.791 & 0.780 & 0.391 & 0.764 & 0.517 & 0.862 \\
+End-to-end fine-tune + aux & 0.795 & 0.753 & 0.388 & 0.692 & 0.498 & 0.842 \\
+OOF stacking (accuracy thr) & 0.880 & 0.653 & 0.682 & 0.333 & 0.448 & 0.873 \\
+OOF stacking (balanced thr) & 0.803 & 0.792 & 0.409 & 0.776 & 0.536 & 0.873 \\
+\textbf{Calibrated stacking} & \textbf{0.766} & \textbf{0.801} & \textbf{0.356} & \textbf{0.838} & \textbf{0.499} & \textbf{0.873} \\
+Majority baseline & 0.854 & 0.500 & --- & 0.000 & --- & --- \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\subsection{Calibration Optimization Results}
+
+\begin{table}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Method} & \textbf{Brier $\downarrow$} & \textbf{ECE $\downarrow$} & \textbf{MCE $\downarrow$} & \textbf{AUROC} & \textbf{Recall} & \textbf{Mean Pred} \\
+\midrule
+Original uncalibrated & 0.144 & 0.222 & 0.423 & 0.873 & 0.836 & 0.369 \\
++ Temperature scaling & 0.142 & 0.137 & 0.533 & 0.873 & 0.814 & --- \\
++ Platt scaling & 0.107 & 0.093 & 0.400 & 0.873 & 0.677 & --- \\
++ Isotonic regression & 0.108 & 0.095 & 0.454 & 0.838 & 0.699 & --- \\
++ Bayesian prior (14.2\%) & 0.104 & 0.123 & 0.143 & 0.873 & 0.785 & --- \\
++ Composite (Temp+Bayesian) & 0.095 & 0.073 & 0.236 & 0.873 & 0.790 & --- \\
+\textbf{Calibrated stacking (optimal)} & \textbf{0.090} & \textbf{0.023} & \textbf{0.098} & \textbf{0.873} & \textbf{0.838} & \textbf{0.141} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\textbf{Root cause}: \texttt{class\_weight="balanced"} in the meta-learner inflated positive-class probabilities by ${\sim}$6x, resulting in mean predicted probability (36.9\%) far exceeding the observed mortality rate (14.6\%).
+
+\textbf{Resolution}: Removing class-weight balancing, reducing base learner depth (5$\to$3), and applying lightweight Platt scaling produced well-calibrated probabilities (mean prediction 14.1\% vs observed 14.6\%) with ECE=0.023 and fully preserved AUROC.
+
+\subsection{Cross-Center Temporal Validation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Metric} & \textbf{Center A (train)} & \textbf{Center B (test)} \\
+\midrule
+Patients & 7,989 & 3,997 \\
+Stable fraction & 65.0\% & 64.4\% \\
+Mortality ordering & {[P0, P3, P1, P2]} & {[P0, P3, P1, P2]} \\
+Highest-risk phenotype & P2 (32.6\%) & P2 (30.0\%) \\
+Stable mortality range & 28.7 pp & 25.8 pp \\
+Mean prevalence L1 & --- & 0.022 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Survival Stratification}
+All six cross-center validation criteria were satisfied.
 
-\begin{table}[H]
-\centering
-\caption{Per-subtype outcome summary ($K=2$).}
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Subtype} & \textbf{Patients} & \textbf{28d Mortality} & \textbf{Mean ICU LOS} & \textbf{Shock Rate} \\
-\midrule
-0 (High Risk) & 83 & 44.6\% & 71.6\,h & 38.6\% \\
-1 (Low Risk) & 417 & 12.9\% & 82.5\,h & 11.0\% \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The mortality difference between subtypes reached 31.7 percentage points. Log-rank test $p \ll 0.001$, confirming statistically significant survival stratification.
-
-\subsection{Method Comparison ($K=2$)}
-
-\begin{table}[H]
-\centering
-\caption{Clustering method comparison.}
-\begin{tabular}{lccc}
-\toprule
-\textbf{Method} & \textbf{Silhouette} & \textbf{CH Index} & \textbf{DB Index} \\
-\midrule
-K-Means & 0.4355 & 164.65 & 0.945 \\
-GMM & 0.4102 & 155.23 & 0.978 \\
-Hierarchical & 0.4287 & 161.12 & 0.952 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-All three methods produce comparable results, confirming method robustness.
-
-% ============================================================
-\section{Visualization Quality Assessment}
-
-The system generates 7 types of visualizations, evaluated below.
-
-\begin{table}[H]
-\centering\small
-\caption{Visualization quality assessment.}
-\begin{tabular}{lcccp{5cm}}
-\toprule
-\textbf{Figure} & \textbf{Readability} & \textbf{Info} & \textbf{Aesthetics} & \textbf{Comments} \\
-\midrule
-Cluster Scatter & High & High & Good & Dual-panel predicted vs.\ actual \\
-K Selection & High & High & Good & 3 metrics, red line for optimal K \\
-Feature Heatmap & Medium & High & Good & Top discriminative features \\
-Survival Curves & High & High & Excellent & Clear K-M separation \\
-Missing Pattern & High & Medium & Good & Horizontal bars, color-coded \\
-Trajectory Plot & High & High & Good & Mean $\pm$ std bands \\
-Dashboard & High & Very High & Excellent & 2$\times$2 overview layout \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{summary_dashboard.png}
-\caption{Summary dashboard: cluster visualization, K selection, mortality stratification, ICU LOS distribution.}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{k_selection.png}
-\caption{Optimal K selection curves showing silhouette score, CH index, and DB index.}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.7\textwidth]{survival_curves.png}
-\caption{Kaplan-Meier survival curves stratified by discovered subtype.}
-\end{figure}
-
-% ============================================================
+%% ====================================================================
 \section{Runtime Efficiency Analysis}
+%% ====================================================================
 
 \begin{table}[H]
-\centering\small
-\caption{Runtime performance at different sample sizes.}
-\begin{tabular}{rrrrrrrr}
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llll}
 \toprule
-\textbf{Patients} & \textbf{Total} & \textbf{DataGen} & \textbf{Preproc} & \textbf{Features} & \textbf{UMAP} & \textbf{Cluster} & \textbf{Eval+Vis} \\
+\textbf{Pipeline Component} & \textbf{Cohort Size} & \textbf{Time} & \textbf{Notes} \\
 \midrule
-100 & 2.8\,s & 0.05\,s & 0.04\,s & $<$0.01\,s & 2.3\,s & 0.2\,s & 0.2\,s \\
-300 & 3.4\,s & 0.15\,s & 0.13\,s & 0.01\,s & 2.6\,s & 0.4\,s & 0.1\,s \\
-500 & 5.2\,s & 0.25\,s & 0.20\,s & 0.02\,s & 3.1\,s & 0.6\,s & 1.0\,s \\
-1000 & 8.5\,s & 0.50\,s & 0.40\,s & 0.04\,s & 4.5\,s & 1.2\,s & 1.8\,s \\
-2000 & 15.3\,s & 1.00\,s & 0.80\,s & 0.08\,s & 8.0\,s & 2.5\,s & 2.9\,s \\
+S0: PhysioNet 2012 extraction & 11,986 & ${\sim}$5s & One-time data preparation \\
+S0: Preprocessing (ffill+median+clip+zscore) & 11,986 & ${\sim}$2s & Cached to disk \\
+S1.5: Contrastive pretraining (50 epochs) & 7,989 train & ${\sim}$8 min & GPU recommended; CPU ${\sim}$25 min \\
+S1.5: Embedding extraction & 11,986 & ${\sim}$3s & Single forward pass \\
+S2: Rolling window embedding extraction & 59,930 windows & ${\sim}$15s & Memory-mapped output \\
+S2: KMeans clustering (K=4) & 59,930 windows & ${\sim}$2s & Fit on train, predict all \\
+S3: Transition analysis + visualization & 11,986 & ${\sim}$1s & Lightweight \\
+Stacking classifier training (5-fold CV) & 7,989 dev & ${\sim}$25s & 3 base learners $\times$ 5 folds \\
+Calibration pipeline (6 methods) & 3,997 test & ${\sim}$1s & Post-hoc, no retraining \\
+Calibrated stacking training & 7,989 dev & ${\sim}$30s & With hparam-optimized specs \\
+Calibration hparam search (30 configs) & 7,989 dev & ${\sim}$2 min & Full grid \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
-UMAP is the primary bottleneck (50\%--60\% of total time). All other modules are highly efficient.
+Full pipeline from raw data to calibrated predictions completes in under 15 minutes on CPU.
 
-% ============================================================
+%% ====================================================================
 \section{Strengths and Limitations}
+%% ====================================================================
 
 \subsection{Strengths}
 
 \begin{enumerate}[nosep]
-  \item \textbf{Modular design}: Each module independently testable with standard interfaces.
-  \item \textbf{Configuration-driven}: All hyperparameters in YAML; experiments reproducible without code changes.
-  \item \textbf{Comprehensive evaluation}: Internal metrics, external metrics, survival stratification, and clinical profiling.
-  \item \textbf{Rich visualizations}: 7 figure types auto-generated, plus summary dashboard.
-  \item \textbf{Clinically realistic simulation}: AR(1) dynamics, non-uniform missing, differentiated subtypes.
-  \item \textbf{High efficiency}: Full pipeline completes in $<$5\,s for 500 patients.
-  \item \textbf{Prepared interfaces}: Real data and self-supervised model interfaces already defined.
+  \item \textbf{Three-Stage Progressive Architecture}: Static baseline $\to$ self-supervised representations $\to$ temporal trajectory analysis, each stage building on the previous
+  \item \textbf{Mask-Aware Self-Supervised Learning}: Explicit observation masks prevent conflating missing values with normality; contrastive window alignment enables rolling-window reuse
+  \item \textbf{Comprehensive Calibration Framework}: Five post-hoc methods + structural calibration-aware stacking with 30-config hyperparameter search; final ECE=0.023
+  \item \textbf{Clinically Meaningful Outputs}: Probability predictions aligned with true mortality rates (14.1\% vs 14.6\%), suitable for bedside risk communication
+  \item \textbf{Cross-Center Validation}: Identical phenotype mortality ordering between training and held-out centers (within PhysioNet 2012 cohort)
+  \item \textbf{External Transfer Capability}: Frozen S1.5 encoder processes MIMIC-IV (94K) and eICU (201K) stays with meaningful trajectory recovery
+  \item \textbf{Leakage-Aware Evaluation}: OOF stacking with bootstrap CIs, permutation importance, and stratified calibration analysis
+  \item \textbf{Modular, Reproducible Design}: YAML-configured, script-driven pipeline with deterministic seeds; each stage independently runnable
 \end{enumerate}
 
 \subsection{Limitations}
 
 \begin{enumerate}[nosep]
-  \item Statistical features have limited expressiveness for fine-grained subtypes (ARI = 0.24).
-  \item Silhouette-based K selection tends to favor smaller K values.
-  \item Bootstrap stability testing not yet implemented.
-  \item Results based on simulated data; external validity requires real-world data.
-  \item Self-supervised representation learning module not yet implemented.
+  \item \textbf{Descriptive Temporal Analysis}: Per-window clustering rather than latent-state inference (no transition probability modeling)
+  \item \textbf{Single-Dataset Encoder Training}: S1.5 encoder trained only on PhysioNet 2012; external transfers use frozen weights under incomplete channel overlap
+  \item \textbf{Missing Treatment Data}: PhysioNet 2012 lacks true treatment records; proxy indicators are physiological thresholds, not interventions
+  \item \textbf{Observational Associations}: Lower mortality in single-transition patients is descriptive, not causal
+  \item \textbf{Window Overlap Sensitivity}: 75\% overlap at stride=6h smooths transitions; sensitivity analysis confirms robustness but exact rates depend on stride
+  \item \textbf{Data Sparsity Ceiling}: 73.3\% overall missingness, with key biomarkers (bilirubin 98.3\%, lactate 95.9\%) rarely observed
 \end{enumerate}
 
-% ============================================================
+%% ====================================================================
+\section{Verification Against Design Targets}
+%% ====================================================================
+
+\begin{table}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llll}
+\toprule
+\textbf{Target} & \textbf{Required} & \textbf{Achieved} & \textbf{Status} \\
+\midrule
+ECE (calibration) & $\leq$ 0.10 & \textbf{0.023} & Exceeded \\
+Brier score & Significant reduction & \textbf{0.090} (37\% $\downarrow$ from 0.144) & Achieved \\
+AUROC (discrimination) & $\geq$ 0.85 & \textbf{0.873} & Achieved \\
+Recall (sensitivity) & $\geq$ 75\% & \textbf{83.8\%} & Exceeded \\
+Cross-center stability & Identical mortality ordering & \textbf{Confirmed} & Achieved \\
+Mean predicted probability & Aligned with base rate & \textbf{14.1\% vs 14.6\%} & Achieved \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+%% ====================================================================
 \section{Future Improvement Directions}
+%% ====================================================================
 
 \begin{enumerate}[nosep]
-  \item Implement self-supervised trajectory encoder (Masked Event Modeling) to capture patterns beyond statistical features.
-  \item Introduce outcome-constrained clustering for clinically meaningful subtypes.
-  \item Integrate real MIMIC-IV data for external validation.
-  \item Add SHAP interpretability analysis for per-subtype variable attribution.
-  \item Multi-center generalization validation using eICU data.
-  \item Adopt more robust K selection methods (Gap Statistic, Consensus Clustering).
+  \item \textbf{Treatment-Aware Temporal Phenotyping}: Extend to MIMIC-IV / eICU with true intervention timestamps for phenotype-treatment interaction analysis
+  \item \textbf{Source-Specific Encoder Retraining}: Compare frozen transfer vs multi-source pretraining to quantify channel mismatch effects
+  \item \textbf{State-Space Modeling}: Replace per-window clustering with HMMs or switching state-space models for probabilistic transition modeling
+  \item \textbf{Online Prediction}: Deploy calibrated model for real-time 6h/12h window mortality risk updates at bedside
+  \item \textbf{Richer Phenotype Interpretation}: Post-hoc attribution (SHAP), multimodal augmentation, and linkage to organ-support variables
+  \item \textbf{Prospective Validation}: Test temporal phenotype trajectories in a prospective clinical study
 \end{enumerate}
 
 \end{document}
