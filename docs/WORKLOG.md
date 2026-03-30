@@ -1049,3 +1049,39 @@ cd docs && pdflatex -interaction=nonstopmode RESEARCH_PAPER.tex
 ### Interpretation
 
 The external temporal claim is now backed by actual full-cohort execution on both credentialed databases, not just subset smoke tests. Scientifically, the interpretation remains conservative: these are frozen-transfer temporal replications under partial channel overlap, so the central quantitative claim still comes from the internal PhysioNet 2012 cross-center validation.
+
+## 2026-03-31 — 项目回顾与未来规划 (V2 多模态临床诊断)
+
+### 阶段
+V2 (多模态临床诊断) 项目规划与方向确认
+
+### 目标
+总结 V1 (无监督亚型发现) 的成果，明确 V2 (有监督多模态预测) 的发展方向。
+
+### 已完成内容 (成果回顾)
+*   **数据管道与基础架构：** 成功处理了 PhysioNet 2012 多中心 ICU 数据集（11,956 名患者，48 小时数据，24 个特征），处理了 72.2% 的缺失率，并建立了随机和跨中心的数据划分机制。
+*   **V1 无监督亚型发现：**
+    *   完成了静态聚类和自监督时间序列表示学习。
+    *   进行了描述性表型轨迹分析，识别出 4 种不同的表型（表型间死亡率差异达 27.7 个百分点）。
+    *   发现 35.2% 的患者在 ICU 的前 48 小时内至少发生一次表型转换。
+    *   满足了 6/6 的跨中心验证标准。
+    *   整理了一套完整的研究成果，包括手稿 (`RESEARCH_PAPER.md` / `.tex`)、实验注册表和设计日志。
+*   **V2 准备工作：**
+    *   完成了领域调研（阅读了 13 篇参考论文）。
+    *   在 `project/multimodal/` 下创建了 V2 项目的骨架。
+    *   确立了结合 EHR 时间序列和临床文本笔记的核心架构方向。
+
+### 未来方向 (Next Steps)
+我们当前的首要目标是执行 **V2 多模态临床诊断** 计划：
+
+1.  **Stage 4 (单模态 LSTM 基线模型)：**
+    *   为 EHR 时间序列数据实现 LSTM 编码器。
+    *   连接线性分类器进行死亡率预测，作为引入文本数据前的基准。
+2.  **Stage 5 (临床笔记整合)：**
+    *   引入临床笔记模态。
+    *   实现 ClinicalBERT 编码器来处理文本数据。
+3.  **Stage 6 (多模态融合)：**
+    *   实现后期融合 (Late Fusion) 技术，结合时间序列 (LSTM) 和文本 (ClinicalBERT) 的表示。
+    *   尝试不同的融合策略，如拼接融合 (Concatenation) 和交叉注意力融合 (Cross-attention)。
+4.  **长期目标：**
+    *   虽然目前使用 PhysioNet 2012 作为起点，但我们的最终目标数据集是 **MIMIC-IV + MIMIC-IV-Note**（需要申请权限）。
