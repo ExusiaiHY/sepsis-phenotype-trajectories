@@ -23,6 +23,9 @@ phenotype_naming:
   cate_responsiveness_threshold: 0.02
   low_severity_sofa_max: 2
   low_severity_mortality_max: 0.10
+  severity_split_targets:
+    - respiratory_failure
+    - hemodynamic_unstable_proxy_responsive
 
 # --- Paths ---
 paths:

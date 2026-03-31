@@ -18,6 +18,7 @@ from s6_optimization.missingness_encoder import (
 from s6_optimization.run_comparison import compare_s6_runs
 from s6_optimization.phenotype_naming import (
     assign_phenotype_by_causality,
+    apply_cluster_severity_modifier,
     _sofa_respiratory,
     _sofa_cardiovascular,
     _sofa_hepatic,
@@ -296,3 +297,28 @@ def test_compare_s6_runs_reports_metric_deltas():
         assert report["metric_deltas"]["center_distribution_l1"]["improved"] is False
         assert report["metric_deltas"]["cate_std"]["improved"] is True
         assert report["metric_deltas"]["mean_sofa_total"]["improved"] is None
+
+
+def test_cluster_severity_modifier_splits_selected_targets():
+    cluster_mortality_order = {0: 0.05, 1: 0.20, 2: 0.31, 3: 0.10}
+
+    assert apply_cluster_severity_modifier(
+        phenotype_key="respiratory_failure",
+        dominant_cluster=2,
+        cluster_mortality_order=cluster_mortality_order,
+    ) == "respiratory_failure_critical"
+    assert apply_cluster_severity_modifier(
+        phenotype_key="respiratory_failure",
+        dominant_cluster=0,
+        cluster_mortality_order=cluster_mortality_order,
+    ) == "respiratory_failure_recovering"
+    assert apply_cluster_severity_modifier(
+        phenotype_key="hemodynamic_unstable_proxy_responsive",
+        dominant_cluster=1,
+        cluster_mortality_order=cluster_mortality_order,
+    ) == "hemodynamic_unstable_proxy_responsive"
+    assert apply_cluster_severity_modifier(
+        phenotype_key="neurological_decline",
+        dominant_cluster=2,
+        cluster_mortality_order=cluster_mortality_order,
+    ) == "neurological_decline"

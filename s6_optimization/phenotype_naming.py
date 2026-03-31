@@ -31,6 +31,10 @@ DEFAULT_THRESHOLDS = {
     "deterioration_slope_threshold": 0.01,
     "high_mortality_reference": 0.1424,
     "multi_organ_min_organs": 3,
+    "severity_split_targets": [
+        "respiratory_failure",
+        "hemodynamic_unstable_proxy_responsive",
+    ],
 }
 
 
@@ -284,13 +288,50 @@ def compute_organ_scores(
 PHENOTYPE_NAMES = {
     "hemodynamic_unstable_proxy_responsive": "Hemodynamic Instability – Proxy-Responsive",
     "hemodynamic_unstable_proxy_refractory": "Hemodynamic Instability – Proxy-Refractory",
+    "hemodynamic_unstable_proxy_responsive_critical": "Hemodynamic Instability – Proxy-Responsive Critical",
+    "hemodynamic_unstable_proxy_responsive_recovering": "Hemodynamic Instability – Proxy-Responsive Recovering",
     "respiratory_failure": "Respiratory Failure Dominant",
+    "respiratory_failure_critical": "Respiratory Failure – Critical Pattern",
+    "respiratory_failure_recovering": "Respiratory Failure – Recovering Pattern",
     "hepatorenal_dysfunction": "Hepato-Renal Dysfunction",
     "coagulopathy_dominant": "Coagulopathy Dominant",
     "neurological_decline": "Neurological Decline",
     "mild_organ_stable": "Mild / Stable Organ Function",
     "multi_organ_deteriorating": "Multi-Organ Deteriorating",
 }
+
+
+def apply_cluster_severity_modifier(
+    phenotype_key: str,
+    dominant_cluster: int,
+    cluster_mortality_order: dict[int, float],
+    thresholds: dict | None = None,
+) -> str:
+    """
+    Add a severity modifier for selected phenotypes based on dominant cluster risk tier.
+
+    The highest-mortality dominant cluster is tagged as ``_critical`` and the
+    lowest-mortality dominant cluster is tagged as ``_recovering``. This keeps
+    the organ-level mechanism label but restores the strong mortality separation
+    already present in the temporal cluster trajectories.
+    """
+    cfg = resolve_thresholds(thresholds)
+    targets = {str(key) for key in cfg.get("severity_split_targets", [])}
+    if phenotype_key not in targets or len(cluster_mortality_order) < 2:
+        return phenotype_key
+
+    ranked_clusters = sorted(
+        ((int(cluster_id), float(mortality)) for cluster_id, mortality in cluster_mortality_order.items()),
+        key=lambda item: item[1],
+    )
+    recovering_cluster = ranked_clusters[0][0]
+    critical_cluster = ranked_clusters[-1][0]
+
+    if int(dominant_cluster) == critical_cluster:
+        return f"{phenotype_key}_critical"
+    if int(dominant_cluster) == recovering_cluster:
+        return f"{phenotype_key}_recovering"
+    return phenotype_key
 
 
 def assign_phenotype_by_causality(
@@ -479,6 +520,12 @@ def assign_all_phenotypes(
             mortality_risk=float(mortality_risks[i]),
             organ_scores=organ,
             trajectory_direction=directions[i],
+            thresholds=cfg,
+        )
+        phenotype_key = apply_cluster_severity_modifier(
+            phenotype_key=phenotype_key,
+            dominant_cluster=dominant_clusters[i],
+            cluster_mortality_order=cluster_mortality_order,
             thresholds=cfg,
         )
         results.append({
