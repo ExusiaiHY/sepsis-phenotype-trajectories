@@ -32,3 +32,10 @@ torch>=2.0.0
 
 # --- Gradient Boosting (optional baseline) ---
 # xgboost>=1.7.0
+
+# --- Causal Inference (S6 optimization) ---
+causalml>=0.15.0
+dowhy>=0.8
+
+# --- Missing Value Modeling (S6 optimization) ---
+pypots>=1.3

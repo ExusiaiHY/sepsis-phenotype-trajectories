@@ -116,33 +116,65 @@ def _fallback_dml_cate(
     X: np.ndarray,
     treatment: np.ndarray,
     outcome: np.ndarray,
+    n_folds: int = 5,
+    random_state: int = 42,
 ) -> np.ndarray:
-    """Sklearn-based doubly-robust DML fallback (same as s4/causal_analysis.py)."""
-    # Propensity model
-    ps_model = LogisticRegression(max_iter=2000, class_weight="balanced")
-    ps_model.fit(X, treatment)
-    ps = np.clip(ps_model.predict_proba(X)[:, 1], 0.05, 0.95)
+    """
+    Sklearn-based doubly-robust DML with honest 5-fold cross-fitting.
 
-    # Outcome model
-    X_aug = np.column_stack([X, treatment])
-    outcome_model = RandomForestRegressor(
-        n_estimators=200, min_samples_leaf=10, random_state=42, n_jobs=-1,
-    )
-    outcome_model.fit(X_aug, outcome)
-    mu1 = outcome_model.predict(np.column_stack([X, np.ones(len(X))]))
-    mu0 = outcome_model.predict(np.column_stack([X, np.zeros(len(X))]))
-    mu = outcome_model.predict(X_aug)
+    Unlike in-sample fitting, each sample's CATE is predicted by a model
+    that never saw that sample during training.
+    """
+    from sklearn.model_selection import KFold
 
-    # Doubly-robust pseudo-outcome
-    pseudo = ((treatment - ps) / (ps * (1.0 - ps) + 1e-8)) * (outcome - mu) + (mu1 - mu0)
+    N = len(X)
+    cate = np.zeros(N, dtype=np.float64)
+    kf = KFold(n_splits=n_folds, shuffle=True, random_state=random_state)
 
-    # CATE model
-    tau_model = RandomForestRegressor(
-        n_estimators=200, min_samples_leaf=10, random_state=42, n_jobs=-1,
-    )
-    tau_model.fit(X, pseudo)
-    cate = tau_model.predict(X)
-    logger.info("DML fallback: CATE mean=%.4f, std=%.4f", cate.mean(), cate.std())
+    for fold_idx, (train_idx, test_idx) in enumerate(kf.split(X)):
+        X_tr, X_te = X[train_idx], X[test_idx]
+        w_tr, w_te = treatment[train_idx], treatment[test_idx]
+        y_tr, y_te = outcome[train_idx], outcome[test_idx]
+
+        # Skip fold if single treatment class in train
+        if len(np.unique(w_tr)) < 2:
+            continue
+
+        # Propensity model
+        ps_model = LogisticRegression(max_iter=2000, class_weight="balanced")
+        ps_model.fit(X_tr, w_tr)
+        ps_te = np.clip(ps_model.predict_proba(X_te)[:, 1], 0.05, 0.95)
+
+        # Outcome model
+        X_aug_tr = np.column_stack([X_tr, w_tr])
+        outcome_model = RandomForestRegressor(
+            n_estimators=200, min_samples_leaf=10, random_state=random_state, n_jobs=-1,
+        )
+        outcome_model.fit(X_aug_tr, y_tr)
+        X_aug_te = np.column_stack([X_te, w_te])
+        mu_te = outcome_model.predict(X_aug_te)
+        mu1_te = outcome_model.predict(np.column_stack([X_te, np.ones(len(X_te))]))
+        mu0_te = outcome_model.predict(np.column_stack([X_te, np.zeros(len(X_te))]))
+
+        # Doubly-robust pseudo-outcome (out-of-fold)
+        pseudo_te = ((w_te - ps_te) / (ps_te * (1.0 - ps_te) + 1e-8)) * (y_te - mu_te) + (mu1_te - mu0_te)
+
+        # CATE model: fit on train pseudo-outcomes, predict on test
+        X_aug_tr_full = np.column_stack([X_tr, w_tr])
+        mu_tr = outcome_model.predict(X_aug_tr_full)
+        ps_tr = np.clip(ps_model.predict_proba(X_tr)[:, 1], 0.05, 0.95)
+        mu1_tr = outcome_model.predict(np.column_stack([X_tr, np.ones(len(X_tr))]))
+        mu0_tr = outcome_model.predict(np.column_stack([X_tr, np.zeros(len(X_tr))]))
+        pseudo_tr = ((w_tr - ps_tr) / (ps_tr * (1.0 - ps_tr) + 1e-8)) * (y_tr - mu_tr) + (mu1_tr - mu0_tr)
+
+        tau_model = RandomForestRegressor(
+            n_estimators=200, min_samples_leaf=10, random_state=random_state, n_jobs=-1,
+        )
+        tau_model.fit(X_tr, pseudo_tr)
+        cate[test_idx] = tau_model.predict(X_te)
+
+    logger.info("DML cross-fitted (%d-fold): CATE mean=%.4f, std=%.4f",
+                n_folds, cate.mean(), cate.std())
     return cate
 
 
