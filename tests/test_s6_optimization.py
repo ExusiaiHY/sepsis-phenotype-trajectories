@@ -16,6 +16,7 @@ from s6_optimization.missingness_encoder import (
     compute_missingness_features,
 )
 from s6_optimization.run_comparison import compare_s6_runs
+from s6_optimization.severity_split_search import search_severity_split_targets
 from s6_optimization.phenotype_naming import (
     assign_phenotype_by_causality,
     apply_cluster_severity_modifier,
@@ -322,3 +323,47 @@ def test_cluster_severity_modifier_splits_selected_targets():
         dominant_cluster=2,
         cluster_mortality_order=cluster_mortality_order,
     ) == "neurological_decline"
+
+
+def test_search_severity_split_targets_recovers_heterogeneous_label():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        run_dir = root / "run"
+        run_dir.mkdir()
+
+        phenotype_df = pd.DataFrame(
+            {
+                "patient_idx": list(range(12)),
+                "dominant_cluster": [0, 0, 0, 0, 2, 2, 2, 2, 1, 1, 3, 3],
+                "trajectory_direction": ["stable"] * 12,
+                "phenotype_key": ["respiratory_failure"] * 8 + ["neurological_decline"] * 4,
+                "phenotype_name": ["x"] * 12,
+                "cate_score": [0.0] * 12,
+                "mortality_risk": [0.1] * 12,
+                "sofa_total": [5] * 12,
+                "dominant_organ": ["respiratory"] * 8 + ["neurological"] * 4,
+            }
+        )
+        phenotype_df.to_csv(run_dir / "phenotype_assignments.csv", index=False)
+
+        static = pd.DataFrame(
+            {
+                "mortality_inhospital": [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0],
+                "center_id": ["a", "a", "b", "b"] * 3,
+            }
+        )
+        static_path = root / "static.csv"
+        static.to_csv(static_path, index=False)
+
+        report = search_severity_split_targets(
+            run_dir=run_dir,
+            static_path=static_path,
+            min_group_size=2,
+            min_candidate_size=2,
+            max_combination_size=2,
+            top_k=3,
+        )
+
+        assert report["recommendation"] is not None
+        assert "respiratory_failure" in report["recommendation"]["targets"]
+        assert report["recommendation"]["score_delta_vs_current"] > 0

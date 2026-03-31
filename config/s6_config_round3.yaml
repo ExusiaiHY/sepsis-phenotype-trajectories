@@ -1,0 +1,37 @@
+# S6 Optimization: search-driven round-3 severity split configuration
+
+missingness:
+  gap_window: 6
+  features: ["mask", "gap_length", "density_change"]
+
+causal:
+  method: t_learner
+  treatment_proxy: vasopressor_proxy
+  treatment_horizon: 24
+  outcome_col: mortality_inhospital
+
+organ_scoring:
+  horizon: 24
+  sofa_version: sepsis3
+
+phenotype_naming:
+  deterioration_slope_threshold: 0.01
+  cate_responsiveness_threshold: 0.02
+  low_severity_sofa_max: 2
+  low_severity_mortality_max: 0.10
+  severity_split_targets:
+    - hemodynamic_unstable_proxy_refractory
+    - hemodynamic_unstable_proxy_responsive
+    - neurological_decline
+    - respiratory_failure
+
+paths:
+  s0_dir: data/s0
+  s2_dir: data/s2
+  s15_encoder: data/s15/checkpoints/pretrain_best.pt
+  output_dir: data/s6
+
+runtime:
+  device: auto
+  log_level: INFO
+  seed: 42
