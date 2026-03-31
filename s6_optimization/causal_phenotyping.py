@@ -20,7 +20,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import (
     HistGradientBoostingClassifier,
     RandomForestRegressor,
@@ -125,20 +124,33 @@ def _fallback_dml_cate(
     Unlike in-sample fitting, each sample's CATE is predicted by a model
     that never saw that sample during training.
     """
-    from sklearn.model_selection import KFold
+    from sklearn.model_selection import StratifiedKFold
 
     N = len(X)
     cate = np.zeros(N, dtype=np.float64)
-    kf = KFold(n_splits=n_folds, shuffle=True, random_state=random_state)
+    if len(np.unique(treatment)) < 2:
+        logger.warning("DML cross-fitting skipped: treatment has only one class")
+        return cate
+    class_counts = np.bincount(treatment.astype(int))
+    min_class_count = int(class_counts[class_counts > 0].min())
+    if min_class_count < 2:
+        logger.warning(
+            "DML cross-fitting skipped: smallest treatment class has only %d sample(s)",
+            min_class_count,
+        )
+        return cate
 
-    for fold_idx, (train_idx, test_idx) in enumerate(kf.split(X)):
+    effective_folds = min(n_folds, min_class_count)
+    splitter = StratifiedKFold(
+        n_splits=effective_folds,
+        shuffle=True,
+        random_state=random_state,
+    )
+
+    for train_idx, test_idx in splitter.split(X, treatment):
         X_tr, X_te = X[train_idx], X[test_idx]
         w_tr, w_te = treatment[train_idx], treatment[test_idx]
-        y_tr, y_te = outcome[train_idx], outcome[test_idx]
-
-        # Skip fold if single treatment class in train
-        if len(np.unique(w_tr)) < 2:
-            continue
+        y_tr = outcome[train_idx]
 
         # Propensity model
         ps_model = LogisticRegression(max_iter=2000, class_weight="balanced")
@@ -156,9 +168,6 @@ def _fallback_dml_cate(
         mu1_te = outcome_model.predict(np.column_stack([X_te, np.ones(len(X_te))]))
         mu0_te = outcome_model.predict(np.column_stack([X_te, np.zeros(len(X_te))]))
 
-        # Doubly-robust pseudo-outcome (out-of-fold)
-        pseudo_te = ((w_te - ps_te) / (ps_te * (1.0 - ps_te) + 1e-8)) * (y_te - mu_te) + (mu1_te - mu0_te)
-
         # CATE model: fit on train pseudo-outcomes, predict on test
         X_aug_tr_full = np.column_stack([X_tr, w_tr])
         mu_tr = outcome_model.predict(X_aug_tr_full)
@@ -173,8 +182,12 @@ def _fallback_dml_cate(
         tau_model.fit(X_tr, pseudo_tr)
         cate[test_idx] = tau_model.predict(X_te)
 
-    logger.info("DML cross-fitted (%d-fold): CATE mean=%.4f, std=%.4f",
-                n_folds, cate.mean(), cate.std())
+    logger.info(
+        "DML cross-fitted (%d-fold): CATE mean=%.4f, std=%.4f",
+        effective_folds,
+        cate.mean(),
+        cate.std(),
+    )
     return cate
 
 
@@ -185,7 +198,7 @@ def build_physiology_covariates(
     horizon: int = 24,
 ) -> np.ndarray:
     """
-    Build patient-level covariate matrix from raw physiology for causal analysis.
+    Build patient-level covariate matrix from processed physiology for causal analysis.
 
     For each important feature, computes mean/min/max over `horizon` hours.
     Also includes observation density as a covariate.
@@ -270,11 +283,29 @@ def run_causal_phenotyping_pipeline(
     # Step 1: Load data
     logger.info("Step 1: Loading data...")
     # processed/ for ML covariates (z-score standardized)
-    continuous_processed = np.load(s0_dir / "processed" / "continuous.npy", mmap_mode="r")
-    masks = np.load(s0_dir / "processed" / "masks_continuous.npy", mmap_mode="r")
+    processed_continuous_path = s0_dir / "processed" / "continuous.npy"
+    processed_masks_path = s0_dir / "processed" / "masks_continuous.npy"
+    raw_continuous_path = s0_dir / "raw_aligned" / "continuous.npy"
+    raw_masks_path = s0_dir / "raw_aligned" / "masks_continuous.npy"
+    missing_inputs = [
+        str(path) for path in [
+            processed_continuous_path,
+            processed_masks_path,
+            raw_continuous_path,
+            raw_masks_path,
+        ] if not path.exists()
+    ]
+    if missing_inputs:
+        raise FileNotFoundError(
+            "S6 causal phenotyping is missing required inputs: "
+            + ", ".join(missing_inputs)
+        )
+
+    continuous_processed = np.load(processed_continuous_path, mmap_mode="r")
+    masks = np.load(processed_masks_path, mmap_mode="r")
     # raw_aligned/ for SOFA organ scores (original clinical units)
-    raw_continuous = np.load(s0_dir / "raw_aligned" / "continuous.npy", mmap_mode="r")
-    raw_masks = np.load(s0_dir / "raw_aligned" / "masks_continuous.npy", mmap_mode="r")
+    raw_continuous = np.load(raw_continuous_path, mmap_mode="r")
+    raw_masks = np.load(raw_masks_path, mmap_mode="r")
     static = pd.read_csv(s0_dir / "static.csv")
     window_labels = np.load(s2_dir / "window_labels.npy")
 
@@ -326,7 +357,7 @@ def run_causal_phenotyping_pipeline(
     else:
         # Fallback: use MAP < 65 directly
         map_idx = CONTINUOUS_NAMES.index("map")
-        map_vals = continuous[:, :treatment_horizon, map_idx]
+        map_vals = raw_continuous[:, :treatment_horizon, map_idx]
         treatment_indicator = (map_vals < 65).any(axis=1).astype(int)
         logger.info("  Treatment (MAP<65 fallback): %d/%d", treatment_indicator.sum(), N)
 
@@ -434,6 +465,10 @@ def run_causal_phenotyping_pipeline(
         "pipeline": "causal_phenotyping",
         "n_patients": N,
         "causal_method": causal_method,
+        "data_sources": {
+            "covariates": str(processed_continuous_path),
+            "organ_scores": str(raw_continuous_path),
+        },
         "treatment_horizon": int(treatment_horizon),
         "organ_horizon": int(organ_horizon),
         "phenotype_config": phenotype_config or {},

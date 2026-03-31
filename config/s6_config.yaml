@@ -29,7 +29,7 @@ paths:
   s0_dir: data/s0
   s2_dir: data/s2
   s15_encoder: data/s15/checkpoints/pretrain_best.pt
-  output_dir: data/s6_rerun_20260401
+  output_dir: data/s6
 
 runtime:
   device: auto

@@ -27,6 +27,7 @@ Outputs:
 """
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import sys
@@ -55,16 +56,40 @@ logging.basicConfig(
 logger = logging.getLogger("s6.orchestrator")
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run the S6 optimization pipeline.")
+    parser.add_argument(
+        "--config",
+        default="config/s6_config.yaml",
+        help="Config path relative to project root",
+    )
+    parser.add_argument(
+        "--output-dir",
+        default=None,
+        help="Optional output directory relative to project root",
+    )
+    parser.add_argument(
+        "--min-group-size",
+        type=int,
+        default=50,
+        help="Minimum group size used by baseline comparison",
+    )
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
     t_start = time.time()
     logger.info("=" * 70)
     logger.info("S6 OPTIMIZATION PIPELINE — Model Enhancement")
     logger.info("=" * 70)
 
     # Load config
-    config_path = PROJECT_ROOT / "config" / "s6_config.yaml"
+    config_path = PROJECT_ROOT / args.config
     with open(config_path) as f:
         cfg = yaml.safe_load(f)
+    if args.output_dir:
+        cfg["paths"]["output_dir"] = args.output_dir
 
     s0_dir = PROJECT_ROOT / cfg["paths"]["s0_dir"]
     s2_dir = PROJECT_ROOT / cfg["paths"]["s2_dir"]
@@ -74,6 +99,11 @@ def main():
     report = {
         "pipeline": "s6_full_optimization",
         "config": cfg,
+        "runtime_overrides": {
+            "config": str(config_path),
+            "output_dir": str(output_dir),
+            "min_group_size": int(args.min_group_size),
+        },
         "stages": {},
     }
 
@@ -155,7 +185,7 @@ def main():
         window_labels_path=s2_dir / "window_labels.npy",
         phenotype_assignments_path=output_dir / "phenotype_assignments.csv",
         output_path=output_dir / "baseline_comparison.json",
-        min_group_size=50,
+        min_group_size=args.min_group_size,
     )
     report["stages"]["baseline_comparison"] = {
         "duration_sec": round(time.time() - t3, 1),

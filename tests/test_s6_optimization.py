@@ -15,6 +15,7 @@ from s6_optimization.missingness_encoder import (
     compute_gap_lengths_vectorized,
     compute_missingness_features,
 )
+from s6_optimization.run_comparison import compare_s6_runs
 from s6_optimization.phenotype_naming import (
     assign_phenotype_by_causality,
     _sofa_respiratory,
@@ -244,3 +245,54 @@ def test_artifact_csv_json_counts_match():
 
     import pytest
     pytest.skip("No S6 artifacts found")
+
+
+def test_compare_s6_runs_reports_metric_deltas():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        previous = root / "previous"
+        current = root / "current"
+        previous.mkdir()
+        current.mkdir()
+
+        previous_baseline = {
+            "optimized": {
+                "supported_group_count": 5,
+                "supported_mortality_range": 0.30,
+                "weighted_mortality_std": 0.12,
+                "center_distribution_l1": 0.01,
+                "center_mortality_deviation": 0.006,
+                "dominant_group_fraction": 0.50,
+                "rare_group_fraction": 0.02,
+                "group_count": 6,
+                "group_stats": [{"label": "a", "n": 10}],
+            }
+        }
+        current_baseline = {
+            "optimized": {
+                "supported_group_count": 7,
+                "supported_mortality_range": 0.25,
+                "weighted_mortality_std": 0.10,
+                "center_distribution_l1": 0.02,
+                "center_mortality_deviation": 0.004,
+                "dominant_group_fraction": 0.40,
+                "rare_group_fraction": 0.00,
+                "group_count": 7,
+                "group_stats": [{"label": "b", "n": 12}],
+            }
+        }
+        previous_causal = {"cate_summary": {"std": 0.08}}
+        current_causal = {"cate_summary": {"std": 0.05}}
+
+        pd.DataFrame({"sofa_total": [8.0, 10.0]}).to_csv(previous / "organ_scores.csv", index=False)
+        pd.DataFrame({"sofa_total": [5.0, 6.0]}).to_csv(current / "organ_scores.csv", index=False)
+        (previous / "baseline_comparison.json").write_text(json.dumps(previous_baseline), encoding="utf-8")
+        (current / "baseline_comparison.json").write_text(json.dumps(current_baseline), encoding="utf-8")
+        (previous / "causal_phenotyping_report.json").write_text(json.dumps(previous_causal), encoding="utf-8")
+        (current / "causal_phenotyping_report.json").write_text(json.dumps(current_causal), encoding="utf-8")
+
+        report = compare_s6_runs(previous, current)
+        assert report["metric_deltas"]["supported_group_count"]["improved"] is True
+        assert report["metric_deltas"]["center_distribution_l1"]["improved"] is False
+        assert report["metric_deltas"]["cate_std"]["improved"] is True
+        assert report["metric_deltas"]["mean_sofa_total"]["improved"] is None

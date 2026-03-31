@@ -6,4 +6,5 @@ Modules:
   - missingness_encoder: Informative missingness modeling (SAITS-style attention masks)
   - causal_phenotyping:  End-to-end causal treatment effect pipeline for phenotype naming
   - baseline_comparison: Quantitative baseline-vs-S6 comparison reporting
+  - run_comparison:      Quantitative comparison between two S6 run directories
 """
