@@ -58,6 +58,7 @@ def parse_args():
     parser.add_argument("--immune-boost", type=float, default=1.0)
     parser.add_argument("--organ-boost", type=float, default=1.0)
     parser.add_argument("--fluid-boost", type=float, default=1.0)
+    parser.add_argument("--phase1-epochs", type=int, default=0)
     parser.add_argument("--init-strict", action="store_true")
     parser.add_argument("--patience", type=int, default=4)
     parser.add_argument("--seed", type=int, default=42)
@@ -95,6 +96,7 @@ def main():
         immune_boost=args.immune_boost,
         organ_boost=args.organ_boost,
         fluid_boost=args.fluid_boost,
+        phase1_epochs=args.phase1_epochs,
         seed=args.seed,
         device=get_device(args.device),
         student_arch=args.student_arch,

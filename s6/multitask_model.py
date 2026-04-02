@@ -318,6 +318,7 @@ def train_multitask_student(
     immune_boost: float = 1.0,
     organ_boost: float = 1.0,
     fluid_boost: float = 1.0,
+    phase1_epochs: int = 0,
 ) -> dict:
     """Train multi-task realtime student on enhanced MIMIC data."""
     torch.manual_seed(seed)
@@ -509,6 +510,7 @@ def train_multitask_student(
     for epoch in range(1, epochs + 1):
         model.train()
         start_time = time.time()
+        in_phase1 = epoch <= phase1_epochs and phase1_epochs > 0
         losses = []
         for batch in train_loader:
             optimizer.zero_grad()
@@ -518,12 +520,15 @@ def train_multitask_student(
                 batch["treatments"].to(device),
                 batch["treatment_mask"].to(device),
             )
-            loss = (
-                lambda_mortality * bce(out["logits_mortality"], batch["y_mortality"].to(device))
-                + lambda_immune * ce_immune(out["logits_immune"], batch["y_immune"].to(device))
-                + lambda_organ * ce_organ(out["logits_organ"], batch["y_organ"].to(device))
-                + lambda_fluid * ce_fluid(out["logits_fluid"], batch["y_fluid"].to(device))
-            )
+            if in_phase1:
+                loss = lambda_mortality * bce(out["logits_mortality"], batch["y_mortality"].to(device))
+            else:
+                loss = (
+                    lambda_mortality * bce(out["logits_mortality"], batch["y_mortality"].to(device))
+                    + lambda_immune * ce_immune(out["logits_immune"], batch["y_immune"].to(device))
+                    + lambda_organ * ce_organ(out["logits_organ"], batch["y_organ"].to(device))
+                    + lambda_fluid * ce_fluid(out["logits_fluid"], batch["y_fluid"].to(device))
+                )
             loss.backward()
             optimizer.step()
             losses.append(float(loss.item()))
@@ -640,6 +645,7 @@ def train_multitask_student(
             "lambda_immune": lambda_immune,
             "lambda_organ": lambda_organ,
             "lambda_fluid": lambda_fluid,
+            "phase1_epochs": phase1_epochs,
             "use_focal_loss": bool(use_focal_loss),
             "focal_gamma": focal_gamma,
             "immune_boost": immune_boost,

@@ -19,6 +19,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from uvicorn import run as uvicorn_run
 
@@ -28,6 +29,8 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from s6.multitask_model import MultitaskRealtimeStudentClassifier
 from s6.treatment_recommender import SubtypeTreatmentRecommender
+
+DEMO_HTML_PATH = PROJECT_ROOT / "webapp_s6" / "index.html"
 
 
 app = FastAPI(title="S6 Sepsis Subtype Diagnosis API", version="0.2.0")
@@ -142,6 +145,13 @@ def health() -> dict:
         "device": DEVICE,
         "model_config": CONFIG,
     }
+
+
+@app.get("/demo", response_class=HTMLResponse)
+def demo() -> str:
+    if DEMO_HTML_PATH.exists():
+        return DEMO_HTML_PATH.read_text(encoding="utf-8")
+    return "<html><body><h1>Demo HTML not found</h1></body></html>"
 
 
 @app.post("/predict", response_model=PredictResponse)

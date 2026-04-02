@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S6 脓毒症亚型诊断与治疗推荐系统</title>
+<style>
+  :root { --bg:#0f172a; --panel:#1e293b; --accent:#38bdf8; --text:#e2e8f0; --muted:#94a3b8; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--text); }
+  .container { max-width:1100px; margin:0 auto; padding:24px; }
+  h1 { font-size:1.6rem; margin-bottom:6px; }
+  .subtitle { color:var(--muted); margin-bottom:18px; }
+  .card { background:var(--panel); border-radius:12px; padding:18px; margin-bottom:16px; box-shadow:0 4px 12px rgba(0,0,0,.25); }
+  label { display:block; font-size:.9rem; color:var(--muted); margin-bottom:6px; }
+  textarea, input[type="text"] { width:100%; background:#0b1220; color:var(--text); border:1px solid #334155; border-radius:8px; padding:10px; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; }
+  textarea { min-height:220px; resize:vertical; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; }
+  .btn { background:var(--accent); color:#0f172a; border:none; padding:10px 16px; border-radius:8px; font-weight:600; cursor:pointer; }
+  .btn.secondary { background:#334155; color:var(--text); }
+  .btn:hover { opacity:.92; }
+  .status { font-size:.9rem; color:var(--muted); margin-top:8px; }
+  pre { background:#0b1220; border:1px solid #334155; border-radius:8px; padding:12px; overflow:auto; max-height:420px; }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:900px){ .grid-2 { grid-template-columns:1fr; } }
+  .tag { display:inline-block; background:#334155; color:var(--text); padding:2px 8px; border-radius:999px; font-size:.8rem; margin-right:6px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧬 S6 脓毒症亚型诊断与治疗推荐系统</h1>
+  <div class="subtitle">基于 MIMIC-IV 增强数据的多任务 Transformer 模型 + 结构化规则引擎</div>
+
+  <div class="card">
+    <label>API 根地址</label>
+    <input id="apiRoot" type="text" value="http://8.216.50.232:8000">
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <label>输入 JSON（time_series  shape: [batch, 48, 43]）</label>
+      <textarea id="payload">{
+  "time_series": [
+    [
+      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+       0.0, 0.0, 0.0],
+      ...Array(47).fill(Array(43).fill(0.0))
+    ]
+  ],
+  "probability_threshold": 0.3
+}</textarea>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn" onclick="callPredict()">🔬 仅诊断 (/predict)</button>
+        <button class="btn secondary" onclick="callRecommend()">💊 诊断+推荐 (/recommend)</button>
+      </div>
+      <div class="status" id="status">就绪</div>
+    </div>
+
+    <div class="card">
+      <label>快速提示</label>
+      <div style="font-size:.9rem;color:var(--muted);line-height:1.6;">
+        <p><span class="tag">42</span> 维连续特征（前 21 维为原始特征）</p>
+        <p><span class="tag">1</span> 维治疗特征（机械通气）</p>
+        <p><span class="tag">48</span> 小时时序窗口</p>
+        <p>返回值包含：</p>
+        <ul>
+          <li>mortality_prob：28 天死亡风险</li>
+          <li>immune_prob：免疫内型概率（3 类）</li>
+          <li>organ_prob：器官主导型概率（5 类）</li>
+          <li>fluid_prob：液体获益型概率（3 类）</li>
+          <li>recommendations：结构化治疗推荐（仅 /recommend）</li>
+        </ul>
+        <p style="margin-top:8px;font-size:.8rem;color:#94a3b8;">⚠️ 此推荐仅供临床研究参考，不替代临床判断。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <label>返回结果</label>
+    <pre id="result">等待请求...</pre>
+  </div>
+</div>
+
+<script>
+const apiRoot = () => document.getElementById('apiRoot').value.replace(/\/$/, '');
+const setStatus = (msg) => document.getElementById('status').textContent = msg;
+const setResult = (obj) => document.getElementById('result').textContent = JSON.stringify(obj, null, 2);
+
+function getPayload() {
+  const raw = document.getElementById('payload').value;
+  // Replace JS spread syntax with real JSON array
+  const clean = raw.replace(/\.\.\.Array\(\d+\)\.fill\(Array\(\d+\)\.fill\(0\.0\)\)/g, () => {
+    return Array.from({length:47}, () => Array(43).fill(0.0)).map(row => '\n      ' + JSON.stringify(row)).join(',');
+  });
+  return JSON.parse(clean);
+}
+
+async function callPredict() {
+  setStatus('请求中...');
+  try {
+    const body = getPayload();
+    delete body.probability_threshold;
+    const res = await fetch(apiRoot() + '/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    setResult(data);
+    setStatus(res.ok ? '完成' : '错误: ' + (data.detail || res.statusText));
+  } catch (e) {
+    setStatus('网络错误: ' + e.message);
+  }
+}
+
+async function callRecommend() {
+  setStatus('请求中...');
+  try {
+    const body = getPayload();
+    const res = await fetch(apiRoot() + '/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    setResult(data);
+    setStatus(res.ok ? '完成' : '错误: ' + (data.detail || res.statusText));
+  } catch (e) {
+    setStatus('网络错误: ' + e.message);
+  }
+}
+</script>
+</body>
+</html>
