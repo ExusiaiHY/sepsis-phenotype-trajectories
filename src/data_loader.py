@@ -252,21 +252,71 @@ def _generate_ar1_series(
 
 def load_mimic_data(config: dict) -> tuple[np.ndarray, pd.DataFrame]:
     """
-    Load MIMIC-IV sepsis cohort from CSV/Parquet exported by build_analysis_table.py.
+    Load MIMIC-IV sepsis cohort from prepared artifacts.
 
-    Reads from data/processed/:
-      - patient_static.csv (or .parquet)
-      - patient_timeseries.csv (or .parquet)
+    Supports two layouts:
+      1. ENHANCED (preferred if present):
+         - time_series_enhanced.npy
+         - patient_info_enhanced.csv
+      2. LEGACY:
+         - patient_static.csv (or .parquet)
+         - patient_timeseries.csv (or .parquet)
 
-    Converts to the same format as simulated data:
-      - time_series_3d: (n_patients, n_timesteps, n_features)
-      - patient_info: DataFrame
-
-    If files don't exist, prompts user to run build_analysis_table.py first.
+    Converts to the same format as simulated data.
     """
     mimic_cfg = config["data"].get("mimic", {})
     processed_dir = resolve_path(mimic_cfg.get("processed_dir") or config["paths"]["processed_data"])
 
+    # --- Try enhanced layout first ---
+    enhanced_ts_path = processed_dir / "time_series_enhanced.npy"
+    enhanced_info_path = processed_dir / "patient_info_enhanced.csv"
+
+    if enhanced_ts_path.exists() and enhanced_info_path.exists():
+        logger.info(f"Loading ENHANCED MIMIC-IV data from {processed_dir}")
+        time_series_3d = np.load(enhanced_ts_path)
+        patient_info = pd.read_csv(enhanced_info_path)
+
+        # Ensure stay_id alignment if needed
+        if "stay_id" not in patient_info.columns and "patient_id" in patient_info.columns:
+            patient_info["stay_id"] = patient_info["patient_id"].astype(int)
+
+        # Compatibility renames for downstream pipeline
+        rename_map = {
+            "is_sepsis3": "subtype_true",
+            "mortality_28d": "mortality_28d",
+            "los_icu_days": "icu_los",
+        }
+        for old, new in rename_map.items():
+            if old in patient_info.columns and old != new:
+                patient_info[new] = patient_info[old]
+
+        if "patient_id" not in patient_info.columns:
+            patient_info["patient_id"] = patient_info["stay_id"].astype(str)
+        if "shock_onset" not in patient_info.columns:
+            patient_info["shock_onset"] = (patient_info.get("vasopressor_use", 0)).astype(int)
+        if "icu_los" not in patient_info.columns:
+            patient_info["icu_los"] = patient_info.get("los_icu_days", 48)
+
+        logger.info(f"MIMIC-IV ENHANCED data loaded: {time_series_3d.shape}")
+        logger.info(
+            "  Subtype labels present: %s",
+            any(
+                c in patient_info.columns
+                for c in [
+                    "proxy_immune_state",
+                    "proxy_clinical_phenotype",
+                    "proxy_trajectory_phenotype",
+                    "proxy_fluid_strategy",
+                    "immune_subtype",
+                    "organ_subtype",
+                    "fluid_benefit_proxy",
+                ]
+            ),
+        )
+        logger.info(f"  Sepsis-3 patients: {patient_info['is_sepsis3'].sum()} / {len(patient_info)}")
+        return time_series_3d, patient_info
+
+    # --- Fallback to legacy layout ---
     static_path = processed_dir / "patient_static.parquet"
     ts_path = processed_dir / "patient_timeseries.parquet"
     if not static_path.exists():
@@ -279,7 +329,7 @@ def load_mimic_data(config: dict) -> tuple[np.ndarray, pd.DataFrame]:
             f"Expected location: {processed_dir}/"
         )
 
-    logger.info(f"Loading MIMIC-IV data: {static_path.name}")
+    logger.info(f"Loading legacy MIMIC-IV data: {static_path.name}")
 
     if static_path.suffix == ".parquet":
         patient_info = pd.read_parquet(static_path)
@@ -512,6 +562,23 @@ def get_feature_names(config: dict) -> list[str]:
     if source == "mimic":
         mimic_cfg = config["data"].get("mimic", {})
         processed_dir = resolve_path(mimic_cfg.get("processed_dir") or config["paths"]["processed_data"])
+
+        # 1. Try enhanced manifest first
+        manifest_path = processed_dir / "enhanced_manifest.json"
+        if manifest_path.exists():
+            import json
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                manifest = json.load(f)
+            return manifest.get("feature_names", _mimic_default_features())
+
+        # 2. Try enhanced timeseries parquet
+        enhanced_ts_path = processed_dir / "patient_timeseries_enhanced.parquet"
+        if enhanced_ts_path.exists():
+            cols = pd.read_parquet(enhanced_ts_path).columns.tolist()
+            meta = {"stay_id", "subject_id", "hr", "grid_time"}
+            return [c for c in cols if c not in meta]
+
+        # 3. Legacy layout
         for ext in (".parquet", ".csv"):
             ts_path = processed_dir / f"patient_timeseries{ext}"
             if ts_path.exists():
@@ -537,4 +604,8 @@ def _mimic_default_features() -> list[str]:
         "sofa_total", "sofa_resp", "sofa_coag", "sofa_liver",
         "sofa_cardio", "sofa_cns", "sofa_renal",
         "norepi_rate", "urine_output_24hr", "meanbp_min",
+        # Enhanced features
+        "lymphocytes_abs", "lymphocytes_pct", "monocytes_abs", "neutrophils_abs",
+        "crp", "alt", "ast", "bilirubin_total",
+        "ferritin", "ddimer", "fibrinogen", "mech_vent",
     ]

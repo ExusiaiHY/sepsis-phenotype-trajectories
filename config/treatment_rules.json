@@ -1,0 +1,266 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Evidence-based sepsis subtype treatment recommendation rules derived from peer-reviewed literature (2021-2026). These rules are intended for clinical decision support and must be reviewed by qualified physicians before application.",
+  "disclaimer": "These recommendations are generated from published literature and proxy subtype labels. They do not replace clinical judgment or individualized patient assessment.",
+  "subtypes": {
+    "immune": {
+      "MAS-like": {
+        "display_name": "巨噬细胞活化样综合征 (MAS-like)",
+        "evidence_level": "RCT / Multi-center cohort",
+        "key_biomarkers": {
+          "ferritin": "> 1000 ng/mL (proxy threshold)",
+          "crp": "> 100 mg/L",
+          "platelet": "< 100 x10^3/uL",
+          "liver_injury": "ALT > 120 U/L or Bilirubin > 3 mg/dL"
+        },
+        "mortality_reference": "~56.3% (proxy cohort)",
+        "treatments": [
+          {
+            "priority": 1,
+            "category": "核心靶向治疗",
+            "name": "重组人干扰素γ (rhIFN-γ)",
+            "rationale": "通过JAK-STAT通路激活免疫细胞，上调mHLA-DR表达，恢复单核细胞抗原提呈能力和吞噬功能",
+            "route": "皮下注射",
+            "monitoring": ["mHLA-DR (若可测)", "体温趋势", "血小板计数", "肝功能", "DIC标志物"],
+            "cautions": ["活动性自身免疫病患者慎用"]
+          },
+          {
+            "priority": 2,
+            "category": "辅助治疗",
+            "name": "精准抗感染 + 器官支持",
+            "rationale": "控制继发感染，纠正凝血障碍和多器官功能障碍",
+            "actions": ["根据培养结果调整抗生素", "必要时血浆置换", "ICU器官功能支持"]
+          }
+        ]
+      },
+      "EIL-like": {
+        "display_name": "免疫麻痹样状态 (EIL-like)",
+        "evidence_level": "Observational cohort",
+        "key_biomarkers": {
+          "lymphocytes_abs": "< 1.0 x10^3/uL or lymphocytes% < 10%",
+          "crp": "< 150 mg/L (相对 modest)",
+          "culture_positive": "血/呼吸道培养阳性"
+        },
+        "mortality_reference": "~54.8% (proxy cohort)",
+        "treatments": [
+          {
+            "priority": 1,
+            "category": "免疫调节",
+            "name": "免疫增强策略 (GM-CSF 或 rhIFN-γ 考虑)",
+            "rationale": "恢复单核细胞mHLA-DR表达，逆转免疫麻痹状态",
+            "monitoring": ["淋巴细胞计数", "继发感染灶", "PCT/CRP动态"],
+            "cautions": ["需排除活动性自身免疫病"]
+          },
+          {
+            "priority": 2,
+            "category": "抗感染",
+            "name": "精准抗感染治疗",
+            "rationale": "EIL患者易继发院内感染，需依据培养结果调整抗生素",
+            "actions": ["痰培养", "血培养", "真菌筛查"]
+          }
+        ]
+      },
+      "Unclassified": {
+        "display_name": "免疫表型未分类",
+        "evidence_level": "N/A",
+        "treatments": [
+          {
+            "priority": 1,
+            "category": "标准治疗",
+            "name": "常规脓毒症bundle",
+            "rationale": "按Surviving Sepsis Campaign指南执行",
+            "actions": ["早期广谱抗生素", "液体复苏", "乳酸监测", "血管活性药物维持MAP≥65mmHg"]
+          }
+        ]
+      }
+    },
+    "organ": {
+      "alpha-like": {
+        "display_name": "α型 — 肝肾损伤主导型",
+        "evidence_level": "Multi-center cohort (Seymour 2019)",
+        "key_features": {
+          "sofa_pattern": "肝/肾SOFA评分最高",
+          "mortality_reference": "~58.0%"
+        },
+        "treatments": [
+          {
+            "priority": 1,
+            "category": "器官支持",
+            "name": "肝肾保护性策略",
+            "rationale": "以肝肾功能维护为核心，避免肾毒性药物",
+            "actions": ["避免NSAIDs和肾毒性抗生素", "监测尿量和肌酐", "必要时CRRT"]
+          },
+          {
+            "priority": 2,
+            "category": "液体管理",
+            "name": "适度液体复苏",
+            "rationale": "保证肾脏灌注但避免液体过载",
+            "actions": ["动态评估液体反应性", "限制晶体液总量"]
+          }
+        ]
+      },
+      "beta-like": {
+        "display_name": "β型 — 心肾损伤主导型",
+        "evidence_level": "Multi-center cohort (Seymour 2019)",
+        "key_features": {
+          "sofa_pattern": "心血管/肾SOFA评分最高",
+          "mortality_reference": "~47.2%"
+        },
+        "treatments": [
+          {
+            "priority": 1,
+            "category": "循环管理",
+            "name": "心肾联合保护",
+            "rationale": "维持心输出量同时避免液体过负荷导致急性肺损伤",
+            "actions": ["去甲肾上腺素维持MAP≥65mmHg", "超声评估心功能", "利尿剂或CRRT去负荷"]
+          },
+          {
+            "priority": 2,
+            "category": "液体策略",
+            "name": "限制性液体策略",
+            "rationale": "心功能不全患者对液体耐受差",
+            "actions": ["少量多次液体挑战", "PAWP或超声指导"]
+          }
+        ]
+      },
+      "gamma-like": {
+        "display_name": "γ型 — 呼吸功能障碍主导型",
+        "evidence_level": "Multi-center cohort (Seymour 2019)",
+        "key_features": {
+          "sofa_pattern": "呼吸SOFA最高 + 低氧血症/机械通气",
+          "pao2_fio2": "常显著降低",
+          "mortality_reference": "~52.5%"
+        },
+        "treatments": [
+          {
+            "priority": 1,
+            "category": "呼吸支持",
+            "name": "肺保护性通气策略",
+            "rationale": "降低呼吸机相关肺损伤，改善氧合",
+            "actions": ["小潮气量 (6 ml/kg理想体重)", "适当PEEP", "俯卧位通气 (若重度ARDS)"]
+          },
+          {
+            "priority": 2,
+            "category": "抗感染",
+            "name": "肺部感染源控制",
+            "rationale": "γ型多由肺部感染触发，需积极控制感染源",
+            "actions": ["痰培养+药敏", "支气管镜灌洗", "必要时CT评估"]
+          }
+        ]
+      },
+      "delta-like": {
+        "display_name": "δ型 — 多器官衰竭型",
+        "evidence_level": "Multi-center cohort (Seymour 2019)",
+        "key_features": {
+          "sofa_pattern": "SOFA≥10，≥3个器官系统受累",
+          "mortality_reference": "~69.4%"
+        },
+        "treatments": [
+          {
+            "priority": 1,
+            "category": "多学科器官支持",
+            "name": "全面ICU器官替代治疗",
+            "rationale": "δ型病情最重，需同时支持循环、呼吸、肾脏",
+            "actions": [
+              "机械通气",
+              "血管活性药物",
+              "CRRT (若AKI)",
+              "凝血功能纠正",
+              "肠内营养支持"
+            ]
+          },
+          {
+            "priority": 2,
+            "category": "预后沟通",
+            "name": "高级生命支持决策",
+            "rationale": "死亡率最高，需早期与家属沟通治疗目标",
+            "actions": ["每日多学科查房", "评估姑息治疗指征"]
+          }
+        ]
+      },
+      "Unclassified": {
+        "display_name": "器官主导型未分类",
+        "evidence_level": "N/A",
+        "treatments": [
+          {
+            "priority": 1,
+            "category": "标准治疗",
+            "name": "常规器官功能监测",
+            "rationale": "按SSC指南进行标准化管理",
+            "actions": ["每4-6h评估SOFA", "乳酸清除率监测"]
+          }
+        ]
+      }
+    },
+    "fluid": {
+      "high_benefit": {
+        "display_name": "液体复苏高获益型",
+        "evidence_level": "Proteinomic cohort (文献提示)",
+        "key_features": {
+          "lactate": "> 2.5 mmol/L",
+          "hypotension": "SBP < 90 or MAP < 65",
+          "no_severe_cardiac": "SOFA_cardio ≤ 2"
+        },
+        "mortality_reference": "~39.7%",
+        "treatments": [
+          {
+            "priority": 1,
+            "category": "液体策略",
+            "name": "积极液体复苏",
+            "rationale": "存在低灌注但心功能尚可，液体复苏可改善组织灌注",
+            "actions": ["20-30 ml/kg晶体液快速输注", "动态评估液体反应性 (脉压变异/被动抬腿)"]
+          }
+        ]
+      },
+      "low_benefit": {
+        "display_name": "液体复苏低获益/高风险型",
+        "evidence_level": "Proteinomic cohort (文献提示)",
+        "key_features": {
+          "cardiorenal_failure": "SOFA_cardio ≥3 + SOFA_renal ≥2",
+          "lung_risk": "机械通气 + SOFA_resp ≥3"
+        },
+        "mortality_reference": "~74.2%",
+        "treatments": [
+          {
+            "priority": 1,
+            "category": "液体策略",
+            "name": "限制性液体策略",
+            "rationale": "心肾功能障碍或肺损伤患者易出现液体过负荷，限制液体可改善预后",
+            "actions": [
+              "限制净液体入量",
+              "优先使用血管活性药物维持灌注",
+              "必要时利尿剂或CRRT去负荷"
+            ]
+          }
+        ]
+      },
+      "Unclassified": {
+        "display_name": "液体获益未分类",
+        "treatments": [
+          {
+            "priority": 1,
+            "category": "液体策略",
+            "name": "标准液体复苏",
+            "rationale": "按SSC指南初始30 ml/kg晶体液，随后动态评估",
+            "actions": ["乳酸指导复苏", "超声评估下腔静脉变异度"]
+          }
+        ]
+      }
+    }
+  },
+  "combination_rules": {
+    "description": "当患者同时属于多个亚型维度时，按以下优先级整合推荐",
+    "priority_order": ["immune", "organ", "fluid"],
+    "special_combinations": {
+      "EIL-like + delta-like": {
+        "risk_level": "极高危",
+        "mortality_proxy": "~85.7%",
+        "note": "免疫麻痹叠加多器官衰竭，预后最差，需尽早启动免疫增强+全面器官支持"
+      },
+      "MAS-like + delta-like": {
+        "risk_level": "极高危",
+        "note": "高炎症风暴合并多器官衰竭，需在抗炎/免疫调节同时积极器官支持"
+      }
+    }
+  }
+}
