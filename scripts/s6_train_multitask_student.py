@@ -53,6 +53,12 @@ def parse_args():
     parser.add_argument("--lambda-organ", type=float, default=1.0)
     parser.add_argument("--lambda-fluid", type=float, default=1.0)
     parser.add_argument("--lambda-mortality", type=float, default=1.0)
+    parser.add_argument("--use-focal-loss", action="store_true")
+    parser.add_argument("--focal-gamma", type=float, default=2.0)
+    parser.add_argument("--immune-boost", type=float, default=1.0)
+    parser.add_argument("--organ-boost", type=float, default=1.0)
+    parser.add_argument("--fluid-boost", type=float, default=1.0)
+    parser.add_argument("--init-strict", action="store_true")
     parser.add_argument("--patience", type=int, default=4)
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
@@ -83,6 +89,12 @@ def main():
         lambda_immune=args.lambda_immune,
         lambda_organ=args.lambda_organ,
         lambda_fluid=args.lambda_fluid,
+        init_checkpoint_strict=args.init_strict,
+        use_focal_loss=args.use_focal_loss,
+        focal_gamma=args.focal_gamma,
+        immune_boost=args.immune_boost,
+        organ_boost=args.organ_boost,
+        fluid_boost=args.fluid_boost,
         seed=args.seed,
         device=get_device(args.device),
         student_arch=args.student_arch,

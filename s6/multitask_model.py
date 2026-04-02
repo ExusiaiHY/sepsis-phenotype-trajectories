@@ -34,6 +34,48 @@ from s15.calibration import TemperatureScaling
 from s15.classification_eval import _classification_metrics, _select_threshold
 
 
+
+def _compute_class_weights(labels: np.ndarray, n_classes: int, method: str = "inv_sqrt") -> torch.Tensor | None:
+    """Compute per-class weights to address imbalance."""
+    counts = np.bincount(labels.astype(int).flatten(), minlength=n_classes)
+    if method == "inv_sqrt":
+        weights = 1.0 / np.sqrt(np.maximum(counts, 1.0))
+    elif method == "inverse":
+        weights = 1.0 / np.maximum(counts, 1.0)
+    elif method == "effective":
+        beta = 0.9999
+        weights = (1.0 - beta) / (1.0 - beta ** np.maximum(counts, 1.0))
+    else:
+        return None
+    weights = weights / weights.mean()
+    return torch.tensor(weights, dtype=torch.float32)
+
+
+class FocalLoss(nn.Module):
+    """Focal loss for classification with optional per-class alpha weights."""
+
+    def __init__(self, gamma: float = 2.0, alpha: torch.Tensor | None = None, reduction: str = "mean"):
+        super().__init__()
+        self.gamma = gamma
+        self.register_buffer("alpha", alpha)
+        self.reduction = reduction
+
+    def forward(self, inputs: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        logp = F.log_softmax(inputs, dim=-1)
+        logp_t = logp.gather(1, targets.unsqueeze(1)).squeeze(1)
+        p_t = torch.exp(logp_t)
+        focal_weight = (1.0 - p_t) ** self.gamma
+        if self.alpha is not None:
+            alpha_t = self.alpha.gather(0, targets)
+            focal_weight = alpha_t * focal_weight
+        loss = -focal_weight * logp_t
+        if self.reduction == "mean":
+            return loss.mean()
+        elif self.reduction == "sum":
+            return loss.sum()
+        return loss
+
+
 class MultitaskStudentDataset(Dataset):
     """Dataset for multi-task student training."""
 
@@ -254,7 +296,7 @@ def train_multitask_student(
     lambda_organ: float = 1.0,
     lambda_fluid: float = 1.0,
     apply_temperature_scaling: bool = False,
-    init_checkpoint_strict: bool = True,
+    init_checkpoint_strict: bool = False,
     seed: int = 42,
     device: str = "cpu",
     student_arch: str = "transformer",
@@ -271,6 +313,11 @@ def train_multitask_student(
     tcn_dilations: tuple[int, ...] | list[int] = (1, 2, 4, 8),
     train_ratio: float = 0.7,
     val_ratio: float = 0.15,
+    use_focal_loss: bool = False,
+    focal_gamma: float = 2.0,
+    immune_boost: float = 1.0,
+    organ_boost: float = 1.0,
+    fluid_boost: float = 1.0,
 ) -> dict:
     """Train multi-task realtime student on enhanced MIMIC data."""
     torch.manual_seed(seed)
@@ -378,6 +425,10 @@ def train_multitask_student(
         num_workers=0,
     )
 
+    n_immune_classes = int(labels_immune.max()) + 1
+    n_organ_classes = int(labels_organ.max()) + 1
+    n_fluid_classes = int(labels_fluid.max()) + 1
+
     model = MultitaskRealtimeStudentClassifier(
         n_cont_features=n_cont,
         n_treat_features=treatments.shape[-1],
@@ -395,6 +446,9 @@ def train_multitask_student(
         head_dropout=head_dropout,
         tcn_kernel_size=tcn_kernel_size,
         tcn_dilations=tcn_dilations,
+        n_immune_classes=n_immune_classes,
+        n_organ_classes=n_organ_classes,
+        n_fluid_classes=n_fluid_classes,
     ).to(device)
 
     initialization_summary = _initialize_realtime_student_model(
@@ -404,9 +458,48 @@ def train_multitask_student(
         device=device,
     )
 
+    # Custom mapping: S5-v2 single-task head -> multitask mortality head
+    if init_checkpoint_path is not None:
+        ckpt = torch.load(init_checkpoint_path, map_location=device, weights_only=False)
+        state_dict = ckpt.get("model_state_dict", ckpt)
+        mapped_head = {}
+        for key, value in state_dict.items():
+            if key.startswith("head."):
+                new_key = key.replace("head.", "head_mortality.")
+                if new_key in model.state_dict() and model.state_dict()[new_key].shape == value.shape:
+                    mapped_head[new_key] = value
+        if mapped_head:
+            load_result = model.load_state_dict(mapped_head, strict=False)
+            initialization_summary["mortality_head_mapped_tensors"] = int(len(mapped_head))
+            initialization_summary["mortality_head_missing_tensors"] = int(len(load_result.missing_keys))
+        else:
+            initialization_summary["mortality_head_mapped_tensors"] = 0
+
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     bce = nn.BCEWithLogitsLoss()
-    ce = nn.CrossEntropyLoss(ignore_index=-1)
+
+    # Class weights for imbalance
+    immune_weights = _compute_class_weights(labels_immune[train_idx], n_immune_classes, method="inv_sqrt")
+    organ_weights = _compute_class_weights(labels_organ[train_idx], n_organ_classes, method="inv_sqrt")
+    fluid_weights = _compute_class_weights(labels_fluid[train_idx], n_fluid_classes, method="inv_sqrt")
+    if immune_weights is not None:
+        immune_weights = immune_weights * immune_boost
+        immune_weights = immune_weights / immune_weights.mean()
+    if organ_weights is not None:
+        organ_weights = organ_weights * organ_boost
+        organ_weights = organ_weights / organ_weights.mean()
+    if fluid_weights is not None:
+        fluid_weights = fluid_weights * fluid_boost
+        fluid_weights = fluid_weights / fluid_weights.mean()
+
+    if use_focal_loss:
+        ce_immune = FocalLoss(gamma=focal_gamma, alpha=immune_weights).to(device)
+        ce_organ = FocalLoss(gamma=focal_gamma, alpha=organ_weights).to(device)
+        ce_fluid = FocalLoss(gamma=focal_gamma, alpha=fluid_weights).to(device)
+    else:
+        ce_immune = nn.CrossEntropyLoss(weight=immune_weights.to(device) if immune_weights is not None else None, ignore_index=-1)
+        ce_organ = nn.CrossEntropyLoss(weight=organ_weights.to(device) if organ_weights is not None else None, ignore_index=-1)
+        ce_fluid = nn.CrossEntropyLoss(weight=fluid_weights.to(device) if fluid_weights is not None else None, ignore_index=-1)
 
     best_state = None
     best_score = -np.inf
@@ -427,9 +520,9 @@ def train_multitask_student(
             )
             loss = (
                 lambda_mortality * bce(out["logits_mortality"], batch["y_mortality"].to(device))
-                + lambda_immune * ce(out["logits_immune"], batch["y_immune"].to(device))
-                + lambda_organ * ce(out["logits_organ"], batch["y_organ"].to(device))
-                + lambda_fluid * ce(out["logits_fluid"], batch["y_fluid"].to(device))
+                + lambda_immune * ce_immune(out["logits_immune"], batch["y_immune"].to(device))
+                + lambda_organ * ce_organ(out["logits_organ"], batch["y_organ"].to(device))
+                + lambda_fluid * ce_fluid(out["logits_fluid"], batch["y_fluid"].to(device))
             )
             loss.backward()
             optimizer.step()
@@ -547,6 +640,11 @@ def train_multitask_student(
             "lambda_immune": lambda_immune,
             "lambda_organ": lambda_organ,
             "lambda_fluid": lambda_fluid,
+            "use_focal_loss": bool(use_focal_loss),
+            "focal_gamma": focal_gamma,
+            "immune_boost": immune_boost,
+            "organ_boost": organ_boost,
+            "fluid_boost": fluid_boost,
             "apply_temperature_scaling": bool(apply_temperature_scaling),
             "initialization": initialization_summary,
             "seed": seed,
