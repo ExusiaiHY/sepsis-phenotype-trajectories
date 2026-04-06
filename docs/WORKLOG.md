@@ -1,5 +1,51 @@
 # Work Log
 
+## 2026-04-06 — S5 MIMIC-IV Deployment Policy Tightening
+
+### Stage
+S5: Bedside deployment policy optimization for MIMIC-IV
+
+### Objective
+Reduce MIMIC-IV `patient_alert_rate` from operationally non-viable 0.994 to below shadow policy ceiling (neg_alert_rate ≤ 0.35)
+
+### Root Cause Identified
+Two compounding problems caused the previous 8100-candidate search to report 0 feasible:
+1. Previous searches used `cloud_round2` replay bundle (mean_risk_h6=0.618); correct local bundle has mean_risk_h6=0.689 — different score distributions
+2. TIGHT grid omitted `min_history_hours=7h`; the sweet spot lies exactly at 7h
+
+Underlying model issue: calibrated S5-v2 transformer produces systematically high risk scores for MIMIC patients in early ICU hours (mean 0.689 at h6, declining to 0.186 at h48). The negative patient median max-risk is 0.84 — the model is over-confident for MIMIC negatives throughout the stay.
+
+### Analysis
+- Ran percentile analysis on correct local bundle: neg p65 max_risk = 0.883; threshold ≥ 0.87 needed for neg_alert_rate ≤ 0.35
+- Fine-grained search confirmed sweet spot: threshold=0.87, min_history=7h satisfies all shadow constraints
+- Official policy optimizer run: 2520 candidates, **300 feasible** (vs 0 previously)
+
+### Results — Best Policy
+| Metric | Value | Shadow Gate |
+|--------|-------|-------------|
+| neg_patient_alert_rate | **0.292** | ≤ 0.35 ✓ |
+| pos_patient_alert_rate | **0.550** | ≥ 0.55 ✓ |
+| pos_alert_rate@24h | **0.525** | ≥ 0.50 ✓ |
+| alert_events/patient-day | **0.192** | ≤ 1.0 ✓ |
+| median_first_alert_positive | **7.0h** | — |
+
+Previous: `patient_alert_rate=0.994`, `aepd=16.77` → Now: `0.338`, `0.192`
+
+### Policy Parameters
+- `enter_threshold=0.87, exit_threshold=0.87`
+- `min_history_hours=7, min_consecutive_hours=1`
+- `refractory_hours=6, max_alerts_per_stay=1`
+
+### Files Changed
+- Created: `config/s5_mimic_deployment_policy.json`
+- Created: `outputs/reports/s5_policy_mimic_tightened_20260406/`
+- Updated: `docs/DECISIONS.md` (D019), `docs/NEXT_STEPS.md`
+
+### Remaining Gap
+Positive recall floor is 55% — to push higher requires source-specific fine-tuning of the student model on MIMIC-IV data. The policy layer alone cannot compensate for the model's early-hour over-prediction.
+
+---
+
 ## 2026-03-18 19:30 — S1.5 Initialization
 
 ### Stage
@@ -1049,39 +1095,3 @@ cd docs && pdflatex -interaction=nonstopmode RESEARCH_PAPER.tex
 ### Interpretation
 
 The external temporal claim is now backed by actual full-cohort execution on both credentialed databases, not just subset smoke tests. Scientifically, the interpretation remains conservative: these are frozen-transfer temporal replications under partial channel overlap, so the central quantitative claim still comes from the internal PhysioNet 2012 cross-center validation.
-
-## 2026-03-31 — 项目回顾与未来规划 (V2 多模态临床诊断)
-
-### 阶段
-V2 (多模态临床诊断) 项目规划与方向确认
-
-### 目标
-总结 V1 (无监督亚型发现) 的成果，明确 V2 (有监督多模态预测) 的发展方向。
-
-### 已完成内容 (成果回顾)
-*   **数据管道与基础架构：** 成功处理了 PhysioNet 2012 多中心 ICU 数据集（11,956 名患者，48 小时数据，24 个特征），处理了 72.2% 的缺失率，并建立了随机和跨中心的数据划分机制。
-*   **V1 无监督亚型发现：**
-    *   完成了静态聚类和自监督时间序列表示学习。
-    *   进行了描述性表型轨迹分析，识别出 4 种不同的表型（表型间死亡率差异达 27.7 个百分点）。
-    *   发现 35.2% 的患者在 ICU 的前 48 小时内至少发生一次表型转换。
-    *   满足了 6/6 的跨中心验证标准。
-    *   整理了一套完整的研究成果，包括手稿 (`RESEARCH_PAPER.md` / `.tex`)、实验注册表和设计日志。
-*   **V2 准备工作：**
-    *   完成了领域调研（阅读了 13 篇参考论文）。
-    *   在 `project/multimodal/` 下创建了 V2 项目的骨架。
-    *   确立了结合 EHR 时间序列和临床文本笔记的核心架构方向。
-
-### 未来方向 (Next Steps)
-我们当前的首要目标是执行 **V2 多模态临床诊断** 计划：
-
-1.  **Stage 4 (单模态 LSTM 基线模型)：**
-    *   为 EHR 时间序列数据实现 LSTM 编码器。
-    *   连接线性分类器进行死亡率预测，作为引入文本数据前的基准。
-2.  **Stage 5 (临床笔记整合)：**
-    *   引入临床笔记模态。
-    *   实现 ClinicalBERT 编码器来处理文本数据。
-3.  **Stage 6 (多模态融合)：**
-    *   实现后期融合 (Late Fusion) 技术，结合时间序列 (LSTM) 和文本 (ClinicalBERT) 的表示。
-    *   尝试不同的融合策略，如拼接融合 (Concatenation) 和交叉注意力融合 (Cross-attention)。
-4.  **长期目标：**
-    *   虽然目前使用 PhysioNet 2012 作为起点，但我们的最终目标数据集是 **MIMIC-IV + MIMIC-IV-Note**（需要申请权限）。

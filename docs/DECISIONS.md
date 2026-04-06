@@ -155,6 +155,41 @@
   3. Simulated ARI=0.245 is modest (honestly reported)
   4. 1 cosmetic overfull hbox in Table 1
 
+## D017 — 2026-03-31: Freeze calibrated stacking and stop local S3.5 tuning
+- **Decision:** Keep calibrated stacking as the preferred downstream probability model, with base learners fixed at `depth=3`, `lr=0.03`, `max_iter=300` and the meta-learner updated to `C=0.02`.
+- **Evidence:**
+  - A refined local neighborhood search evaluated `35` nearby configurations around the previous best.
+  - The best calibration-oriented result stayed on the same base learner setting and only changed the meta regularization: `C=0.05 -> 0.02`.
+  - Updated Center B metrics at the validation-selected balanced operating point (`thr=0.09`): `Brier=0.0895`, `ECE=0.0227`, `AUROC=0.8727`, `balanced_accuracy=0.7897`, `recall=0.8393`.
+  - The previous default (`C=0.05`) was nearly identical, but slightly worse on the calibration objective: `ECE=0.0228`, `AUROC=0.8726`, `balanced_accuracy=0.7887`.
+  - Some nearby settings improved a single metric slightly (for example AUROC or balanced accuracy) but lost the joint calibration objective `Brier + ECE`, so they are not preferred for probability-quality use.
+- **Impact:** Further local S3.5 tuning is not the best use of project time. The next execution priority should move to S4 full-cohort treatment heterogeneity on MIMIC/eICU.
+
+## D018 — 2026-03-31: Replace the local calibrated-stacking freeze with branch-specific combo optimum
+- **Decision:** Supersede D017 with the broader combo-search winner. The preferred calibrated stacking configuration is now:
+  - `stats_hgb`: `depth=5`, `lr=0.03`, `max_iter=200`
+  - `fused_hgb`: `depth=5`, `lr=0.03`, `max_iter=200`
+  - `meta-learner`: logistic `C=0.02`
+  - `post-hoc calibrator`: `TemperatureScaling`
+- **Evidence:**
+  - A branch-specific combo search evaluated `900` candidate combinations across separate stats/fused HGB settings, meta-learner `C`, and calibrator choice.
+  - The best configuration achieved Center B `Brier=0.0895`, `ECE=0.0198`, `AUROC=0.8731`, `balanced_accuracy=0.7937`, `precision=0.3646`, `recall=0.8376`, `F1=0.5080` at `thr=0.09`.
+  - Relative to the previous D017 setting (`d=3`, `Platt`, `ECE=0.0227`, `AUROC=0.8727`), the new winner improves calibration materially (`ECE -0.0029`) while also slightly improving discrimination and balanced accuracy.
+  - The best post-hoc choice was `TemperatureScaling`; the top `CompositeCalibration` variant tied numerically because the Bayesian-prior step effectively collapsed to a near-zero adjustment.
+- **Impact:** The calibrated probability model is better than the D017 version, but the strategic conclusion remains unchanged: after this wider search, the next meaningful project work is S4 full-cohort treatment heterogeneity rather than more local S3.5 tuning.
+
+## D019 — 2026-04-06: MIMIC-IV deployment policy tightened — shadow-ready
+
+- **Decision:** Accept `enter_threshold=0.87`, `min_history_hours=7`, `min_consecutive=1`, `refractory=6h`, `max_alerts_per_stay=1` as the MIMIC-IV shadow deployment policy. Status promoted from `operationally_non_viable` to `shadow_ready`.
+- **Evidence:**
+  - Previous searches used the `cloud_round2` replay bundle (mean_risk_h6=0.618); correct local bundle has mean_risk_h6=0.689. Root cause of prior 0-feasible result: wrong bundle, and TIGHT grid omitted `min_history_hours=7h`.
+  - Root cause of over-alerting: model produces systematically high scores for MIMIC patients in early hours (mean 0.689 at h6 vs 0.186 at h48). The model is miscalibrated for MIMIC at early horizons.
+  - 2520-candidate refined sweep on correct bundle found **300 feasible policies**. Best (burden_first): `thr=0.87, hist=7h, consec=1, refrac=6h`.
+  - Achieved metrics vs shadow constraints: `neg_alert=0.292` (≤0.35 ✓), `pos_alert=0.550` (≥0.55 ✓), `pos@24h=0.525` (≥0.50 ✓), `aepd=0.192` (≤1.0 ✓).
+  - Previous `patient_alert_rate=0.994` → now `0.338`. `alerts_per_patient_day` drops from 16.77 → 0.19.
+- **Artifacts:** `config/s5_mimic_deployment_policy.json`, `outputs/reports/s5_policy_mimic_tightened_20260406/`
+- **Impact:** MIMIC-IV S5 bedside deployment is now operationally viable for shadow monitoring. Production promotion requires further validation (recall gap: only 55% of positive patients are caught). The recall floor is constrained by the model's early-hour over-prediction; source-specific fine-tuning would be needed to improve beyond this.
+
 ## D013 — 2026-03-19: Manuscript rewrite applied
 - **Decision:** Full rewrite of RESEARCH_PAPER.md applying all 12 validated patches.
 - **Key language changes:**
@@ -188,3 +223,27 @@
 - Less risk of shortcut learning on continuous time-series
 - Better supported by existing clinical ML literature for continuous EHR data
 - Simpler to diagnose if it doesn't work
+
+## D019 — 2026-04-01: Freeze current S6 local search without promoting new DANN variants
+- **Decision:** Keep the existing S6 hierarchy unchanged:
+  - `round6` remains the strongest current main-result cloud run
+  - `round7` remains the conservative low-overalignment cloud reference
+  - `alpha06` remains the best searched local midpoint
+  - new geometry-regularized DANN variants remain exploratory only
+- **Evidence:**
+  - `alpha06_local_smoke` still gives the best balanced local tradeoff:
+    - `cate_std=0.0341`
+    - `supported_mortality_range=0.5142`
+    - `center_distribution_l1=0.0216`
+    - `center_mortality_deviation=0.0119`
+  - `round8_dann_geom_local_smoke` improved separation slightly (`supported_mortality_range=0.5172`, `cate_std=0.0333`) but no longer behaved like meaningful domain adaptation:
+    - weighted group mean gap worsened (`0.0439 -> 0.0490`)
+    - domain probe did not improve (`0.4940 -> 0.5003`)
+  - `round8_dann_coral_geom_local_smoke` became the best adversarial local prototype:
+    - `supported_mortality_range=0.5199`
+    - weighted mean gap improved (`0.0448 -> 0.0251`)
+    - domain probe improved (`0.5023 -> 0.4702`)
+    - but downstream center balance still lagged `alpha06`:
+      - `center_distribution_l1=0.0267`
+      - `center_mortality_deviation=0.0123`
+- **Impact:** Further tuning of the current lightweight in-repo DANN form is not the best next investment. If adversarial multi-domain adaptation is revisited, it should move to a stronger implementation (`DALIB` / `AdaTime`) or a materially different objective, not another small local sweep.

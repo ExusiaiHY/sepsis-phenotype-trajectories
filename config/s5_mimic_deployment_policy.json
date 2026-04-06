@@ -1,0 +1,43 @@
+{
+  "source": "mimic_v2",
+  "deployment_status": "shadow_ready",
+  "selected_on": "2026-04-06",
+  "selection": {
+    "grid_profile": "tight",
+    "ranking_mode": "burden_first",
+    "candidate_count": 2520,
+    "feasible_count": 300,
+    "bundle": "outputs/reports/s5_silent_20260402_bundle/mimic_v2/replay_bundle.npz",
+    "note": "Previous searches used cloud_round2 bundle (mean_risk_h6=0.618) which has different score distribution. This policy was found using the correct local bundle (mean_risk_h6=0.689). The sweet spot is threshold=0.87 with min_history=7h — earlier searches missed this because they used min_history=[6,8,...] without 7h."
+  },
+  "constraints": {
+    "max_negative_patient_alert_rate": 0.35,
+    "max_alert_events_per_patient_day": 1.0,
+    "min_positive_patient_alert_rate": 0.55,
+    "min_positive_alert_rate_24h": 0.5,
+    "min_history_hours": 7
+  },
+  "best_policy": {
+    "policy_name": "mimic_v2_tightened_shadow",
+    "enter_threshold": 0.87,
+    "exit_threshold": 0.87,
+    "min_history_hours": 7,
+    "min_consecutive_hours": 1,
+    "refractory_hours": 6,
+    "max_alerts_per_stay": 1
+  },
+  "achieved_metrics": {
+    "patient_alert_rate": 0.3379,
+    "positive_patient_alert_rate": 0.5502,
+    "negative_patient_alert_rate": 0.2918,
+    "alert_events_per_patient_day": 0.1917,
+    "positive_alert_rate_at_24h": 0.5249,
+    "median_first_alert_hour_positive": 7.0
+  },
+  "vs_previous": {
+    "previous_patient_alert_rate": 0.9941,
+    "previous_negative_patient_alert_rate": 0.994,
+    "previous_alerts_per_patient_day": 16.7718,
+    "previous_status": "operationally_non_viable"
+  }
+}

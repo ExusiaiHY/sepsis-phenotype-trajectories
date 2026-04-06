@@ -1,0 +1,93 @@
+{
+  "source": "mimic_v2_tightened",
+  "constraints": {
+    "max_negative_patient_alert_rate": 0.35,
+    "max_alert_events_per_patient_day": 1.0,
+    "min_positive_patient_alert_rate": 0.55,
+    "min_positive_alert_rate_24h": 0.5,
+    "min_history_hours": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "grid_profile": "tight",
+    "ranking_mode": "burden_first"
+  },
+  "best_policy": {
+    "policy_name": "policy_1369",
+    "enter_threshold": 0.87,
+    "exit_threshold": 0.87,
+    "min_history_hours": 7,
+    "min_consecutive_hours": 1,
+    "refractory_hours": 6,
+    "max_alerts_per_stay": 1,
+    "n_patients": 6297,
+    "positive_rate": 0.1787,
+    "patient_alert_rate": 0.3379,
+    "positive_patient_alert_rate": 0.5502,
+    "negative_patient_alert_rate": 0.2918,
+    "alert_events_per_patient_day": 0.1917,
+    "alert_state_hours_per_patient_day": 1.8169,
+    "median_first_alert_hour_positive": 7.0,
+    "median_first_alert_hour_all": 7.0,
+    "mean_alert_events_per_alerted_patient": 1.0,
+    "positive_alert_rate_at_6h": 0.0,
+    "negative_alert_rate_at_6h": 0.0,
+    "patient_alert_rate_at_6h": 0.0,
+    "positive_alert_rate_at_12h": 0.5245,
+    "negative_alert_rate_at_12h": 0.2754,
+    "patient_alert_rate_at_12h": 0.3194,
+    "positive_alert_rate_at_24h": 0.5249,
+    "negative_alert_rate_at_24h": 0.2946,
+    "patient_alert_rate_at_24h": 0.3346,
+    "positive_alert_rate_at_36h": 0.5225,
+    "negative_alert_rate_at_36h": 0.3258,
+    "patient_alert_rate_at_36h": 0.3631,
+    "positive_alert_rate_at_48h": 0.5159,
+    "negative_alert_rate_at_48h": 0.3411,
+    "patient_alert_rate_at_48h": 0.3756,
+    "cumulative_alert_metrics": [
+      {
+        "hour": 6,
+        "n_patients": 6295,
+        "patient_alert_rate": 0.0,
+        "positive_alert_rate": 0.0,
+        "negative_alert_rate": 0.0
+      },
+      {
+        "hour": 12,
+        "n_patients": 6234,
+        "patient_alert_rate": 0.3194,
+        "positive_alert_rate": 0.5245,
+        "negative_alert_rate": 0.2754
+      },
+      {
+        "hour": 24,
+        "n_patients": 5795,
+        "patient_alert_rate": 0.3346,
+        "positive_alert_rate": 0.5249,
+        "negative_alert_rate": 0.2946
+      },
+      {
+        "hour": 36,
+        "n_patients": 4924,
+        "patient_alert_rate": 0.3631,
+        "positive_alert_rate": 0.5225,
+        "negative_alert_rate": 0.3258
+      },
+      {
+        "hour": 48,
+        "n_patients": 4297,
+        "patient_alert_rate": 0.3756,
+        "positive_alert_rate": 0.5159,
+        "negative_alert_rate": 0.3411
+      }
+    ],
+    "constraint_penalty": 0.0,
+    "feasible": true
+  }
+}
