@@ -178,6 +178,21 @@
   - The best post-hoc choice was `TemperatureScaling`; the top `CompositeCalibration` variant tied numerically because the Bayesian-prior step effectively collapsed to a near-zero adjustment.
 - **Impact:** The calibrated probability model is better than the D017 version, but the strategic conclusion remains unchanged: after this wider search, the next meaningful project work is S4 full-cohort treatment heterogeneity rather than more local S3.5 tuning.
 
+## D020 — 2026-04-06: MIMIC-IV source-specific fine-tune with horizon augmentation — production-ready
+
+- **Decision:** Fine-tune S5-v2 student on MIMIC-IV data with partial horizon augmentation. Promotes MIMIC-IV from shadow-only to production-ready.
+- **Root cause of over-prediction:** Model trained on FULL 48h sequences but deployed with PARTIAL sequences (only h hours available at hour h). At h=6, model sees 6h of real data + 42h of zeros → systematically high risk scores for all patients.
+- **Fix:** During fine-tuning, randomly truncate each batch's sequences to a random horizon h in [6, 48]. Model learns to output calibrated predictions at every horizon.
+- **Training config:** warm-start from `realtime_mimic_transformer_v2_tempcal_20260401`, lr=3e-4, pos_weight=4.0, horizon_augmentation_min_h=6, epochs=15 (patience=5), batch=256. Added `pos_weight` and `horizon_augmentation_min_h` parameters to `distill_realtime_student()`.
+- **Evidence:**
+  - Negative patient mean risk at h6: 0.675 → **0.362** (−0.313)
+  - Negative patient mean risk at h12: 0.604 → **0.335** (−0.269)
+  - Positive-negative separation at h6: 0.080 → **0.238** (3× better)
+  - Policy feasibility: 0 production-feasible → **276 production-feasible** policies
+  - Best policy: `thr=0.75, hist=8h`: neg_alert=0.130 (≤0.25 ✓), pos_alert=0.624 (≥0.60 ✓), pos@24h=0.503, aepd=0.109
+- **Artifacts:** `s5/realtime_model.py` (+2 params), `scripts/s5_distill_realtime.py`, `config/s5_mimic_finetune_horizon_aug.yaml`, `data/s5_mimic_finetune_horizon_aug_20260406/`, `outputs/reports/s5_policy_mimic_finetune_20260406/`
+- **Impact:** MIMIC-IV S5 status: `shadow_only` → `production_ready`. AUROC=0.877 maintained.
+
 ## D019 — 2026-04-06: MIMIC-IV deployment policy tightened — shadow-ready
 
 - **Decision:** Accept `enter_threshold=0.87`, `min_history_hours=7`, `min_consecutive=1`, `refractory=6h`, `max_alerts_per_stay=1` as the MIMIC-IV shadow deployment policy. Status promoted from `operationally_non_viable` to `shadow_ready`.

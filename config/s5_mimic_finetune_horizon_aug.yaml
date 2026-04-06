@@ -1,0 +1,51 @@
+# Stage 5 — MIMIC-IV source-specific fine-tune with partial horizon augmentation.
+#
+# Goal: Fix early-hour over-prediction in MIMIC-IV.
+# Root cause: model trained on full 48h sequences but deployed with partial sequences.
+# Fix: randomly truncate sequences to a random horizon h in [6, 48] during training,
+#      so the model learns to produce calibrated predictions at every horizon.
+#
+# Warm-starts from the existing MIMIC-IV calibrated transformer checkpoint.
+
+paths:
+  s0_dir: data/external_temporal/mimic/s0
+  treatment_dir: data/s4/mimic_treatments
+  teacher_embeddings: data/external_temporal/mimic/s15/embeddings_s15.npy
+  teacher_probabilities:
+  note_embeddings:
+  output_dir: data/s5_mimic_finetune_horizon_aug_20260406/mimic_v2_horizon_aug
+  base_student_artifact: data/s5_v2_cloud/realtime_mimic_transformer_v2_tempcal_20260401/realtime_student.pt
+
+training:
+  label_col: mortality_inhospital
+  batch_size: 256
+  epochs: 15
+  lr: 3.0e-4          # lower LR to avoid catastrophic forgetting
+  weight_decay: 1.0e-4
+  patience: 5
+  bce_weight: 1.0
+  pos_weight: 4.0     # moderate upweight of positives; (1-0.12)/0.12 ≈ 7.3 is max, use 4.0 for stability
+  horizon_augmentation_min_h: 6   # randomly truncate to h in [6, 48] per batch
+  distill_weight: 0.5             # keep partial distillation to preserve general representations
+  distill_cosine_weight: 0.1
+  distill_prob_weight: 0.0
+  distill_temperature: 2.0
+  apply_temperature_scaling: true
+  init_checkpoint_strict: true
+  threshold_metric: balanced_accuracy
+  seed: 42
+
+model:
+  student_arch: transformer
+  student_d_model: 64
+  teacher_dim: 128
+  n_heads: 4
+  n_layers: 1
+  d_ff: 128
+  dropout: 0.1
+  treatment_layers: 1
+  head_hidden_dim: 64
+  head_dropout: 0.1
+
+runtime:
+  device: auto

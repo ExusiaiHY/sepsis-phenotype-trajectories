@@ -1,43 +1,49 @@
 {
   "source": "mimic_v2",
-  "deployment_status": "shadow_ready",
+  "deployment_status": "production_ready",
   "selected_on": "2026-04-06",
+  "model_version": "mimic_v2_horizon_aug_finetune",
+  "model_artifact": "data/s5_mimic_finetune_horizon_aug_20260406/realtime_student.pt",
   "selection": {
     "grid_profile": "tight",
     "ranking_mode": "burden_first",
-    "candidate_count": 2520,
-    "feasible_count": 300,
-    "bundle": "outputs/reports/s5_silent_20260402_bundle/mimic_v2/replay_bundle.npz",
-    "note": "Previous searches used cloud_round2 bundle (mean_risk_h6=0.618) which has different score distribution. This policy was found using the correct local bundle (mean_risk_h6=0.689). The sweet spot is threshold=0.87 with min_history=7h — earlier searches missed this because they used min_history=[6,8,...] without 7h."
+    "candidate_count": 720,
+    "feasible_count": 276,
+    "bundle": "outputs/reports/s5_policy_mimic_finetune_20260406/replay_bundle.npz",
+    "note": "Model fine-tuned with horizon augmentation (random sequence truncation to h in [6,48] during training). Fixes training-deployment distribution mismatch that caused early-hour over-prediction. Fine-tune: warm-start from realtime_mimic_transformer_v2_tempcal_20260401, lr=3e-4, pos_weight=4.0, epochs=15 (patience=5)."
   },
   "constraints": {
-    "max_negative_patient_alert_rate": 0.35,
+    "max_negative_patient_alert_rate": 0.25,
     "max_alert_events_per_patient_day": 1.0,
-    "min_positive_patient_alert_rate": 0.55,
-    "min_positive_alert_rate_24h": 0.5,
-    "min_history_hours": 7
+    "min_positive_patient_alert_rate": 0.60,
+    "min_positive_alert_rate_24h": 0.50,
+    "min_history_hours": 8
   },
   "best_policy": {
-    "policy_name": "mimic_v2_tightened_shadow",
-    "enter_threshold": 0.87,
-    "exit_threshold": 0.87,
-    "min_history_hours": 7,
+    "policy_name": "mimic_v2_finetune_production",
+    "enter_threshold": 0.75,
+    "exit_threshold": 0.75,
+    "min_history_hours": 8,
     "min_consecutive_hours": 1,
     "refractory_hours": 6,
     "max_alerts_per_stay": 1
   },
   "achieved_metrics": {
-    "patient_alert_rate": 0.3379,
-    "positive_patient_alert_rate": 0.5502,
-    "negative_patient_alert_rate": 0.2918,
-    "alert_events_per_patient_day": 0.1917,
-    "positive_alert_rate_at_24h": 0.5249,
-    "median_first_alert_hour_positive": 7.0
+    "patient_alert_rate": null,
+    "positive_patient_alert_rate": 0.6240,
+    "negative_patient_alert_rate": 0.1301,
+    "alert_events_per_patient_day": 0.1092,
+    "positive_alert_rate_at_24h": 0.5031,
+    "median_first_alert_hour_positive": 8.0
   },
   "vs_previous": {
-    "previous_patient_alert_rate": 0.9941,
-    "previous_negative_patient_alert_rate": 0.994,
-    "previous_alerts_per_patient_day": 16.7718,
-    "previous_status": "operationally_non_viable"
+    "previous_model": "realtime_mimic_transformer_v2_tempcal_20260401",
+    "previous_status": "shadow_only",
+    "previous_best_neg_alert": 0.292,
+    "previous_best_pos_alert": 0.550,
+    "previous_best_pos_at_24h": 0.525,
+    "improvement_neg": "-0.162 (neg alert rate halved)",
+    "improvement_pos": "+0.074 (recall up from 55% to 62%)",
+    "improvement_pos24h": "-0.022"
   }
 }

@@ -1,5 +1,49 @@
 # Work Log
 
+## 2026-04-06 — S5 MIMIC-IV Source-Specific Fine-Tune (Horizon Augmentation)
+
+### Stage
+S5: Source-specific model fine-tuning to fix MIMIC-IV early-hour over-prediction
+
+### Root Cause
+Training-deployment distribution mismatch: model trained on full 48h sequences, but deployed with partial sequences (only first h hours at deployment hour h). At h=6, model receives 6h of real data + 42h of zeros, producing artificially high risk scores.
+
+### Fix: Horizon Augmentation
+Added `horizon_augmentation_min_h` parameter to `distill_realtime_student()`. During training, each batch's sequences are randomly truncated to a random horizon h ∈ [min_h, 48]. Model learns calibrated predictions at every horizon.
+
+Also added `pos_weight` parameter for class-imbalanced BCE.
+
+### Training Config (`config/s5_mimic_finetune_horizon_aug.yaml`)
+- warm-start: `realtime_mimic_transformer_v2_tempcal_20260401`
+- lr=3e-4 (low to avoid catastrophic forgetting)
+- pos_weight=4.0, horizon_augmentation_min_h=6
+- epochs=15 (patience=5), batch=256
+
+### Results vs Original Model
+
+| Metric | Original | Fine-tuned | Change |
+|--------|----------|------------|--------|
+| neg mean risk @h6 | 0.675 | **0.362** | −0.313 |
+| neg mean risk @h12 | 0.604 | **0.335** | −0.269 |
+| pos-neg separation @h6 | 0.080 | **0.238** | 3× |
+| Production-feasible policies | 0 | **276** | ∞ |
+| Best neg_alert_rate | 0.292 (shadow) | **0.130** (prod) | −0.162 |
+| Best pos_alert_rate | 0.550 (shadow) | **0.624** (prod) | +0.074 |
+| Test AUROC | 0.877 | 0.877 | = |
+
+### Best Policy
+`thr=0.75, hist=8h, consec=1, refrac=6h, max_alerts=1`
+
+### Files Changed
+- Modified: `s5/realtime_model.py` (added pos_weight, horizon_augmentation_min_h)
+- Modified: `scripts/s5_distill_realtime.py` (config reader for new params)
+- Created: `config/s5_mimic_finetune_horizon_aug.yaml`
+- Created: `data/s5_mimic_finetune_horizon_aug_20260406/` (model artifact)
+- Created: `outputs/reports/s5_policy_mimic_finetune_20260406/` (policy sweep)
+- Updated: `config/s5_mimic_deployment_policy.json` (production_ready)
+
+---
+
 ## 2026-04-06 — S5 MIMIC-IV Deployment Policy Tightening
 
 ### Stage
