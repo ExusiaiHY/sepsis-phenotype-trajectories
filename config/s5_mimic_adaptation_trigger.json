@@ -1,0 +1,35 @@
+{
+  "source": "mimic_v2",
+  "description": "Escalation rule for source-specific model adaptation after Stage 5 deployment-policy tightening on MIMIC-IV.",
+  "offline_quality_gates": {
+    "min_auroc": 0.87,
+    "min_balanced_accuracy": 0.78,
+    "max_ece": 0.02,
+    "max_latency_ms_per_sample": 2.0
+  },
+  "production_policy_gates": {
+    "max_negative_patient_alert_rate": 0.25,
+    "max_alert_events_per_patient_day": 1.0,
+    "min_positive_patient_alert_rate": 0.6,
+    "min_positive_alert_rate_24h": 0.5
+  },
+  "shadow_policy_gates": {
+    "max_negative_patient_alert_rate": 0.35,
+    "max_alert_events_per_patient_day": 0.25,
+    "min_positive_patient_alert_rate": 0.55,
+    "min_positive_alert_rate_24h": 0.5,
+    "max_median_first_alert_hour_positive": 12.0
+  },
+  "search_exhaustion_gates": {
+    "min_candidate_count": 5000,
+    "max_feasible_count": 0,
+    "required_grid_profile": "tight",
+    "required_ranking_mode": "burden_first"
+  },
+  "trigger_policy": {
+    "require_shadow_ready": true,
+    "require_offline_quality_ready": true,
+    "require_production_policy_failure": true,
+    "require_search_exhausted": true
+  }
+}

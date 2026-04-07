@@ -1,24 +1,21 @@
-# S6 Optimization: Model enhancement addressing 8 limitations
+# S6 round-7: soften round-6 CORAL with alpha-blended domain adaptation.
 
-# --- Missingness Enhancement ---
 missingness:
-  gap_window: 6          # hours for density change window
+  gap_window: 6
   features: ["mask", "gap_length", "density_change"]
   append_patient_features: true
   selected_features: ["map", "lactate"]
 
-# --- Causal Phenotyping ---
 causal:
-  method: t_learner      # t_learner or x_learner
-  treatment_proxy: vasopressor_proxy  # proxy indicator channel 0
-  treatment_horizon: 24  # hours to look for treatment exposure
+  method: t_learner
+  treatment_proxy: vasopressor_proxy
+  treatment_horizon: 24
   outcome_col: mortality_inhospital
   stability_gate:
     enabled: true
     max_std: 0.12
     max_abs_q90: 0.15
 
-# --- Informative Missingness Imputation ---
 imputation:
   enabled: true
   fit_patients: 1024
@@ -31,9 +28,8 @@ imputation:
   patience: 1
   device: cpu
 
-# --- Dynamic Temporal Foundation Model ---
 timesfm:
-  enabled: false
+  enabled: true
   context_len: 32
   horizon_len: 6
   batch_size: 128
@@ -43,41 +39,39 @@ timesfm:
   selected_features: ["map", "heart_rate", "lactate", "creatinine"]
   repo_id: google/timesfm-1.0-200m-pytorch
 
-# --- Causal Refutation ---
 dowhy:
   enabled: true
   max_samples: 3000
   random_common_cause_simulations: 20
   placebo_treatment_simulations: 20
 
-# --- Domain Adaptation ---
 domain_adaptation:
-  enabled: false
+  enabled: true
   method: coral
-  min_group_size: 200
+  min_group_size: 500
   reg: 0.001
+  alpha: 0.5
 
-# --- Organ Scoring ---
 organ_scoring:
-  horizon: 24            # hours for SOFA sub-score computation
-  sofa_version: sepsis3  # Singer et al., JAMA 2016
+  horizon: 24
+  sofa_version: sepsis3
 
-# --- Phenotype Naming ---
 phenotype_naming:
   deterioration_slope_threshold: 0.01
   cate_responsiveness_threshold: 0.02
   low_severity_sofa_max: 2
   low_severity_mortality_max: 0.10
   severity_split_targets:
-    - respiratory_failure
+    - hemodynamic_unstable_proxy_refractory
     - hemodynamic_unstable_proxy_responsive
+    - neurological_decline
+    - respiratory_failure
 
-# --- Paths ---
 paths:
   s0_dir: data/s0
   s2_dir: data/s2
   s15_encoder: data/s15/checkpoints/pretrain_best.pt
-  output_dir: data/s6
+  output_dir: data/s6_rerun_20260401_round7
 
 runtime:
   device: auto

@@ -1,4 +1,4 @@
-# S6 Optimization: search-driven round-3 severity split configuration
+# Local smoke profile for round-8 DANN with stronger domain pressure and partial blending.
 
 missingness:
   gap_window: 6
@@ -16,9 +16,9 @@ causal:
 
 imputation:
   enabled: true
-  fit_patients: 1024
+  fit_patients: 32
   epochs: 1
-  batch_size: 64
+  batch_size: 16
   n_layers: 2
   d_model: 64
   n_heads: 4
@@ -30,18 +30,37 @@ timesfm:
   enabled: false
   context_len: 32
   horizon_len: 6
-  batch_size: 128
+  batch_size: 64
   backend: cpu
   freq: 0
   input_source: imputed
-  selected_features: ["map", "heart_rate", "lactate", "creatinine"]
+  selected_features: ["map"]
   repo_id: google/timesfm-1.0-200m-pytorch
 
 dowhy:
   enabled: true
-  max_samples: 3000
-  random_common_cause_simulations: 20
-  placebo_treatment_simulations: 20
+  max_samples: 200
+  random_common_cause_simulations: 5
+  placebo_treatment_simulations: 5
+
+domain_adaptation:
+  enabled: true
+  method: dann
+  min_group_size: 2
+  alpha: 0.8
+  device: cpu
+  epochs: 8
+  patience: 3
+  batch_size: 128
+  hidden_dim: 32
+  embedding_dim: 16
+  lr: 0.001
+  weight_decay: 0.0001
+  dropout: 0.1
+  lambda_domain: 0.4
+  lambda_recon: 1.0
+  warmup_epochs: 4
+  val_fraction: 0.2
 
 organ_scoring:
   horizon: 24
@@ -62,7 +81,7 @@ paths:
   s0_dir: data/s0
   s2_dir: data/s2
   s15_encoder: data/s15/checkpoints/pretrain_best.pt
-  output_dir: data/s6
+  output_dir: data/s6_round8_dann_strong_blend_local_smoke
 
 runtime:
   device: auto

@@ -1,0 +1,41 @@
+# Stage 5-v2: transformer student with richer distillation
+
+paths:
+  s0_dir: data/external_temporal/mimic/s0
+  treatment_dir: data/s4/mimic_treatments
+  teacher_embeddings: data/external_temporal/mimic/s15/embeddings_s15.npy
+  teacher_probabilities:
+  note_embeddings:
+  output_dir: data/s5_v2/realtime_mimic_transformer_v2
+  dashboard_html: outputs/reports/realtime_dashboard_demo_v2_transformer.html
+
+training:
+  label_col: mortality_inhospital
+  batch_size: 128
+  epochs: 10
+  lr: 1.0e-3
+  weight_decay: 1.0e-4
+  patience: 4
+  bce_weight: 1.0
+  distill_weight: 1.0
+  distill_cosine_weight: 0.25
+  distill_prob_weight: 0.0
+  distill_temperature: 2.0
+  apply_temperature_scaling: true
+  threshold_metric: balanced_accuracy
+  seed: 42
+
+model:
+  student_arch: transformer
+  student_d_model: 64
+  teacher_dim: 128
+  n_heads: 4
+  n_layers: 1
+  d_ff: 128
+  dropout: 0.1
+  treatment_layers: 1
+  head_hidden_dim: 64
+  head_dropout: 0.1
+
+runtime:
+  device: auto

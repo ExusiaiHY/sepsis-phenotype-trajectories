@@ -1,0 +1,51 @@
+# Stage 5-v2: causal TCN realtime student
+
+paths:
+  s0_dir: data/external_temporal/mimic/s0
+  treatment_dir: data/s4/mimic_treatments
+  teacher_embeddings: data/external_temporal/mimic/s15/embeddings_s15.npy
+  teacher_probabilities:
+  note_embeddings:
+  output_dir: data/s5_v2/realtime_mimic_tcn
+  dashboard_html: outputs/reports/realtime_dashboard_demo_v2.html
+
+notes:
+  raw_dir: EICU 2.0数据
+  cohort_static: data/s4/eicu_treatments/cohort_static.csv
+  output_path: data/s5/eicu_note_embeddings.npy
+  n_hours: 48
+  n_features: 512
+  n_components: 16
+
+training:
+  label_col: mortality_inhospital
+  batch_size: 128
+  epochs: 10
+  lr: 1.0e-3
+  weight_decay: 1.0e-4
+  patience: 4
+  bce_weight: 1.0
+  distill_weight: 1.0
+  distill_cosine_weight: 0.25
+  distill_prob_weight: 0.0
+  distill_temperature: 2.0
+  threshold_metric: predicted_positive_rate
+  target_positive_rate: 0.2
+  seed: 42
+
+model:
+  student_arch: tcn
+  student_d_model: 64
+  teacher_dim: 128
+  n_heads: 4
+  n_layers: 1
+  d_ff: 128
+  dropout: 0.1
+  treatment_layers: 1
+  head_hidden_dim: 64
+  head_dropout: 0.1
+  tcn_kernel_size: 3
+  tcn_dilations: [1, 2, 4, 8]
+
+runtime:
+  device: auto

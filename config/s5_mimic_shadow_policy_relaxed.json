@@ -1,0 +1,28 @@
+{
+  "source": "mimic_v2",
+  "deployment_status": "shadow_only_relaxed",
+  "selected_on": "2026-04-02",
+  "selection": {
+    "grid_profile": "tight",
+    "ranking_mode": "burden_first",
+    "candidate_count": 8100,
+    "feasible_count": 0
+  },
+  "note": "Best available MIMIC policy under current model. A tighter 8100-candidate sweep still found no hard-constraint feasible policy, so this remains suitable for continued shadow monitoring only, not production alerting.",
+  "constraints": {
+    "max_negative_patient_alert_rate": 0.35,
+    "max_alert_events_per_patient_day": 1.0,
+    "min_positive_patient_alert_rate": 0.55,
+    "min_positive_alert_rate_24h": 0.5,
+    "min_history_hours": 6
+  },
+  "best_policy": {
+    "policy_name": "mimic_v2_relaxed_shadow",
+    "enter_threshold": 0.85,
+    "exit_threshold": 0.85,
+    "min_history_hours": 6,
+    "min_consecutive_hours": 2,
+    "refractory_hours": 6,
+    "max_alerts_per_stay": 1
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "description": "Targeted masked-NPZ S6 sweep over lambda_gold, lambda_trajectory, lambda_regression, and larger architectures.",
+  "shared": {
+    "data_dir": "data/processed_mimic_enhanced",
+    "epochs": 12,
+    "batch_size": 256,
+    "device": "cuda",
+    "patience": 3,
+    "lr": 0.001,
+    "dropout": 0.1,
+    "lambda_mortality": 1.0,
+    "lambda_immune": 1.0,
+    "lambda_organ": 1.0,
+    "lambda_fluid": 1.0,
+    "seed": 42
+  },
+  "runs": [
+    {
+      "name": "01_tcn32_baseline",
+      "student_arch": "tcn",
+      "student_d_model": 32,
+      "lambda_gold": 1.0,
+      "lambda_trajectory": 1.0,
+      "lambda_regression": 0.25
+    },
+    {
+      "name": "02_tcn32_gold2",
+      "student_arch": "tcn",
+      "student_d_model": 32,
+      "lambda_gold": 2.0,
+      "lambda_trajectory": 1.0,
+      "lambda_regression": 0.25
+    },
+    {
+      "name": "03_tcn32_gold3",
+      "student_arch": "tcn",
+      "student_d_model": 32,
+      "lambda_gold": 3.0,
+      "lambda_trajectory": 1.0,
+      "lambda_regression": 0.25
+    },
+    {
+      "name": "04_tcn32_traj1p5",
+      "student_arch": "tcn",
+      "student_d_model": 32,
+      "lambda_gold": 1.0,
+      "lambda_trajectory": 1.5,
+      "lambda_regression": 0.25
+    },
+    {
+      "name": "05_tcn32_traj2",
+      "student_arch": "tcn",
+      "student_d_model": 32,
+      "lambda_gold": 1.0,
+      "lambda_trajectory": 2.0,
+      "lambda_regression": 0.25
+    },
+    {
+      "name": "06_tcn32_reg0p5",
+      "student_arch": "tcn",
+      "student_d_model": 32,
+      "lambda_gold": 1.0,
+      "lambda_trajectory": 1.0,
+      "lambda_regression": 0.5
+    },
+    {
+      "name": "07_tcn32_combo",
+      "student_arch": "tcn",
+      "student_d_model": 32,
+      "lambda_gold": 2.0,
+      "lambda_trajectory": 1.5,
+      "lambda_regression": 0.5
+    },
+    {
+      "name": "08_tcn48_combo",
+      "student_arch": "tcn",
+      "student_d_model": 48,
+      "lambda_gold": 2.0,
+      "lambda_trajectory": 1.5,
+      "lambda_regression": 0.5
+    },
+    {
+      "name": "09_transformer64_combo",
+      "student_arch": "transformer",
+      "student_d_model": 64,
+      "lambda_gold": 2.0,
+      "lambda_trajectory": 1.5,
+      "lambda_regression": 0.5
+    }
+  ]
+}

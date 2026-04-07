@@ -1,0 +1,60 @@
+# Stage 5 MIMIC source-specific full fine-tune preparation template.
+# Materialize a concrete run with scripts/s5_prepare_full_finetune.py.
+
+paths:
+  s0_dir: data/external_temporal/mimic/s0
+  treatment_dir: data/s4/mimic_treatments
+  teacher_embeddings: data/external_temporal/mimic/s15/embeddings_s15.npy
+  teacher_probabilities:
+  note_embeddings:
+  output_dir: data/s5_mimic_adapt/_pending_materialization
+  base_student_artifact: data/s5_v2_cloud/realtime_mimic_transformer_v2_tempcal_20260401/realtime_student.pt
+  base_student_report: data/s5_v2_cloud/realtime_mimic_transformer_v2_tempcal_20260401/realtime_student_report.json
+  trigger_report: outputs/reports/s5_adaptation_trigger_20260402/mimic_v2/s5_adaptation_trigger_report.json
+
+adaptation:
+  source: mimic_v2
+  source_key: mimic
+  mode: source_specific_full_finetune_prep
+  base_run_name: realtime_mimic_transformer_v2_tempcal_20260401
+  output_root: data/s5_mimic_adapt
+  run_name_prefix: mimic_v2_full_finetune
+  initialization_strategy: warm_start_checkpoint
+  expected_outputs:
+    training_config: train_config.yaml
+    prep_manifest: prep_manifest.json
+    model_artifact: realtime_student.pt
+    report_json: realtime_student_report.json
+    best_checkpoint: checkpoints/student_best.pt
+
+training:
+  label_col: mortality_inhospital
+  batch_size: 128
+  epochs: 10
+  lr: 1.0e-3
+  weight_decay: 1.0e-4
+  patience: 4
+  bce_weight: 1.0
+  distill_weight: 1.0
+  distill_cosine_weight: 0.25
+  distill_prob_weight: 0.0
+  distill_temperature: 2.0
+  apply_temperature_scaling: true
+  init_checkpoint_strict: true
+  threshold_metric: balanced_accuracy
+  seed: 42
+
+model:
+  student_arch: transformer
+  student_d_model: 64
+  teacher_dim: 128
+  n_heads: 4
+  n_layers: 1
+  d_ff: 128
+  dropout: 0.1
+  treatment_layers: 1
+  head_hidden_dim: 64
+  head_dropout: 0.1
+
+runtime:
+  device: auto

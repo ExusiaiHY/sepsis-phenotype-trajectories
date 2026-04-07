@@ -1,0 +1,22 @@
+{
+  "run_name": "s6_masked_npz_mainline_transformer64_20260403",
+  "description": "Promoted mainline run from sweep winner 09_transformer64_combo.",
+  "data_dir": "data/processed_mimic_enhanced",
+  "output_dir": "data/s6_masked_npz_mainline_transformer64_20260403",
+  "epochs": 12,
+  "batch_size": 256,
+  "device": "cuda",
+  "patience": 3,
+  "lr": 0.001,
+  "dropout": 0.1,
+  "student_arch": "transformer",
+  "student_d_model": 64,
+  "lambda_mortality": 1.0,
+  "lambda_immune": 1.0,
+  "lambda_organ": 1.0,
+  "lambda_fluid": 1.0,
+  "lambda_gold": 2.0,
+  "lambda_trajectory": 1.5,
+  "lambda_regression": 0.5,
+  "seed": 42
+}
