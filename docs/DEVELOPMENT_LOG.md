@@ -3,7 +3,7 @@
 ## Project Overview
 **Project Name**: ICU Sepsis Dynamic Subtype Discovery via Self-Supervised Patient Trajectory Representation
 **Course**: Python Advanced Programming
-**Author**: Wang Ruike
+**Author**: Wang Ruike, School of Biomedical Engineering, ShanghaiTech University
 **Date**: 2026-03-17
 **Repository**: `project/`
 
@@ -399,3 +399,71 @@ Command: `python3 main.py --source sepsis2019 --compare-methods`
 - Added subtype profile table, Kaplan-Meier analysis
 - Cross-dataset comparison table finalized
 - PDF compiled successfully (zero LaTeX errors)
+
+---
+
+### 2026-04-01 ~ 2026-04-07 — Phase 6: S6 Mechanism-Based Causal Phenotyping Optimization
+
+#### Overview
+
+S6 extends the data-driven S2 temporal clusters (K=4) into clinically interpretable, mechanism-based phenotypes using causal inference, organ scoring, missingness modeling, and domain adaptation. The optimization ran 10+ rounds from initial pipeline construction through convergence.
+
+#### Optimization Round History
+
+| Round | Date | Key Change | Phenotypes | Mortality Range | Notes |
+|-------|------|-----------|------------|-----------------|-------|
+| Early (alpha08) | 04-01 | Initial pipeline | — | — | End-to-end validation |
+| R3 | 04-01 | Config stabilization | 14 | — | First full phenotype set |
+| R5–R6 | 04-01 | External fast + local smoke | 14 | — | MIMIC/eICU generalization smoke |
+| R7 | 04-01 | Missingness covariate encoding | 14 | — | 3 variants: base, map, lactate |
+| R8 | 04-01 | Domain adaptation (DANN/CORAL) | 14 | — | 6 variants: DANN, CORAL, geometric, combos |
+| R9 | 04-07 | x_learner + CORAL α=0.5 | 14 | 0.479 | Stable baseline |
+| **R10** | **04-07** | **t_learner + CORAL α=0.3 + refractory split** | **16** | **0.491** | **FROZEN** |
+
+#### R10 Final Frozen Configuration
+
+- **Causal method:** T-learner candidate → stability-gated fallback to cross-fitted DML
+- **Domain adaptation:** CORAL (alpha=0.3, reg=0.001)
+- **Missingness features:** mask + gap_length + density_change + patient-level covariates (map, lactate, creatinine, bilirubin, gcs)
+- **Imputation:** SAITS (d=64, 2 layers, 1 epoch, 1024 fit patients)
+- **Organ scoring:** SOFA Sepsis-3, 24h horizon
+- **Severity split targets:** respiratory_failure, hemodynamic_unstable_proxy_responsive, neurological_decline, hemodynamic_unstable_proxy_refractory
+
+#### R10 Frozen Results
+
+**16 mechanism-based phenotypes** (vs 4 S2 clusters):
+
+| Phenotype | n | Fraction | Mortality | SOFA | CATE |
+|-----------|---|----------|-----------|------|------|
+| mild_organ_stable | 1,077 | 9.0% | 1.3% | 0.75 | +0.011 |
+| neurological_decline_recovering | 677 | 5.7% | 3.4% | 6.03 | +0.004 |
+| respiratory_failure_recovering | 653 | 5.5% | 4.8% | 7.42 | +0.003 |
+| hemodynamic_refractory_recovering | 980 | 8.2% | 6.6% | 2.65 | -0.014 |
+| hemodynamic_responsive_recovering | 270 | 2.3% | 7.8% | 2.21 | +0.039 |
+| hemodynamic_refractory (base) | 1,141 | 9.5% | 12.8% | 4.55 | -0.015 |
+| coagulopathy_dominant | 200 | 1.7% | 15.5% | 3.96 | +0.012 |
+| hepatorenal_dysfunction | 600 | 5.0% | 15.7% | 7.28 | +0.012 |
+| hemodynamic_responsive (base) | 534 | 4.5% | 15.7% | 2.84 | +0.043 |
+| respiratory_failure (base) | 2,132 | 17.8% | 16.0% | 7.71 | +0.006 |
+| neurological_decline (base) | 2,038 | 17.0% | 16.5% | 6.05 | +0.006 |
+| multi_organ_deteriorating | 538 | 4.5% | 22.9% | 8.27 | +0.007 |
+| hemodynamic_refractory_critical | 469 | 3.9% | 29.9% | 6.99 | -0.022 |
+| respiratory_failure_critical | 363 | 3.0% | 31.4% | 9.82 | +0.003 |
+| neurological_decline_critical | 86 | 0.7% | 32.6% | 7.05 | +0.007 |
+| hemodynamic_responsive_critical | 228 | 1.9% | 50.4% | 8.62 | +0.056 |
+
+**Baseline comparison (S2 → S6):**
+
+| Metric | S2 Baseline | S6 Optimized | Delta |
+|--------|-------------|--------------|-------|
+| Group count | 4 | 16 | +300% |
+| Mortality range | 0.254 | 0.491 | +93.2% |
+| Weighted mortality std | 0.087 | 0.091 | +5.2% |
+| Dominant group fraction | 32.2% | 17.8% | -44.8% |
+
+**Causal validation:**
+- DoWhy ATE: 0.0076; random common cause p=0.450; placebo p=0.452 (both passed)
+- CORAL: weighted mean gap 0.043→0.030 (improved); domain probe 0.490→0.477 (improved)
+- Cross-center: Center A and Center B show consistent phenotype distributions and mortality ordering
+
+**Convergence assessment:** R9→R10 delta was marginal (primary change: hemodynamic refractory split). Core metrics stable. S6 optimization declared converged and frozen at E031.

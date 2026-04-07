@@ -308,3 +308,65 @@ All experiments with their configurations, results, and artifact locations.
   - Both full runs produced the complete artifact tree: `s0/`, `s15/embeddings_s15.npy`, `s2/rolling_embeddings.npy`, `s2/window_labels.npy`, `s2/trajectory_stats.json`, `s2/sanity_checks.json`, `s2/figures/`, per-source `run_summary.json`, and merged `data/external_temporal/external_temporal_runs.json`
 - **Artifacts:** `data/external_temporal/mimic/`, `data/external_temporal/eicu/`, `data/external_temporal/external_temporal_runs.json`
 - **Conclusion:** The repository now contains a full-cohort external temporal reproduction for both credentialed databases. The evidence is supplementary frozen-transfer validation under partial feature overlap, not source-specific retraining.
+
+## E029 — Refined calibrated-stacking neighborhood search and freeze
+- **Date:** 2026-03-31
+- **Method:** Ran a focused local neighborhood search around the existing calibrated stacking setting, keeping the same 5-fold OOF protocol and exploring nearby base learner regularization (`depth`, `lr`, `max_iter`) plus meta-learner `C`. Selected the winner by minimizing `Brier + ECE` under `AUROC >= 0.85`, then re-trained `calibrated_stacking` and refreshed the calibration comparison report.
+- **Data:** Same PhysioNet 2012 S0 cross-center mortality split used for all S3.5 downstream validation (`train+val` development split, Center B test split).
+- **Results:**
+  - Refined search evaluated `35` local candidates and kept the same base learner setting: `depth=3`, `lr=0.03`, `max_iter=300`
+  - Only the meta-learner regularization changed: `C=0.05 -> 0.02`
+  - Updated calibrated stacking test metrics: `Brier=0.0895`, `ECE=0.0227`, `MCE=0.0747`, `AUROC=0.8727`
+  - Validation-selected balanced operating point (`thr=0.09`): accuracy=`0.7546`, balanced_accuracy=`0.7897`, precision=`0.3563`, recall=`0.8393`, F1=`0.5003`
+  - Improvement vs the previous calibrated setting was marginal but reproducible: `ECE -0.0001`, balanced_accuracy `+0.0010`, AUROC `+0.0001`
+  - Improvement vs the original uncalibrated stacking model remained large: `Brier -37.6%`, `ECE -89.8%`
+- **Artifacts:** `data/s15_trainval/calibration_hparam_search_refined/refined_search_report.json`, `data/s15_trainval/calibrated_stacking/calibrated_stacking_report.json`, `data/s15_trainval/calibration_comparison/calibration_comparison_report.json`
+- **Conclusion:** Downstream calibration tuning is effectively saturated. The repo should freeze calibrated stacking at `d=3 / lr=0.03 / iter=300 / meta_C=0.02` and shift effort to the next scientific stage rather than continue local S3.5 tuning.
+
+## E030 — Branch-specific calibrated-stacking combo search with temperature scaling
+- **Date:** 2026-03-31
+- **Method:** Extended the S3.5 calibration search beyond the local neighborhood by tuning the `stats_hgb` and `fused_hgb` branches separately, keeping the `fused_lr` branch fixed, searching `meta_C`, and comparing five post-hoc calibrators (`none`, `platt`, `temperature`, `bayesian_prior`, `composite`). The search objective remained `minimize(Brier + ECE)` subject to `AUROC >= 0.85`.
+- **Data:** Same PhysioNet 2012 S0 cross-center mortality split used for all downstream validation (`train+val` development split, Center B test split).
+- **Results:**
+  - Evaluated `900` candidate combinations (`6 stats configs × 6 fused configs × 5 meta_C values × 5 calibrators`)
+  - New best configuration:
+    - `stats_hgb`: `depth=5`, `lr=0.03`, `max_iter=200`
+    - `fused_hgb`: `depth=5`, `lr=0.03`, `max_iter=200`
+    - `meta_C=0.02`
+    - `post-hoc calibrator=temperature`
+  - Updated calibrated stacking test metrics: `Brier=0.0895`, `ECE=0.0198`, `MCE=0.0943`, `AUROC=0.8731`
+  - Validation-selected balanced operating point (`thr=0.09`): accuracy=`0.7626`, balanced_accuracy=`0.7937`, precision=`0.3646`, recall=`0.8376`, F1=`0.5080`
+  - Improvement vs E029: `ECE -0.0029`, `AUROC +0.0004`, `balanced_accuracy +0.0040`
+  - Improvement vs original uncalibrated stacking remained large: `Brier -37.6%`, `ECE -91.1%`
+- **Artifacts:** `scripts/s15_calibration_combo_search.py`, `data/s15_trainval/calibration_combo_search/search_report.json`, `data/s15_trainval/calibrated_stacking/calibrated_stacking_report.json`, `data/s15_trainval/calibration_comparison/calibration_comparison_report.json`
+- **Conclusion:** A wider branch-specific search still found a better downstream calibration setting. The current calibrated stacking default should now be frozen at the E030 configuration, and any future tuning should only resume if the optimization objective itself changes.
+
+## E031 — S6 mechanism-based causal phenotyping freeze (Round 10)
+- **Date:** 2026-04-07
+- **Status:** FROZEN — final S6 optimization result
+- **Method:** Mechanism-based causal phenotyping pipeline: missingness covariate encoding (5 selected features × 5 summary stats + patient-level features), SAITS imputation (d=64, 2 layers, 1 epoch on 1024 patients), cross-fitted DML for CATE estimation (stability-gated, fallback from T-learner), CORAL domain adaptation (alpha=0.3, reg=0.001), DoWhy refutation (random common cause + placebo treatment), organ scoring (SOFA Sepsis-3, 24h horizon), and hierarchical severity splitting on 4 target systems.
+- **Config:** `config/s6_config_round10.yaml`
+- **Data:** PhysioNet 2012 S0 cross-center split (11,986 patients; Center A=7,989, Center B=3,997). S2 temporal cluster labels as baseline.
+- **Results:**
+  - Causal method: T-learner candidate failed stability gate (std=0.188 > 0.12, abs_q90=0.228 > 0.15) → cross-fitted DML selected
+  - CATE summary (DML): mean=0.0052, std=0.0341, q10=-0.035, q90=0.047
+  - DoWhy ATE=0.0076; random common cause refuter p=0.450; placebo treatment refuter p=0.452 (both passed)
+  - CORAL domain adaptation: weighted mean gap 0.043→0.030 (improved), domain probe accuracy 0.490→0.477 (improved)
+  - **16 mechanism-based phenotypes** (vs 4 S2 data-driven clusters):
+    - Mortality range: 0.4914 (mild_organ_stable 1.3% → hemodynamic_responsive_critical 50.4%)
+    - Weighted mortality std: 0.0912
+    - Dominant group fraction: 17.8% (vs 32.2% baseline)
+    - No rare groups (all n ≥ 50)
+  - Key phenotype profiles:
+    - `mild_organ_stable`: n=1077, mortality=1.3%, SOFA=0.75
+    - `respiratory_failure_critical`: n=363, mortality=31.4%, SOFA=9.82
+    - `hemodynamic_responsive_critical`: n=228, mortality=50.4%, SOFA=8.62, CATE=+0.056
+    - `neurological_decline_critical`: n=86, mortality=32.6%, SOFA=7.05
+    - `multi_organ_deteriorating`: n=538, mortality=22.9%, SOFA=8.27
+    - `hemodynamic_refractory_critical`: n=469, mortality=29.9%, SOFA=6.99, CATE=-0.022
+  - Cross-center consistency: Center A and Center B show matching phenotype distributions and mortality ordering
+  - Baseline comparison (S2→S6): mortality range +93.2%, group count +300%, weighted mortality std +5.2%, dominant group fraction -44.8%
+  - Runtime: 290.2s (causal phenotyping: 289.1s)
+- **Artifacts:** `data/s6_round10_local_smoke/optimization_report.json`, `data/s6_round10_local_smoke/phenotype_assignments.csv`, `data/s6_round10_local_smoke/causal_phenotyping_report.json`
+- **Convergence note:** R9→R10 delta was small (primary change: hemodynamic refractory split into 3 severity tiers). Core metrics (CATE, DoWhy, cross-center deviation) stable across rounds. S6 optimization is converged.
+- **Conclusion:** Mechanism-based causal phenotyping produces clinically interpretable subgroups with nearly double the mortality discrimination range of data-driven clusters. The hemodynamic responsive phenotypes show the strongest treatment signal (CATE +0.04–0.06), while refractory phenotypes show negative CATE, consistent with their clinical definition. Results are frozen at Round 10 configuration.
