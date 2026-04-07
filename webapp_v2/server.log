@@ -1,0 +1,38 @@
+======================================================================
+ICU Sepsis Patient Browser - Medical BI Dashboard
+重症脓毒症科研患者浏览中台
+======================================================================
+
+🌐 访问地址: http://localhost:5051
+
+📋 功能入口:
+   • 🏥 患者总览浏览
+   • 📊 科研数据看板
+   • 🤖 AI智能分析
+   • ⚙️ 系统配置管理
+
+⏹️  按 Ctrl+C 停止服务
+======================================================================
+ * Serving Flask app 'app'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5051
+ * Running on http://10.20.246.236:5051
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [07/Apr/2026 15:37:59] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 15:40:23] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 15:40:26] "GET /api/patients?page=1&per_page=20&icu_type=all&risk_level=all&phenotype=-1 HTTP/1.1" 200 -
+/Users/exusiaihy/Desktop/Python高阶程序设计/project/s1/encoder.py:69: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=n_layers)
+/Users/exusiaihy/Desktop/Python高阶程序设计/project/s4/treatment_aware_model.py:141: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.treatment_transformer = nn.TransformerEncoder(
+127.0.0.1 - - [07/Apr/2026 15:40:26] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [07/Apr/2026 15:40:26] "GET /api/sepsis-subtypes/metadata HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 15:40:34] "GET /api/research/models/performance HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 15:40:34] "GET /api/research/models/overview HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 15:41:02] "GET /api/dashboard/stats HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 15:41:10] "GET /api/patients?page=1&per_page=20&icu_type=all&risk_level=all&phenotype=-1 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 15:41:16] "GET /api/dashboard/stats HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 15:41:27] "GET /api/research/models/overview HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 15:41:27] "GET /api/research/models/performance HTTP/1.1" 200 -

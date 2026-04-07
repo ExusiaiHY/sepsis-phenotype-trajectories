@@ -1,0 +1,107 @@
+============================================================
+ICU Sepsis Phenotype Visualization Dashboard
+============================================================
+
+Open your browser at: http://localhost:5050
+
+Press Ctrl+C to stop the server
+============================================================
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5050
+ * Running on http://192.168.0.103:5050
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 102-437-886
+127.0.0.1 - - [02/Apr/2026 22:04:26] "GET /api/summary HTTP/1.1" 200 -
+127.0.0.1 - - [02/Apr/2026 22:06:03] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [02/Apr/2026 22:06:03] "GET /static/js/dashboard.js HTTP/1.1" 200 -
+ * Detected change in '/Users/exusiaihy/Desktop/Python高阶程序设计/project/s5/reporting.py', reloading
+============================================================
+ICU Sepsis Phenotype Visualization Dashboard
+============================================================
+
+Open your browser at: http://localhost:5050
+
+Press Ctrl+C to stop the server
+============================================================
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 102-437-886
+ * Detected change in '/Users/exusiaihy/Desktop/Python高阶程序设计/project/webapp/app.py', reloading
+============================================================
+ICU Sepsis Phenotype Visualization Dashboard
+============================================================
+
+Open your browser at: http://localhost:5050
+
+Press Ctrl+C to stop the server
+============================================================
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 102-437-886
+ * Detected change in '/Users/exusiaihy/Desktop/Python高阶程序设计/project/tests/test_stage45_reporting.py', reloading
+============================================================
+ICU Sepsis Phenotype Visualization Dashboard
+============================================================
+
+Open your browser at: http://localhost:5050
+
+Press Ctrl+C to stop the server
+============================================================
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 102-437-886
+127.0.0.1 - - [02/Apr/2026 22:08:32] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [02/Apr/2026 22:08:40] "GET /api/summary HTTP/1.1" 200 -
+127.0.0.1 - - [02/Apr/2026 22:08:52] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [02/Apr/2026 22:08:52] "[36mGET /static/js/dashboard.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [02/Apr/2026 22:09:37] "GET /api/summary HTTP/1.1" 200 -
+127.0.0.1 - - [02/Apr/2026 22:09:37] "GET /api/comparison HTTP/1.1" 200 -
+127.0.0.1 - - [02/Apr/2026 22:09:37] "GET /api/trajectory/stats HTTP/1.1" 200 -
+127.0.0.1 - - [02/Apr/2026 22:09:37] "GET /api/trajectory/transitions HTTP/1.1" 200 -
+127.0.0.1 - - [02/Apr/2026 22:09:38] "GET /api/patients/sample HTTP/1.1" 200 -
+127.0.0.1 - - [02/Apr/2026 22:09:38] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+ * Detected change in '/Users/exusiaihy/Desktop/Python高阶程序设计/project/webapp/app.py', reloading
+============================================================
+ICU Sepsis Phenotype Visualization Dashboard
+============================================================
+
+Open your browser at: http://localhost:5050
+
+Press Ctrl+C to stop the server
+============================================================
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 102-437-886
+ * Detected change in '/Users/exusiaihy/Desktop/Python高阶程序设计/project/webapp/app.py', reloading
+============================================================
+ICU Sepsis Phenotype Visualization Dashboard
+============================================================
+
+Open your browser at: http://localhost:5050
+
+Press Ctrl+C to stop the server
+============================================================
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 102-437-886
+ * Detected change in '/Users/exusiaihy/Desktop/Python高阶程序设计/project/webapp/app.py', reloading
+============================================================
+ICU Sepsis Phenotype Visualization Dashboard
+============================================================
+
+Open your browser at: http://localhost:5050
+
+Press Ctrl+C to stop the server
+============================================================
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 102-437-886
+/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/multiprocessing/resource_tracker.py:396: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown: {'/mp-hhyunbax'}
+  warnings.warn(
+/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/multiprocessing/resource_tracker.py:396: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown: {'/loky-33684-vgnryibw'}
+  warnings.warn(

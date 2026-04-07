@@ -1,0 +1,3522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICU脓毒症科研患者浏览中台 | Patient Browser</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* 极简扁平化设计系统 */
+        :root {
+            --primary-blue: #E3F2FD;
+            --primary-blue-dark: #1976D2;
+            --secondary-green: #E8F5E9;
+            --secondary-green-dark: #388E3C;
+            --warning-red: #FFEBEE;
+            --warning-red-dark: #D32F2F;
+            --warning-yellow: #FFF8E1;
+            --warning-yellow-dark: #FBC02D;
+            --neutral-gray: #F5F5F5;
+            --text-primary: #212121;
+            --text-secondary: #757575;
+            --border-light: #E0E0E0;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #FAFAFA;
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* 扁平化卡片 */
+        .card-flat {
+            background: #FFFFFF;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+        }
+        
+        /* AI助手按钮样式 */
+        .ai-explain-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            margin-left: 4px;
+            font-size: 10px;
+            background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+            color: white;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: all 0.2s;
+            vertical-align: middle;
+        }
+        
+        .ai-explain-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        
+        .ai-explain-inline {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 6px;
+            margin-left: 6px;
+            font-size: 11px;
+            background: #EEF2FF;
+            color: #4F46E5;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 1px solid #C7D2FE;
+            transition: all 0.2s;
+        }
+        
+        .ai-explain-inline:hover {
+            background: #4F46E5;
+            color: white;
+        }
+        
+        .card-flat:hover {
+            background: #FAFAFA;
+        }
+        
+        /* 扁平化按钮 */
+        .btn-flat {
+            border: 1px solid var(--border-light);
+            background: #FFFFFF;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: none;
+        }
+        
+        .btn-flat:hover {
+            background: var(--neutral-gray);
+        }
+        
+        .btn-flat.active {
+            background: var(--primary-blue);
+            border-color: var(--primary-blue-dark);
+            color: var(--primary-blue-dark);
+        }
+        
+        /* 扁平化输入框 */
+        .input-flat {
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            background: #FFFFFF;
+        }
+        
+        .input-flat:focus {
+            outline: none;
+            border-color: var(--primary-blue-dark);
+        }
+        
+        /* 左侧导航 */
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            margin: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        
+        .nav-item:hover {
+            background: var(--neutral-gray);
+        }
+        
+        .nav-item.active {
+            background: var(--primary-blue);
+            color: var(--primary-blue-dark);
+        }
+        
+        /* 患者列表卡片 */
+        .patient-card {
+            display: grid;
+            grid-template-columns: 120px 120px 140px 80px 160px 100px;
+            gap: 16px;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-light);
+            cursor: pointer;
+        }
+        
+        .patient-card:hover {
+            background: #FAFAFA;
+        }
+        
+        .patient-card:last-child {
+            border-bottom: none;
+        }
+        
+        /* 详情板块 */
+        .section-flat {
+            background: #FFFFFF;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            margin-bottom: 16px;
+        }
+        
+        .section-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light);
+            background: var(--neutral-gray);
+            font-weight: 500;
+        }
+        
+        .section-body {
+            padding: 16px;
+        }
+        
+        /* 风险等级标签 */
+        .risk-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .risk-high {
+            background: var(--warning-red);
+            color: var(--warning-red-dark);
+        }
+        
+        .risk-medium {
+            background: var(--warning-yellow);
+            color: var(--warning-yellow-dark);
+        }
+        
+        .risk-low {
+            background: var(--secondary-green);
+            color: var(--secondary-green-dark);
+        }
+        
+        /* 表型标签 */
+        .phenotype-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .ph-0 { background: #E3F2FD; color: #1976D2; }
+        .ph-1 { background: #FFF8E1; color: #FBC02D; }
+        .ph-2 { background: #FFEBEE; color: #D32F2F; }
+        .ph-3 { background: #F3E5F5; color: #7B1FA2; }
+        
+        /* 分页 */
+        .pagination-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border-light);
+            background: #FFFFFF;
+            cursor: pointer;
+        }
+        
+        .pagination-btn:hover {
+            background: var(--neutral-gray);
+        }
+        
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* 隐藏滚动条但保持功能 */
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+    
+    <!-- 左侧导航栏 -->
+    <aside class="w-56 bg-white border-r border-gray-200 flex flex-col">
+        <!-- Logo -->
+        <div class="p-4 border-b border-gray-200">
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl">🏥</span>
+                <div>
+                    <div class="font-semibold text-sm">ICU Patient Browser</div>
+                    <div class="text-xs text-gray-500">脓毒症科研中台</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 导航菜单 -->
+        <nav class="flex-1 py-4">
+            <div class="nav-item active" onclick="switchView('patients')" id="nav-patients">
+                <span class="text-xl mr-3">🏥</span>
+                <span>患者总览浏览</span>
+            </div>
+            <div class="nav-item" onclick="switchView('dashboard')" id="nav-dashboard">
+                <span class="text-xl mr-3">📊</span>
+                <span>科研数据看板</span>
+            </div>
+            <div class="nav-item" onclick="switchView('research')" id="nav-research">
+                <span class="text-xl mr-3">🏆</span>
+                <span>科研成果展示</span>
+                <span class="ml-auto text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">NEW</span>
+            </div>
+            <div class="nav-item" onclick="switchView('ai')" id="nav-ai">
+                <span class="text-xl mr-3">🤖</span>
+                <span>AI智能分析</span>
+            </div>
+            <div class="nav-item" onclick="switchView('settings')" id="nav-settings">
+                <span class="text-xl mr-3">⚙️</span>
+                <span>系统配置管理</span>
+            </div>
+        </nav>
+        
+        <!-- 底部信息 -->
+        <div class="p-4 border-t border-gray-200 text-xs text-gray-500">
+            <div>PhysioNet 2012 Dataset</div>
+            <div class="mt-1">11,986 Patients</div>
+        </div>
+    </aside>
+    
+    <!-- 主内容区 -->
+    <main class="flex-1 flex flex-col bg-gray-50">
+        
+        <!-- 顶部筛选栏 -->
+        <header class="bg-white border-b border-gray-200 px-6 py-3">
+            <div class="flex items-center space-x-6">
+                <!-- 时间筛选 -->
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-600">📅 入院时间:</span>
+                    <select id="filter-time" class="input-flat px-3 py-1.5 text-sm" onchange="applyFilters()">
+                        <option value="all">全部时间</option>
+                        <option value="24h">近24小时</option>
+                        <option value="7d">近7天</option>
+                        <option value="30d">近30天</option>
+                    </select>
+                </div>
+                
+                <!-- ICU病区筛选 -->
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-600">🏥 ICU病区:</span>
+                    <select id="filter-icu" class="input-flat px-3 py-1.5 text-sm" onchange="applyFilters()">
+                        <option value="all">全部病区</option>
+                        <option value="cardiac">心内ICU</option>
+                        <option value="surgical">外科ICU</option>
+                        <option value="medical">内科ICU</option>
+                        <option value="other">综合ICU</option>
+                    </select>
+                </div>
+                
+                <!-- 表型筛选 -->
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-600">🧬 时序表型:</span>
+                    <select id="filter-phenotype" class="input-flat px-3 py-1.5 text-sm" onchange="applyFilters()">
+                        <option value="-1">全部表型</option>
+                        <option value="0">P0 低危型</option>
+                        <option value="1">P1 中高危型</option>
+                        <option value="2">P2 高危型</option>
+                        <option value="3">P3 低中危型</option>
+                    </select>
+                </div>
+                
+                <!-- AI风险筛选 -->
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-600">🤖 AI风险:</span>
+                    <select id="filter-risk" class="input-flat px-3 py-1.5 text-sm" onchange="applyFilters()">
+                        <option value="all">全部风险</option>
+                        <option value="🔴">🔴 高风险</option>
+                        <option value="🟡">🟡 中风险</option>
+                        <option value="🟢">🟢 低风险</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+        
+        <!-- 内容容器 -->
+        <div id="content-area" class="flex-1 overflow-auto p-6">
+            <!-- 动态加载内容 -->
+        </div>
+        
+    </main>
+    
+    <script>
+        // 全局状态
+        let currentView = 'patients';
+        let currentPage = 1;
+        let currentPatientId = null;
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            switchView('patients');
+        });
+        
+        // 切换视图
+        function switchView(view) {
+            currentView = view;
+            
+            // 更新导航状态
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`nav-${view}`).classList.add('active');
+            
+            // 加载对应视图
+            const contentArea = document.getElementById('content-area');
+            
+            switch(view) {
+                case 'patients':
+                    loadPatientListView();
+                    break;
+                case 'dashboard':
+                    loadDashboardView();
+                    break;
+                case 'ai':
+                    loadAIView();
+                    break;
+                case 'research':
+                    loadResearchDashboardView();
+                    break;
+                case 'settings':
+                    loadSettingsView();
+                    break;
+            }
+        }
+        
+        // ========== 视图A: 患者总览列表 ==========
+        async function loadPatientListView() {
+            const contentArea = document.getElementById('content-area');
+            contentArea.innerHTML = `
+                <div class="card-flat mb-4">
+                    <div class="px-6 py-3 border-b border-gray-200 flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">📑</span>
+                            <span class="font-medium">患者总览列表</span>
+                            <span class="text-sm text-gray-500" id="patient-count"></span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="refreshPatientList()" class="btn-flat px-4 py-1.5 text-sm">
+                                🔄 刷新
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 列表表头 -->
+                    <div class="grid grid-cols-[120px_120px_140px_80px_160px_100px] gap-4 px-6 py-2 bg-gray-50 text-sm text-gray-600 border-b border-gray-200">
+                        <div>🆔 脱敏ID</div>
+                        <div>📅 入院时间</div>
+                        <div>🏥 ICU病区</div>
+                        <div>风险等级</div>
+                        <div>❤️ 核心体征</div>
+                        <div>🤖 预测时间</div>
+                    </div>
+                    
+                    <!-- 患者列表 -->
+                    <div id="patient-list"></div>
+                    
+                    <!-- 分页 -->
+                    <div class="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+                        <span class="text-sm text-gray-500" id="pagination-info"></span>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="changePage(-1)" class="pagination-btn text-sm" id="btn-prev">上一页</button>
+                            <span class="text-sm" id="page-number">第 1 页</span>
+                            <button onclick="changePage(1)" class="pagination-btn text-sm" id="btn-next">下一页</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            await fetchPatientList();
+        }
+        
+        async function fetchPatientList() {
+            const icuType = document.getElementById('filter-icu').value;
+            const riskLevel = document.getElementById('filter-risk').value;
+            const phenotype = document.getElementById('filter-phenotype').value;
+            
+            try {
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    per_page: 20,
+                    icu_type: icuType,
+                    risk_level: riskLevel,
+                    phenotype: phenotype
+                });
+                
+                const response = await fetch(`/api/patients?${params}`);
+                const data = await response.json();
+                
+                renderPatientList(data);
+            } catch (error) {
+                console.error('Error fetching patients:', error);
+                document.getElementById('patient-list').innerHTML = `
+                    <div class="p-8 text-center text-gray-500">加载失败，请重试</div>
+                `;
+            }
+        }
+        
+        function renderPatientList(data) {
+            const listContainer = document.getElementById('patient-list');
+            const { patients, total, page, per_page } = data;
+            
+            if (patients.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="p-8 text-center text-gray-500">暂无数据</div>
+                `;
+                return;
+            }
+            
+            // 渲染患者卡片
+            listContainer.innerHTML = patients.map(p => `
+                <div class="patient-card" onclick="openPatientDetail('${p.masked_id}')">
+                    <div class="font-mono text-sm font-medium">${p.masked_id}</div>
+                    <div class="text-sm">${p.admission_time}</div>
+                    <div class="text-sm">${p.icu_ward}</div>
+                    <div class="risk-badge ${getRiskClass(p.risk_level)}">${p.risk_level}</div>
+                    <div class="text-sm font-mono">${p.vitals_summary}</div>
+                    <div class="text-xs text-gray-500">${p.last_prediction}</div>
+                </div>
+            `).join('');
+            
+            // 更新统计
+            document.getElementById('patient-count').textContent = `(${total.toLocaleString()}人)`;
+            document.getElementById('pagination-info').textContent = `显示 ${(page-1)*per_page + 1}-${Math.min(page*per_page, total)} / ${total} 条`;
+            document.getElementById('page-number').textContent = `第 ${page} 页`;
+            
+            // 更新分页按钮
+            document.getElementById('btn-prev').disabled = page <= 1;
+            document.getElementById('btn-next').disabled = page * per_page >= total;
+        }
+        
+        function getRiskClass(risk) {
+            if (risk === '🔴') return 'risk-high';
+            if (risk === '🟡') return 'risk-medium';
+            return 'risk-low';
+        }
+        
+        function changePage(delta) {
+            currentPage += delta;
+            if (currentPage < 1) currentPage = 1;
+            fetchPatientList();
+        }
+        
+        function refreshPatientList() {
+            currentPage = 1;
+            fetchPatientList();
+        }
+        
+        function applyFilters() {
+            currentPage = 1;
+            fetchPatientList();
+        }
+        
+        // ========== 视图B: 单患者详情 ==========
+        async function openPatientDetail(maskedId) {
+            currentPatientId = maskedId;
+            
+            const contentArea = document.getElementById('content-area');
+            contentArea.innerHTML = `
+                <div class="mb-4 flex items-center space-x-2">
+                    <button onclick="switchView('patients')" class="btn-flat px-3 py-1.5 text-sm">
+                        ← 返回列表
+                    </button>
+                    <span class="text-gray-400">|</span>
+                    <span class="text-lg">📊</span>
+                    <span class="font-medium">患者深度详情</span>
+                    <span class="font-mono text-blue-600">${maskedId}</span>
+                </div>
+                
+                <div id="patient-detail-content">
+                    <div class="text-center py-12 text-gray-500">加载中...</div>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch(`/api/patients/${maskedId}`);
+                const data = await response.json();
+                renderPatientDetail(data);
+            } catch (error) {
+                console.error('Error fetching patient detail:', error);
+                document.getElementById('patient-detail-content').innerHTML = `
+                    <div class="text-center py-12 text-red-500">加载失败</div>
+                `;
+            }
+        }
+        
+        function renderPatientDetail(data) {
+            const { basic_info, vitals_series, ai_analysis, clinical_records, phenotype_trajectory } = data;
+            
+            document.getElementById('patient-detail-content').innerHTML = `
+                <!-- 1. 基础脱敏信息 -->
+                <div class="section-flat">
+                    <div class="section-header">
+                        <span class="text-lg mr-2">🧾</span>基础脱敏信息
+                    </div>
+                    <div class="section-body">
+                        <div class="grid grid-cols-4 gap-6">
+                            <div>
+                                <div class="text-xs text-gray-500 mb-1">🆔 脱敏ID</div>
+                                <div class="font-mono font-medium">${basic_info.masked_id}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500 mb-1">👤 年龄/性别</div>
+                                <div>${basic_info.age}岁 / ${basic_info.sex}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500 mb-1">🏥 ICU病区</div>
+                                <div>${basic_info.icu_ward}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500 mb-1">⏱️ ICU停留</div>
+                                <div>${basic_info.los_hours}小时</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500 mb-1">📅 入院时间</div>
+                                <div>${basic_info.admission_time}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500 mb-1">📊 数据来源</div>
+                                <div>${basic_info.data_source}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500 mb-1">🏢 医疗中心</div>
+                                <div>${basic_info.center}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500 mb-1">⚠️ 预后</div>
+                                <div class="${basic_info.mortality_flag ? 'text-red-600 font-medium' : 'text-green-600'}">
+                                    ${basic_info.mortality_flag ? '院内死亡' : '存活出院'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 2. 时序生命体征 -->
+                <div class="section-flat">
+                    <div class="section-header">
+                        <span class="text-lg mr-2">📈</span>时序生命体征曲线
+                    </div>
+                    <div class="section-body">
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="p-3 bg-blue-50 rounded">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <span>❤️</span>
+                                    <span class="text-sm font-medium">心率趋势</span>
+                                </div>
+                                <canvas id="chart-hr" height="120"></canvas>
+                            </div>
+                            <div class="p-3 bg-green-50 rounded">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <span>💓</span>
+                                    <span class="text-sm font-medium">血压趋势</span>
+                                </div>
+                                <canvas id="chart-bp" height="120"></canvas>
+                            </div>
+                            <div class="p-3 bg-purple-50 rounded">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <span>🫀</span>
+                                    <span class="text-sm font-medium">平均动脉压</span>
+                                </div>
+                                <canvas id="chart-map" height="120"></canvas>
+                            </div>
+                            <div class="p-3 bg-orange-50 rounded">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <span>🌡️</span>
+                                    <span class="text-sm font-medium">体温趋势</span>
+                                </div>
+                                <canvas id="chart-temp" height="120"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 3. AI预测分析 -->
+                <div class="section-flat">
+                    <div class="section-header">
+                        <span class="text-lg mr-2">🤖</span>AI脓毒症预测分析
+                    </div>
+                    <div class="section-body">
+                        <div class="grid grid-cols-3 gap-6">
+                            <div class="col-span-2">
+                                <div class="flex items-center space-x-2 mb-3">
+                                    <span>🔺🔻</span>
+                                    <span class="text-sm font-medium">风险趋势</span>
+                                </div>
+                                <canvas id="chart-risk" height="150"></canvas>
+                            </div>
+                            <div>
+                                <div class="flex items-center space-x-2 mb-3">
+                                    <span>⚠️</span>
+                                    <span class="text-sm font-medium">预警信息</span>
+                                </div>
+                                <div class="space-y-2">
+                                    ${ai_analysis.warnings.map(w => `
+                                        <div class="p-2 bg-red-50 border-l-4 border-red-400 text-sm">
+                                            ${w}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="mt-4 p-3 bg-gray-50 rounded text-sm">
+                                    <div class="flex justify-between mb-1">
+                                        <span>模型置信度</span>
+                                        <span class="font-medium">${(ai_analysis.model_confidence * 100).toFixed(0)}%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>当前风险分</span>
+                                        <span class="font-medium ${ai_analysis.current_risk_score > 0.5 ? 'text-red-600' : 'text-green-600'}">${ai_analysis.current_risk_score}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <div class="flex items-center space-x-2 mb-3">
+                                <span>📊</span>
+                                <span class="text-sm font-medium">特征贡献度</span>
+                            </div>
+                            <div class="space-y-2">
+                                ${ai_analysis.feature_importance.map(f => `
+                                    <div class="flex items-center">
+                                        <span class="text-sm w-32">${f.feature}</span>
+                                        <div class="flex-1 h-4 bg-gray-100 rounded overflow-hidden mx-3">
+                                            <div class="h-full bg-blue-500" style="width: ${f.contribution * 100}%"></div>
+                                        </div>
+                                        <span class="text-sm text-gray-600">${(f.contribution * 100).toFixed(0)}%</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 4. 临床诊疗记录 -->
+                <div class="section-flat">
+                    <div class="section-header">
+                        <span class="text-lg mr-2">🩺</span>临床诊疗记录
+                    </div>
+                    <div class="section-body">
+                        <div class="space-y-2">
+                            ${clinical_records.map(r => `
+                                <div class="flex items-start space-x-3 p-2 hover:bg-gray-50">
+                                    <span class="text-lg">${r.type}</span>
+                                    <span class="text-xs text-gray-500 w-12">${r.time}</span>
+                                    <span class="text-sm flex-1">${r.content}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 5. 快捷标记 -->
+                <div class="section-flat">
+                    <div class="section-header">
+                        <span class="text-lg mr-2">📌</span>快捷标记端口
+                    </div>
+                    <div class="section-body">
+                        <div class="flex items-center space-x-4">
+                            <button class="btn-flat px-4 py-2 text-sm" onclick="toggleMark('important')">
+                                ⭐ 标记重点病例
+                            </button>
+                            <button class="btn-flat px-4 py-2 text-sm" onclick="toggleMark('follow')">
+                                📋 加入随访队列
+                            </button>
+                            <button class="btn-flat px-4 py-2 text-sm" onclick="toggleMark('research')">
+                                🔬 科研重点关注
+                            </button>
+                            <button class="btn-flat px-4 py-2 text-sm" onclick="toggleMark('teaching')">
+                                📚 教学典型案例
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 6. 表型轨迹 -->
+                <div class="section-flat">
+                    <div class="section-header">
+                        <span class="text-lg mr-2">🧬</span>脓毒症表型时序轨迹
+                    </div>
+                    <div class="section-body">
+                        <div class="flex items-center justify-center space-x-4">
+                            ${phenotype_trajectory.map((p, i, arr) => `
+                                <div class="flex items-center">
+                                    <div class="text-center">
+                                        <div class="text-xs text-gray-500 mb-1">${p.time_range}h</div>
+                                        <div class="phenotype-badge ph-${p.phenotype}">${p.phenotype_name}</div>
+                                    </div>
+                                    ${i < arr.length - 1 ? '<span class="mx-2 text-gray-400">→</span>' : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 渲染图表
+            renderVitalsCharts(vitals_series);
+            renderRiskChart(ai_analysis.risk_trend);
+        }
+        
+        function renderVitalsCharts(vitals) {
+            const hours = vitals.hours;
+            
+            // 心率
+            new Chart(document.getElementById('chart-hr'), {
+                type: 'line',
+                data: {
+                    labels: hours,
+                    datasets: [{
+                        label: 'HR',
+                        data: vitals.heart_rate,
+                        borderColor: '#1976D2',
+                        backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { display: false } }
+                }
+            });
+            
+            // 血压
+            new Chart(document.getElementById('chart-bp'), {
+                type: 'line',
+                data: {
+                    labels: hours,
+                    datasets: [
+                        { label: 'SBP', data: vitals.systolic_bp, borderColor: '#388E3C', pointRadius: 0, tension: 0.3 },
+                        { label: 'DBP', data: vitals.diastolic_bp, borderColor: '#66BB6A', pointRadius: 0, tension: 0.3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { display: false } }
+                }
+            });
+            
+            // MAP
+            new Chart(document.getElementById('chart-map'), {
+                type: 'line',
+                data: {
+                    labels: hours,
+                    datasets: [{
+                        data: vitals.map,
+                        borderColor: '#7B1FA2',
+                        backgroundColor: 'rgba(123, 31, 162, 0.1)',
+                        fill: true,
+                        pointRadius: 0,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { display: false } }
+                }
+            });
+            
+            // 体温
+            new Chart(document.getElementById('chart-temp'), {
+                type: 'line',
+                data: {
+                    labels: hours,
+                    datasets: [{
+                        data: vitals.temperature,
+                        borderColor: '#F57C00',
+                        backgroundColor: 'rgba(245, 124, 0, 0.1)',
+                        fill: true,
+                        pointRadius: 0,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { display: false } }
+                }
+            });
+        }
+        
+        function renderRiskChart(riskTrend) {
+            new Chart(document.getElementById('chart-risk'), {
+                type: 'line',
+                data: {
+                    labels: ['W0', 'W1', 'W2', 'W3', 'W4'],
+                    datasets: [{
+                        label: '风险分',
+                        data: riskTrend,
+                        borderColor: '#D32F2F',
+                        backgroundColor: 'rgba(211, 47, 47, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#D32F2F'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 1,
+                            ticks: {
+                                callback: v => (v * 100).toFixed(0) + '%'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function toggleMark(type) {
+            alert(`已${type === 'important' ? '标记为重点病例' : type === 'follow' ? '加入随访队列' : type === 'research' ? '设为科研关注' : '设为教学案例'}`);
+        }
+        
+        // ========== 科研数据看板视图 ==========
+        async function loadDashboardView() {
+            const contentArea = document.getElementById('content-area');
+            contentArea.innerHTML = `
+                <div class="mb-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xl">📊</span>
+                        <span class="font-medium text-lg">科研数据看板</span>
+                        <span class="text-sm text-gray-500">PhysioNet 2012 Dataset</span>
+                    </div>
+                    <button onclick="refreshDashboard()" class="btn-flat px-4 py-1.5 text-sm">
+                        🔄 刷新数据
+                    </button>
+                </div>
+                
+                <!-- 核心指标卡片 -->
+                <div class="grid grid-cols-4 gap-4 mb-6" id="overview-cards">
+                    <div class="section-flat p-4">
+                        <div class="text-sm text-gray-500 mb-1">👥 总患者数</div>
+                        <div class="text-2xl font-bold">-</div>
+                    </div>
+                    <div class="section-flat p-4">
+                        <div class="text-sm text-gray-500 mb-1">💀 院内死亡率</div>
+                        <div class="text-2xl font-bold text-red-600">-</div>
+                    </div>
+                    <div class="section-flat p-4">
+                        <div class="text-sm text-gray-500 mb-1">⏱️ 平均ICU停留</div>
+                        <div class="text-2xl font-bold text-blue-600">-</div>
+                    </div>
+                    <div class="section-flat p-4">
+                        <div class="text-sm text-gray-500 mb-1">🔄 表型转换率</div>
+                        <div class="text-2xl font-bold text-purple-600">-</div>
+                    </div>
+                </div>
+                
+                <!-- 图表区域 -->
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <!-- 表型分布 -->
+                    <div class="section-flat">
+                        <div class="section-header">
+                            <span class="mr-2">🧬</span>脓毒症表型分布
+                        </div>
+                        <div class="section-body">
+                            <canvas id="chart-phenotype" height="200"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- ICU分布 -->
+                    <div class="section-flat">
+                        <div class="section-header">
+                            <span class="mr-2">🏥</span>ICU病区分布
+                        </div>
+                        <div class="section-body">
+                            <canvas id="chart-icu" height="200"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- 年龄分布 -->
+                    <div class="section-flat">
+                        <div class="section-header">
+                            <span class="mr-2">👤</span>患者年龄分布
+                        </div>
+                        <div class="section-body">
+                            <canvas id="chart-age" height="200"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- 风险分布 -->
+                    <div class="section-flat">
+                        <div class="section-header">
+                            <span class="mr-2">🤖</span>AI风险等级分布
+                        </div>
+                        <div class="section-body">
+                            <canvas id="chart-risk" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 死亡率交叉分析 -->
+                <div class="section-flat mb-6">
+                    <div class="section-header">
+                        <span class="mr-2">💀</span>死亡率交叉分析
+                    </div>
+                    <div class="section-body">
+                        <div class="grid grid-cols-2 gap-8">
+                            <div>
+                                <div class="text-sm font-medium mb-3 text-center">按表型分组</div>
+                                <canvas id="chart-mortality-ph" height="180"></canvas>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium mb-3 text-center">按ICU病区分组</div>
+                                <canvas id="chart-mortality-icu" height="180"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 轨迹模式统计 -->
+                <div class="section-flat mb-6">
+                    <div class="section-header">
+                        <span class="mr-2">🔄</span>表型轨迹模式统计
+                    </div>
+                    <div class="section-body">
+                        <div class="grid grid-cols-3 gap-6" id="trajectory-stats">
+                            <!-- 动态填充 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 数据质量报告 -->
+                <div class="section-flat mb-6">
+                    <div class="section-header">
+                        <span class="mr-2">✅</span>数据质量报告
+                    </div>
+                    <div class="section-body">
+                        <div class="grid grid-cols-6 gap-4 text-center" id="data-quality">
+                            <!-- 动态填充 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ===== 新增数据源可视化 ===== -->
+                
+                <!-- 1. 轨迹转换流向图 -->
+                <div class="section-flat mb-6">
+                    <div class="section-header">
+                        <span class="mr-2">🔄</span>表型转换流向分析 (Top 8)
+                    </div>
+                    <div class="section-body">
+                        <div id="transition-flow-chart" class="space-y-2">
+                            <!-- 动态填充转换流向 -->
+                        </div>
+                        <div class="mt-4 grid grid-cols-4 gap-4" id="phenotype-stability">
+                            <!-- 各表型稳定性 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 3. 特征可用性 -->
+                <div class="section-flat mb-6">
+                    <div class="section-header">
+                        <span class="mr-2">📊</span>特征维度可用性
+                    </div>
+                    <div class="section-body">
+                        <div class="grid grid-cols-3 gap-4" id="feature-availability">
+                            <!-- 动态填充 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 4. 时序观测密度 -->
+                <div class="section-flat mb-6">
+                    <div class="section-header">
+                        <span class="mr-2">⏱️</span>时序观测密度变化
+                    </div>
+                    <div class="section-body">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm text-gray-600">48小时滚动窗口观测密度趋势</span>
+                            <span class="text-sm" id="density-trend"></span>
+                        </div>
+                        <canvas id="chart-obs-density" height="150"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 5. 跨中心验证 -->
+                <div class="section-flat">
+                    <div class="section-header">
+                        <span class="mr-2">🏥</span>跨中心验证结果
+                    </div>
+                    <div class="section-body">
+                        <div class="grid grid-cols-2 gap-6" id="cross-center-validation">
+                            <!-- 动态填充 -->
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            await fetchDashboardData();
+        }
+        
+        async function fetchDashboardData() {
+            try {
+                const response = await fetch('/api/dashboard/stats');
+                const data = await response.json();
+                renderDashboard(data);
+            } catch (error) {
+                console.error('Error fetching dashboard data:', error);
+            }
+        }
+        
+        function renderDashboard(data) {
+            // 核心指标
+            const overview = data.overview;
+            const cards = document.getElementById('overview-cards');
+            const transitionRate = data.trajectory_patterns
+                .filter(p => p.type !== 'stable')
+                .reduce((sum, p) => sum + p.percentage, 0);
+            
+            cards.innerHTML = `
+                <div class="section-flat p-4">
+                    <div class="text-sm text-gray-500 mb-1">👥 总患者数</div>
+                    <div class="text-2xl font-bold">${overview.total_patients.toLocaleString()}</div>
+                    <div class="text-xs text-gray-400 mt-1">男${overview.male_count} / 女${overview.female_count}</div>
+                </div>
+                <div class="section-flat p-4">
+                    <div class="text-sm text-gray-500 mb-1">💀 院内死亡率</div>
+                    <div class="text-2xl font-bold text-red-600">${overview.mortality_rate}%</div>
+                    <div class="text-xs text-gray-400 mt-1">${overview.mortality_count}例死亡</div>
+                </div>
+                <div class="section-flat p-4">
+                    <div class="text-sm text-gray-500 mb-1">⏱️ 平均ICU停留</div>
+                    <div class="text-2xl font-bold text-blue-600">${overview.avg_los_hours}h</div>
+                    <div class="text-xs text-gray-400 mt-1">中位数${overview.median_los_hours}h</div>
+                </div>
+                <div class="section-flat p-4">
+                    <div class="text-sm text-gray-500 mb-1">🔄 表型转换率</div>
+                    <div class="text-2xl font-bold text-purple-600">${transitionRate.toFixed(1)}%</div>
+                    <div class="text-xs text-gray-400 mt-1">非稳定患者</div>
+                </div>
+            `;
+            
+            // 表型分布图
+            renderPhenotypeChart(data.phenotype_distribution);
+            
+            // ICU分布图
+            renderICUChart(data.icu_distribution);
+            
+            // 年龄分布图
+            renderAgeChart(data.age_distribution);
+            
+            // 风险分布图
+            renderRiskDistChart(data.risk_distribution);
+            
+            // 死亡率交叉分析
+            renderMortalityCharts(data.mortality_by_phenotype, data.mortality_by_icu);
+            
+            // 轨迹模式
+            renderTrajectoryStats(data.trajectory_patterns);
+            
+            // 数据质量
+            renderDataQuality(data.data_quality);
+            
+            // ===== 新增数据可视化 =====
+            
+            // 轨迹转换详情
+            renderTrajectoryDetails(data.trajectory_details);
+            
+            // 特征可用性
+            renderFeatureAvailability(data.feature_availability);
+            
+            // 时序观测密度
+            renderTemporalObsDensity(data.temporal_observation_density);
+            
+            // 跨中心验证
+            renderCrossCenterValidation(data.cross_center_validation);
+        }
+        
+        function renderPhenotypeChart(data) {
+            new Chart(document.getElementById('chart-phenotype'), {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(d => d.name),
+                    datasets: [{
+                        data: data.map(d => d.count),
+                        backgroundColor: data.map(d => d.color),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12 } }
+                    }
+                }
+            });
+        }
+        
+        function renderICUChart(data) {
+            new Chart(document.getElementById('chart-icu'), {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.name.replace('ICU', '')),
+                    datasets: [{
+                        label: '患者数',
+                        data: data.map(d => d.count),
+                        backgroundColor: '#1976D2',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+        
+        function renderAgeChart(data) {
+            new Chart(document.getElementById('chart-age'), {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.group),
+                    datasets: [{
+                        label: '患者数',
+                        data: data.map(d => d.count),
+                        backgroundColor: ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0'],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+        
+        function renderRiskDistChart(data) {
+            new Chart(document.getElementById('chart-risk'), {
+                type: 'pie',
+                data: {
+                    labels: data.map(d => d.label),
+                    datasets: [{
+                        data: data.map(d => d.count),
+                        backgroundColor: ['#4CAF50', '#FF9800', '#F44336'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12 } }
+                    }
+                }
+            });
+        }
+        
+        function renderMortalityCharts(phData, icuData) {
+            // 表型死亡率
+            new Chart(document.getElementById('chart-mortality-ph'), {
+                type: 'bar',
+                data: {
+                    labels: phData.map(d => d.name.split(' ')[0]),
+                    datasets: [{
+                        label: '死亡率(%)',
+                        data: phData.map(d => d.mortality_rate),
+                        backgroundColor: ['#1976D2', '#FBC02D', '#D32F2F', '#7B1FA2'],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, max: 40 } }
+                }
+            });
+            
+            // ICU死亡率
+            new Chart(document.getElementById('chart-mortality-icu'), {
+                type: 'bar',
+                data: {
+                    labels: icuData.map(d => d.name.replace('ICU', '').trim()),
+                    datasets: [{
+                        label: '死亡率(%)',
+                        data: icuData.map(d => d.mortality_rate),
+                        backgroundColor: '#D32F2F',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+        
+        function renderTrajectoryStats(patterns) {
+            document.getElementById('trajectory-stats').innerHTML = patterns.map(p => `
+                <div class="text-center p-4 bg-gray-50 rounded">
+                    <div class="text-3xl mb-2">${p.emoji}</div>
+                    <div class="text-lg font-bold">${p.percentage}%</div>
+                    <div class="text-sm text-gray-600">${p.name}</div>
+                    <div class="text-xs text-gray-400 mt-1">${p.count.toLocaleString()}人</div>
+                </div>
+            `).join('');
+        }
+        
+        function renderDataQuality(data) {
+            const completeness = [
+                { label: '年龄数据', value: data.complete_age, total: data.total_records },
+                { label: '性别数据', value: data.complete_sex, total: data.total_records },
+                { label: 'ICU时长', value: data.complete_los, total: data.total_records },
+                { label: '结局验证', value: data.outcome_verified, total: data.total_records },
+            ];
+            
+            document.getElementById('data-quality').innerHTML = completeness.map(item => {
+                const pct = (item.value / item.total * 100).toFixed(1);
+                return `
+                    <div class="p-3">
+                        <div class="text-2xl font-bold ${pct > 95 ? 'text-green-600' : 'text-orange-600'}">${pct}%</div>
+                        <div class="text-xs text-gray-500 mt-1">${item.label}</div>
+                        <div class="text-xs text-gray-400">${item.value}/${item.total}</div>
+                    </div>
+                `;
+            }).join('') + `
+                <div class="p-3">
+                    <div class="text-xs text-gray-500">数据源</div>
+                    <div class="text-sm font-medium mt-1">${data.data_source}</div>
+                </div>
+                <div class="p-3">
+                    <div class="text-xs text-gray-500">最后更新</div>
+                    <div class="text-sm font-medium mt-1">${data.last_updated}</div>
+                </div>
+            `;
+        }
+        
+        // ========== 新增数据可视化渲染 ==========
+        
+        function renderTrajectoryDetails(data) {
+            if (!data || !data.top_transitions) return;
+            
+            // 转换流向（使用描述性名称）
+            document.getElementById('transition-flow-chart').innerHTML = data.top_transitions.map(t => `
+                <div class="p-3 bg-gray-50 rounded mb-2">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xl">${t.from_emoji}</span>
+                            <div>
+                                <div class="font-medium">${t.from_name}</div>
+                                <div class="text-xs text-gray-500">${t.from_code}</div>
+                            </div>
+                        </div>
+                        <div class="flex-1 mx-4 text-center">
+                            <div class="text-2xl text-gray-400">→</div>
+                            <div class="text-xs text-gray-500">${t.probability}%</div>
+                        </div>
+                        <div class="flex items-center space-x-2 text-right">
+                            <div>
+                                <div class="font-medium">${t.to_name}</div>
+                                <div class="text-xs text-gray-500">${t.to_code}</div>
+                            </div>
+                            <span class="text-xl">${t.to_emoji}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs px-2 py-1 rounded ${t.type === '恶化' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}">
+                            ${t.type}
+                        </span>
+                        <span class="text-xs text-gray-500">${t.count}例</span>
+                        <span class="text-xs text-gray-600 flex-1 ml-3">${t.clinical_significance}</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            // 各阶段详细分析
+            if (data.phenotype_analysis) {
+                const analysisHtml = data.phenotype_analysis.map(p => `
+                    <div class="p-4 bg-white border rounded mb-3">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-2xl">${p.icon}</span>
+                                <div>
+                                    <div class="font-bold text-lg">${p.name}</div>
+                                    <div class="text-xs text-gray-500">${p.code}</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-gray-600">死亡率</div>
+                                <div class="text-xl font-bold ${p.mortality.replace(/[%~]/g, '') > 20 ? 'text-red-600' : 'text-green-600'}">${p.mortality}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <div class="font-medium text-gray-700 mb-1">🔬 临床特征</div>
+                                <ul class="list-disc list-inside text-gray-600 space-y-1">
+                                    ${p.characteristics.map(c => `<li>${c}</li>`).join('')}
+                                </ul>
+                            </div>
+                            <div>
+                                <div class="font-medium text-gray-700 mb-1">🏥 临床管理</div>
+                                <p class="text-gray-600">${p.clinical_management}</p>
+                                <div class="mt-2">
+                                    <span class="text-xs text-gray-500">稳定性: ${p.stability}%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${p.main_transitions && p.main_transitions.length > 0 ? `
+                            <div class="mt-3 pt-3 border-t">
+                                <div class="font-medium text-gray-700 mb-1">🔄 主要转换去向</div>
+                                <div class="flex space-x-4">
+                                    ${p.main_transitions.map(t => `
+                                        <div class="flex items-center space-x-1 text-sm">
+                                            <span>${t.to_emoji}</span>
+                                            <span>${t.to_name}</span>
+                                            <span class="text-gray-500">${t.prob}%</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+                
+                document.getElementById('phenotype-stability').innerHTML = analysisHtml;
+            }
+            
+            // 临床洞察
+            if (data.clinical_insights && data.clinical_insights.length > 0) {
+                const insightsHtml = `
+                    <div class="mt-4 p-4 bg-blue-50 rounded">
+                        <div class="font-medium mb-3">💡 临床洞察</div>
+                        <div class="space-y-2">
+                            ${data.clinical_insights.map(i => `
+                                <div class="flex items-start space-x-2">
+                                    <span>${i.icon}</span>
+                                    <div>
+                                        <span class="font-medium">${i.title}:</span>
+                                        <span class="text-sm text-gray-700">${i.content}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                document.getElementById('phenotype-stability').insertAdjacentHTML('beforeend', insightsHtml);
+            }
+        }
+        
+        function renderFeatureAvailability(data) {
+            if (!data) return;
+            
+            document.getElementById('feature-availability').innerHTML = data.map(f => `
+                <div class="p-4 bg-gray-50 rounded">
+                    <div class="flex items-center space-x-2 mb-2">
+                        <span class="text-xl">${f.emoji}</span>
+                        <span class="font-medium">${f.group}</span>
+                    </div>
+                    <div class="text-2xl font-bold mb-1">${f.count}</div>
+                    <div class="text-xs text-gray-500">维度数</div>
+                    <div class="text-xs text-gray-400 mt-2">可靠性: ${f.avg_reliability}</div>
+                </div>
+            `).join('');
+        }
+        
+        function renderTemporalObsDensity(data) {
+            if (!data || !data.windows) return;
+            
+            document.getElementById('density-trend').innerHTML = `
+                <span class="px-2 py-1 rounded ${data.overall_trend === '下降' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'}">
+                    ${data.overall_trend === '下降' ? '⬇️' : '➡️'} ${data.overall_trend}
+                </span>
+            `;
+            
+            new Chart(document.getElementById('chart-obs-density'), {
+                type: 'line',
+                data: {
+                    labels: data.windows.map(w => w.time_range),
+                    datasets: [{
+                        label: '观测密度(%)',
+                        data: data.windows.map(w => w.mean_density),
+                        borderColor: '#1976D2',
+                        backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 40,
+                            ticks: { callback: v => v + '%' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderCrossCenterValidation(data) {
+            if (!data) return;
+            
+            document.getElementById('cross-center-validation').innerHTML = `
+                <div class="p-4 bg-blue-50 rounded">
+                    <div class="font-medium mb-2">🏥 Center A (训练集)</div>
+                    <div class="text-sm space-y-1">
+                        <div>患者数: ${data.center_a?.patients?.toLocaleString() || '7,989'}</div>
+                        <div>稳定患者: ${data.center_a?.stable || 65.0}%</div>
+                        <div>死亡率排序: ${data.center_a?.mortality_order || '[P0,P3,P1,P2]'}</div>
+                    </div>
+                </div>
+                <div class="p-4 bg-green-50 rounded">
+                    <div class="font-medium mb-2">🏥 Center B (验证集)</div>
+                    <div class="text-sm space-y-1">
+                        <div>患者数: ${data.center_b?.patients?.toLocaleString() || '3,997'}</div>
+                        <div>稳定患者: ${data.center_b?.stable || 64.4}%</div>
+                        <div>死亡率排序: ${data.center_b?.mortality_order || '[P0,P3,P1,P2]'}</div>
+                    </div>
+                </div>
+                <div class="col-span-2 p-3 ${data.validation_passed ? 'bg-green-100' : 'bg-red-100'} rounded text-center">
+                    <span class="font-medium">${data.validation_passed ? '✅ 跨中心验证通过' : '❌ 验证未通过'}</span>
+                    <span class="text-sm ml-2">${data.notes || '死亡率排序一致，表型结构稳定'}</span>
+                </div>
+            `;
+        }
+        
+        function refreshDashboard() {
+            fetchDashboardData();
+        }
+        
+        // ========== AI智能分析视图 (临床决策Pipeline) ==========
+        // ========== 科研成果展示面板 ==========
+        
+        async function loadResearchDashboardView() {
+            const contentArea = document.getElementById('content-area');
+            contentArea.innerHTML = `
+                <div class="mb-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-2xl">🏆</span>
+                        <div>
+                            <span class="font-bold text-lg">科研成果展示中心</span>
+                            <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full ml-2">Model v2.0</span>
+                        </div>
+                        <span class="text-sm text-gray-500">模型性能 · 参数分析 · 优化建议</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="refreshResearchDashboard()" class="btn-flat px-4 py-2 text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg">
+                            🔄 刷新数据
+                        </button>
+                        <button onclick="loadDashboardView()" class="btn-flat px-4 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded-lg">
+                            📊 返回数据看板
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 核心成果指标 -->
+                <div class="grid grid-cols-4 gap-4 mb-6" id="research-overview-cards">
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-4 shadow-lg">
+                        <div class="text-blue-100 text-sm mb-1">死亡率预测 AUROC</div>
+                        <div class="text-3xl font-bold" id="metric-auroc">--</div>
+                        <div class="text-xs text-blue-200 mt-1">Test Set Performance</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-4 shadow-lg">
+                        <div class="text-green-100 text-sm mb-1">表型聚类 Silhouette</div>
+                        <div class="text-3xl font-bold" id="metric-silhouette">--</div>
+                        <div class="text-xs text-green-200 mt-1">vs PCA 0.061</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-4 shadow-lg">
+                        <div class="text-purple-100 text-sm mb-1">多任务综合 F1</div>
+                        <div class="text-3xl font-bold" id="metric-multitask">--</div>
+                        <div class="text-xs text-purple-200 mt-1">4 Tasks Combined</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl p-4 shadow-lg">
+                        <div class="text-orange-100 text-sm mb-1">模型参数量</div>
+                        <div class="text-3xl font-bold" id="metric-params">--</div>
+                        <div class="text-xs text-orange-200 mt-1">轻量级设计</div>
+                    </div>
+                </div>
+                
+                <!-- 模型性能对比 -->
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <!-- 死亡率预测对比 -->
+                    <div class="bg-white rounded-xl shadow-sm border p-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="font-medium text-lg">💀 死亡率预测性能对比</div>
+                            <span class="text-xs text-gray-400">AUROC Score</span>
+                        </div>
+                        <canvas id="chart-mortality-compare" height="200"></canvas>
+                        <div class="mt-3 grid grid-cols-3 gap-2 text-center text-sm">
+                            <div class="p-2 bg-gray-50 rounded">
+                                <div class="text-gray-500">S15 Baseline</div>
+                                <div class="font-bold text-blue-600">0.829</div>
+                            </div>
+                            <div class="p-2 bg-gray-50 rounded">
+                                <div class="text-gray-500">S15 TrainVal</div>
+                                <div class="font-bold text-green-600">0.825</div>
+                            </div>
+                            <div class="p-2 bg-gray-50 rounded">
+                                <div class="text-gray-500">Multitask</div>
+                                <div class="font-bold text-purple-600">0.781</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 表型聚类对比 -->
+                    <div class="bg-white rounded-xl shadow-sm border p-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="font-medium text-lg">🧬 表型聚类质量对比</div>
+                            <span class="text-xs text-gray-400">Silhouette Score (K=4)</span>
+                        </div>
+                        <canvas id="chart-clustering-compare" height="200"></canvas>
+                        <div class="mt-3 p-3 bg-green-50 rounded text-sm">
+                            <span class="font-medium text-green-800">✓ 自监督编码器显著优于PCA基线</span>
+                            <span class="text-green-700"> (0.087 vs 0.061, +42%)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 多任务性能雷达图 -->
+                <div class="bg-white rounded-xl shadow-sm border p-4 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="font-medium text-lg">🎯 多任务学习性能雷达</div>
+                        <span class="text-xs text-gray-400">S6 Multitask Student</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-6">
+                        <canvas id="chart-multitask-radar" height="250"></canvas>
+                        <div class="space-y-3">
+                            <div class="p-3 bg-red-50 rounded border-l-4 border-red-500">
+                                <div class="font-medium text-red-800">死亡率预测</div>
+                                <div class="text-sm text-red-700">AUROC: 0.781 | F1: 0.666</div>
+                                <div class="text-xs text-red-600 mt-1">主要任务，性能良好</div>
+                            </div>
+                            <div class="p-3 bg-yellow-50 rounded border-l-4 border-yellow-500">
+                                <div class="font-medium text-yellow-800">免疫状态预测</div>
+                                <div class="text-sm text-yellow-700">Macro F1: 0.376</div>
+                                <div class="text-xs text-yellow-600 mt-1">⚠️ 需要优化，建议增加权重</div>
+                            </div>
+                            <div class="p-3 bg-blue-50 rounded border-l-4 border-blue-500">
+                                <div class="font-medium text-blue-800">器官功能预测</div>
+                                <div class="text-sm text-blue-700">Macro F1: 0.656</div>
+                                <div class="text-xs text-blue-600 mt-1">性能稳定</div>
+                            </div>
+                            <div class="p-3 bg-green-50 rounded border-l-4 border-green-500">
+                                <div class="font-medium text-green-800">液体平衡预测</div>
+                                <div class="text-sm text-green-700">Macro F1: 0.650</div>
+                                <div class="text-xs text-green-600 mt-1">性能稳定</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 模型参数与架构对比 -->
+                <div class="bg-white rounded-xl shadow-sm border p-4 mb-6">
+                    <div class="font-medium text-lg mb-4">🔧 模型架构与参数对比</div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left">模型</th>
+                                    <th class="px-4 py-2 text-center">架构</th>
+                                    <th class="px-4 py-2 text-center">d_model</th>
+                                    <th class="px-4 py-2 text-center">n_layers</th>
+                                    <th class="px-4 py-2 text-center">n_heads</th>
+                                    <th class="px-4 py-2 text-center">参数量</th>
+                                    <th class="px-4 py-2 text-center">推理延迟</th>
+                                </tr>
+                            </thead>
+                            <tbody id="model-architecture-table">
+                                <tr class="border-t">
+                                    <td class="px-4 py-3 font-medium">S6 Multitask Student</td>
+                                    <td class="px-4 py-3 text-center">Transformer</td>
+                                    <td class="px-4 py-3 text-center">32</td>
+                                    <td class="px-4 py-3 text-center">1</td>
+                                    <td class="px-4 py-3 text-center">2</td>
+                                    <td class="px-4 py-3 text-center font-mono">31,852</td>
+                                    <td class="px-4 py-3 text-center">0.28ms</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- 智能优化建议 -->
+                <div class="bg-white rounded-xl shadow-sm border p-4 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="font-medium text-lg">💡 智能优化建议</div>
+                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">AI Analysis</span>
+                    </div>
+                    <div id="optimization-suggestions" class="space-y-3">
+                        <div class="animate-pulse text-gray-400">正在分析模型数据...</div>
+                    </div>
+                </div>
+                
+                <!-- SOTA对比：死亡率预测 -->
+                <div class="bg-white rounded-xl shadow-sm border p-4 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="font-medium text-lg">🏆 与SOTA模型对比：ICU脓毒症死亡率预测</div>
+                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">MIMIC-III/IV 基准</span>
+                    </div>
+                    
+                    <!-- AUROC对比 -->
+                    <div class="mb-4">
+                        <div class="text-sm font-medium text-gray-600 mb-2">AUROC (Area Under ROC Curve)</div>
+                        <div class="space-y-2">
+                            <div class="flex items-center">
+                                <div class="w-52 text-sm font-medium text-blue-700">我们的模型 (S6)</div>
+                                <div class="flex-1 mx-3 bg-gray-200 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full" style="width: 81.2%"></div>
+                                </div>
+                                <div class="w-16 text-right font-bold text-blue-600">0.812</div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-52 text-sm">S15 Baseline</div>
+                                <div class="flex-1 mx-3 bg-gray-200 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-blue-400 h-full rounded-full" style="width: 82.9%"></div>
+                                </div>
+                                <div class="w-16 text-right font-medium">0.829</div>
+                            </div>
+                            <div class="flex items-center opacity-80">
+                                <div class="w-52 text-sm">
+                                    <span class="text-gray-600 font-medium">TCKIN (2024)</span>
+                                    <a href="https://arxiv.org/abs/2407.06560" target="_blank" class="text-xs text-blue-500 hover:underline ml-1">[Wang et al., arXiv 2024]</a>
+                                </div>
+                                <div class="flex-1 mx-3 bg-gray-200 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-gray-400 h-full rounded-full" style="width: 88.1%"></div>
+                                </div>
+                                <div class="w-16 text-right text-gray-600 font-medium">0.881</div>
+                            </div>
+                            <div class="flex items-center opacity-80">
+                                <div class="w-52 text-sm">
+                                    <span class="text-gray-600">Extra Trees (2025)</span>
+                                    <a href="https://link.springer.com/article/10.1186/s40635-025-00765-5" target="_blank" class="text-xs text-blue-500 hover:underline ml-1">[Rahman et al., ICM 2025]</a>
+                                </div>
+                                <div class="flex-1 mx-3 bg-gray-200 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-gray-400 h-full rounded-full" style="width: 87%"></div>
+                                </div>
+                                <div class="w-16 text-right text-gray-600">0.87</div>
+                            </div>
+                            <div class="flex items-center opacity-80">
+                                <div class="w-52 text-sm">
+                                    <span class="text-gray-600">XGBoost (2024)</span>
+                                    <a href="https://link.springer.com/article/10.1007/s11739-024-03732-2" target="_blank" class="text-xs text-blue-500 hover:underline ml-1">[Zhou et al., IJMS 2024]</a>
+                                </div>
+                                <div class="flex-1 mx-3 bg-gray-200 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-gray-400 h-full rounded-full" style="width: 87.3%"></div>
+                                </div>
+                                <div class="w-16 text-right text-gray-600">0.873</div>
+                            </div>
+                            <div class="flex items-center opacity-70">
+                                <div class="w-52 text-sm">
+                                    <span class="text-gray-500">LightGBM (2024)</span>
+                                    <a href="https://arxiv.org/abs/2407.06560" target="_blank" class="text-xs text-blue-500 hover:underline ml-1">[Wang et al., arXiv 2024]</a>
+                                </div>
+                                <div class="flex-1 mx-3 bg-gray-200 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-gray-400 h-full rounded-full" style="width: 86%"></div>
+                                </div>
+                                <div class="w-16 text-right text-gray-500">0.86</div>
+                            </div>
+                            <div class="flex items-center opacity-70">
+                                <div class="w-52 text-sm">
+                                    <span class="text-gray-500">LSTM (2024)</span>
+                                    <a href="https://arxiv.org/abs/2407.06560" target="_blank" class="text-xs text-blue-500 hover:underline ml-1">[Wang et al., arXiv 2024]</a>
+                                </div>
+                                <div class="flex-1 mx-3 bg-gray-200 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-gray-400 h-full rounded-full" style="width: 85%"></div>
+                                </div>
+                                <div class="w-16 text-right text-gray-500">0.85</div>
+                            </div>
+                            <div class="flex items-center opacity-70">
+                                <div class="w-52 text-sm">
+                                    <span class="text-gray-500">MLP (2022)</span>
+                                    <a href="https://pubmed.ncbi.nlm.nih.gov/36192615/" target="_blank" class="text-xs text-blue-500 hover:underline ml-1">[Mirzahani et al., Sci Rep 2022]</a>
+                                </div>
+                                <div class="flex-1 mx-3 bg-gray-200 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-gray-400 h-full rounded-full" style="width: 84.1%"></div>
+                                </div>
+                                <div class="w-16 text-right text-gray-500">0.841</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-xs text-gray-500 mt-2">⚠️ 数据来源：同行评审文献中MIMIC-III/IV数据库的ICU脓毒症患者队列；点击文献链接验证原始数据</div>
+                </div>
+                
+                <!-- 与临床评分系统对比 -->
+                <div class="bg-white rounded-xl shadow-sm border p-4 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="font-medium text-lg">⏱️ 与临床评分系统对比</div>
+                        <span class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">ICU脓毒症预后</span>
+                    </div>
+                    <div class="mb-4">
+                        <div class="text-sm font-medium text-gray-600 mb-2">AUROC (Area Under ROC Curve)</div>
+                        <div class="space-y-2">
+                            <div class="flex items-center">
+                                <div class="w-36 text-sm font-medium text-blue-700">我们的模型</div>
+                                <div class="flex-1 mx-3 bg-gray-200 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full" style="width: 81.2%"></div>
+                                </div>
+                                <div class="w-16 text-right font-bold text-blue-600">0.812</div>
+                            </div>
+                            <div class="flex items-center opacity-70">
+                                <div class="w-36 text-sm">
+                                    <span class="text-gray-500">OASIS</span>
+                                    <a href="https://link.springer.com/article/10.1007/s11739-024-03732-2" target="_blank" class="text-xs text-blue-500 hover:underline ml-1">[Zhou et al., IJMS 2024]</a>
+                                </div>
+                                <div class="flex-1 mx-3 bg-gray-200 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-gray-400 h-full rounded-full" style="width: 73.8%"></div>
+                                </div>
+                                <div class="w-16 text-right text-gray-500">0.738</div>
+                            </div>
+                            <div class="flex items-center opacity-70">
+                                <div class="w-36 text-sm">
+                                    <span class="text-gray-500">APACHE II</span>
+                                    <a href="https://pubmed.ncbi.nlm.nih.gov/36192615/" target="_blank" class="text-xs text-blue-500 hover:underline ml-1">[Mirzahani et al., Sci Rep 2022]</a>
+                                </div>
+                                <div class="flex-1 mx-3 bg-gray-200 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-gray-400 h-full rounded-full" style="width: 73%"></div>
+                                </div>
+                                <div class="w-16 text-right text-gray-500">0.73</div>
+                            </div>
+                            <div class="flex items-center opacity-70">
+                                <div class="w-36 text-sm">
+                                    <span class="text-gray-500">SOFA</span>
+                                    <a href="https://link.springer.com/article/10.1007/s11739-024-03732-2" target="_blank" class="text-xs text-blue-500 hover:underline ml-1">[Zhou et al., IJMS 2024]</a>
+                                </div>
+                                <div class="flex-1 mx-3 bg-gray-200 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-gray-400 h-full rounded-full" style="width: 72.8%"></div>
+                                </div>
+                                <div class="w-16 text-right text-gray-500">0.728</div>
+                            </div>
+                            <div class="flex items-center opacity-70">
+                                <div class="w-36 text-sm">
+                                    <span class="text-gray-500">SAPS II</span>
+                                    <a href="https://link.springer.com/article/10.1007/s11739-024-03732-2" target="_blank" class="text-xs text-blue-500 hover:underline ml-1">[Zhou et al., IJMS 2024]</a>
+                                </div>
+                                <div class="flex-1 mx-3 bg-gray-200 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-gray-400 h-full rounded-full" style="width: 72.8%"></div>
+                                </div>
+                                <div class="w-16 text-right text-gray-500">0.728</div>
+                            </div>
+                            <div class="flex items-center opacity-70">
+                                <div class="w-36 text-sm">
+                                    <span class="text-gray-500">qSOFA</span>
+                                    <a href="https://pubmed.ncbi.nlm.nih.gov/36192615/" target="_blank" class="text-xs text-blue-500 hover:underline ml-1">[Mirzahani et al., Sci Rep 2022]</a>
+                                </div>
+                                <div class="flex-1 mx-3 bg-gray-200 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-gray-400 h-full rounded-full" style="width: 65%"></div>
+                                </div>
+                                <div class="w-16 text-right text-gray-500">0.65</div>
+                            </div>
+                            <div class="flex items-center opacity-70">
+                                <div class="w-36 text-sm">
+                                    <span class="text-gray-500">SIRS</span>
+                                    <a href="https://pubmed.ncbi.nlm.nih.gov/36192615/" target="_blank" class="text-xs text-blue-500 hover:underline ml-1">[Mirzahani et al., Sci Rep 2022]</a>
+                                </div>
+                                <div class="flex-1 mx-3 bg-gray-200 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-gray-400 h-full rounded-full" style="width: 61%"></div>
+                                </div>
+                                <div class="w-16 text-right text-gray-500">0.61</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-2">⚠️ 数据来源：同行评审文献中MIMIC-III/IV数据库ICU脓毒症患者队列；点击文献链接验证原始数据</div>
+                </div>
+                
+                <!-- 综合性能指标表 -->
+                <div class="bg-white rounded-xl shadow-sm border p-4 mb-6">
+                    <div class="font-medium text-lg mb-4">📋 详细性能指标对比</div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 py-2 text-left">指标</th>
+                                    <th class="px-3 py-2 text-center">我们的模型</th>
+                                    <th class="px-3 py-2 text-center">文献SOTA</th>
+                                    <th class="px-3 py-2 text-center">传统评分</th>
+                                    <th class="px-3 py-2 text-center">提升</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-t">
+                                    <td class="px-3 py-2 font-medium">AUROC</td>
+                                    <td class="px-3 py-2 text-center font-bold text-blue-600">0.812</td>
+                                    <td class="px-3 py-2 text-center text-gray-600">
+                                        0.84-0.88
+                                        <a href="https://arxiv.org/abs/2407.06560" target="_blank" class="text-xs text-blue-500 hover:underline ml-1">[1]</a>
+                                        <a href="https://link.springer.com/article/10.1186/s40635-025-00765-5" target="_blank" class="text-xs text-blue-500 hover:underline">[2]</a>
+                                    </td>
+                                    <td class="px-3 py-2 text-center text-gray-400">0.728 (SOFA)</td>
+                                    <td class="px-3 py-2 text-center text-green-600">+12%</td>
+                                </tr>
+                                <tr class="border-t bg-gray-50">
+                                    <td class="px-3 py-2 font-medium">敏感性 (Recall)</td>
+                                    <td class="px-3 py-2 text-center font-bold text-blue-600">0.74</td>
+                                    <td class="px-3 py-2 text-center text-gray-600">
+                                        0.70-0.82
+                                        <a href="https://link.springer.com/article/10.1007/s11739-024-03732-2" target="_blank" class="text-xs text-blue-500 hover:underline ml-1">[3]</a>
+                                    </td>
+                                    <td class="px-3 py-2 text-center text-gray-400">0.65 (qSOFA)</td>
+                                    <td class="px-3 py-2 text-center text-green-600">+14%</td>
+                                </tr>
+                                <tr class="border-t">
+                                    <td class="px-3 py-2 font-medium">特异性</td>
+                                    <td class="px-3 py-2 text-center font-bold text-blue-600">0.73</td>
+                                    <td class="px-3 py-2 text-center text-gray-600">
+                                        0.77-0.82
+                                        <a href="https://link.springer.com/article/10.1007/s11739-024-03732-2" target="_blank" class="text-xs text-blue-500 hover:underline ml-1">[3]</a>
+                                    </td>
+                                    <td class="px-3 py-2 text-center text-gray-400">0.78 (SOFA)</td>
+                                    <td class="px-3 py-2 text-center text-yellow-600">-6%</td>
+                                </tr>
+                                <tr class="border-t bg-gray-50">
+                                    <td class="px-3 py-2 font-medium">F1 Score</td>
+                                    <td class="px-3 py-2 text-center font-bold text-blue-600">0.69</td>
+                                    <td class="px-3 py-2 text-center text-gray-600">
+                                        0.74-0.78
+                                        <a href="https://link.springer.com/article/10.1186/s40635-025-00765-5" target="_blank" class="text-xs text-blue-500 hover:underline ml-1">[2]</a>
+                                    </td>
+                                    <td class="px-3 py-2 text-center text-gray-400">0.66 (qSOFA)</td>
+                                    <td class="px-3 py-2 text-center text-green-600">+5%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-2">* 对比数据来源：MIMIC-III/eICU数据库ICU脓毒症患者队列；点击数字链接查看对应文献</div>
+                </div>
+                
+                <!-- 其他维度对比 -->
+                <div class="bg-white rounded-xl shadow-sm border p-4 mb-6">
+                    <div class="font-medium text-lg mb-4">🔍 多维度能力对比</div>
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="p-4 bg-gray-50 rounded">
+                            <div class="text-sm text-gray-500 mb-2">vs PCA Baseline</div>
+                            <div class="text-2xl font-bold text-green-600">+42%</div>
+                            <div class="text-xs text-gray-400 mt-1">Silhouette提升</div>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded">
+                            <div class="text-sm text-gray-500 mb-2">跨中心验证</div>
+                            <div class="text-2xl font-bold text-blue-600">稳定</div>
+                            <div class="text-xs text-gray-400 mt-1">MIMIC ↔ eICU</div>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded">
+                            <div class="text-sm text-gray-500 mb-2">外部泛化</div>
+                            <div class="text-2xl font-bold text-purple-600">A→B</div>
+                            <div class="text-xs text-gray-400 mt-1">Domain Adaptation</div>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded">
+                            <div class="text-sm text-gray-500 mb-2">推理速度</div>
+                            <div class="text-2xl font-bold text-orange-600">1.3ms</div>
+                            <div class="text-xs text-gray-400 mt-1">实时能力</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 训练超参数 -->
+                <div class="bg-white rounded-xl shadow-sm border p-4">
+                    <div class="font-medium text-lg mb-4">🎛️ 训练超参数</div>
+                    <div class="grid grid-cols-4 gap-4 text-sm">
+                        <div class="p-3 bg-gray-50 rounded">
+                            <div class="text-gray-500">Learning Rate</div>
+                            <div class="font-mono font-bold">0.001</div>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded">
+                            <div class="text-gray-500">Batch Size</div>
+                            <div class="font-mono font-bold">64</div>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded">
+                            <div class="text-gray-500">Weight Decay</div>
+                            <div class="font-mono font-bold">0.0001</div>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded">
+                            <div class="text-gray-500">Epochs</div>
+                            <div class="font-mono font-bold">2</div>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 bg-yellow-50 rounded text-sm">
+                        <span class="font-medium text-yellow-800">多任务权重配置:</span>
+                        <span class="text-yellow-700">λ_mortality=1.0, λ_immune=1.0, λ_organ=1.0, λ_fluid=1.0</span>
+                    </div>
+                </div>
+                
+                <!-- 参考文献 -->
+                <div class="bg-white rounded-xl shadow-sm border p-4">
+                    <div class="font-medium text-lg mb-4">📚 ICU脓毒症预测相关文献</div>
+                    <div class="text-xs text-gray-600 space-y-1.5 max-h-64 overflow-y-auto">
+                        <p><strong>最新ML模型 (MIMIC-III/IV ICU脓毒症):</strong></p>
+                        <p>[1] Wang Y, et al. (2024) <a href="https://arxiv.org/abs/2407.06560" target="_blank" class="text-blue-600 hover:underline"><strong>TCKIN: A Novel Integrated Network Model for Predicting Mortality Risk in Sepsis Patients.</strong></a> arXiv:2407.06560. <em>MIMIC-IV AUROC 0.881</em></p>
+                        <p>[2] Rahman MM, et al. (2025) <a href="https://link.springer.com/article/10.1186/s40635-025-00765-5" target="_blank" class="text-blue-600 hover:underline"><strong>Explainable machine learning models for mortality prediction in sepsis ICU patients.</strong></a> ICM, 13:45. <em>Extra Trees AUROC 0.87</em></p>
+                        <p>[3] Zhou X, et al. (2024) <a href="https://link.springer.com/article/10.1007/s11739-024-03732-2" target="_blank" class="text-blue-600 hover:underline"><strong>Early sepsis mortality prediction model based on interpretable ML.</strong></a> IJMS. <em>XGBoost AUROC 0.873</em></p>
+                        <p>[4] Mirzahani F, et al. (2022) <a href="https://pubmed.ncbi.nlm.nih.gov/36192615/" target="_blank" class="text-blue-600 hover:underline"><strong>Comparison of machine learning algorithms for predicting mortality in sepsis.</strong></a> Sci Rep, 12:15954. <em>MLP AUROC 0.841</em></p>
+                        <p>[5] Shillan D, et al. (2019) <a href="https://pubmed.ncbi.nlm.nih.gov/31849296/" target="_blank" class="text-blue-600 hover:underline"><strong>Use of machine learning to analyse routinely collected ICU data: A systematic review.</strong></a> Critical Care, 23:284.</p>
+                        <p><strong>临床评分系统:</strong></p>
+                        <p>[6] Zhou X, et al. (2024) <a href="https://link.springer.com/article/10.1007/s11739-024-03732-2" target="_blank" class="text-blue-600 hover:underline"><strong>Early sepsis mortality prediction - Clinical scores comparison.</strong></a> IJMS. <em>SOFA 0.728, SAPS II 0.728, OASIS 0.738</em></p>
+                        <p>[7] Mirzahani F, et al. (2022) <a href="https://pubmed.ncbi.nlm.nih.gov/36192615/" target="_blank" class="text-blue-600 hover:underline"><strong>ML algorithms vs clinical scores for sepsis mortality.</strong></a> Sci Rep, 12:15954. <em>APACHE II 0.73, qSOFA 0.65, SIRS 0.61</em></p>
+                    </div>
+                </div>
+            `;
+            
+            await fetchResearchDashboardData();
+        }
+        
+        async function fetchResearchDashboardData() {
+            try {
+                const [overviewRes, performanceRes] = await Promise.all([
+                    fetch('/api/research/models/overview'),
+                    fetch('/api/research/models/performance')
+                ]);
+                
+                const overview = await overviewRes.json();
+                const performance = await performanceRes.json();
+                
+                renderResearchDashboard(overview, performance);
+            } catch (error) {
+                console.error('Error fetching research data:', error);
+            }
+        }
+        
+        function renderResearchDashboard(overview, performance) {
+            // 更新核心指标
+            if (overview.mortality_prediction && overview.mortality_prediction.length > 0) {
+                const s15 = overview.mortality_prediction[0];
+                document.getElementById('metric-auroc').textContent = s15.performance.test_auroc.toFixed(3);
+            }
+            
+            if (overview.phenotype_clustering) {
+                const s1 = overview.phenotype_clustering.find(m => m.model_id.includes('S1_SS_Encoder'));
+                if (s1) {
+                    document.getElementById('metric-silhouette').textContent = s1.silhouette_score.toFixed(3);
+                }
+            }
+            
+            if (overview.multitask_models && overview.multitask_models.length > 0) {
+                const mt = overview.multitask_models[0];
+                const avgF1 = (mt.performance.immune_f1 + mt.performance.organ_f1 + mt.performance.fluid_f1) / 3;
+                document.getElementById('metric-multitask').textContent = avgF1.toFixed(3);
+                document.getElementById('metric-params').textContent = (mt.architecture.n_parameters / 1000).toFixed(1) + 'K';
+            }
+            
+            // 渲染优化建议
+            if (overview.optimization_suggestions) {
+                renderOptimizationSuggestions(overview.optimization_suggestions);
+            }
+            
+            // 渲染图表
+            renderMortalityComparisonChart(performance.mortality_auroc_comparison);
+            renderClusteringComparisonChart(performance.silhouette_comparison);
+            renderMultitaskRadarChart(overview.multitask_models);
+        }
+        
+        function renderOptimizationSuggestions(suggestions) {
+            const container = document.getElementById('optimization-suggestions');
+            if (!container || !suggestions) return;
+            
+            const priorityColors = {
+                'high': 'bg-red-50 border-red-200 text-red-800',
+                'medium': 'bg-yellow-50 border-yellow-200 text-yellow-800',
+                'low': 'bg-blue-50 border-blue-200 text-blue-800',
+                'info': 'bg-green-50 border-green-200 text-green-800'
+            };
+            
+            container.innerHTML = suggestions.map(s => `
+                <div class="p-3 rounded border ${priorityColors[s.priority] || 'bg-gray-50 border-gray-200'}">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="font-medium">${s.category}</div>
+                            ${s.issue ? `<div class="text-sm opacity-80 mt-1">问题: ${s.issue}</div>` : ''}
+                            <div class="text-sm mt-1">💡 ${s.suggestion}</div>
+                        </div>
+                        <span class="text-xs px-2 py-1 rounded bg-white bg-opacity-50">${s.impact} impact</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function renderMortalityComparisonChart(data) {
+            if (!data || data.length === 0) return;
+            const ctx = document.getElementById('chart-mortality-compare');
+            if (!ctx) return;
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.model.replace(' + Logistic Regression', '').replace(' Student Transformer', '')),
+                    datasets: [
+                        { label: 'Train AUROC', data: data.map(d => d.train), backgroundColor: '#42A5F5', borderRadius: 4 },
+                        { label: 'Val AUROC', data: data.map(d => d.val), backgroundColor: '#66BB6A', borderRadius: 4 },
+                        { label: 'Test AUROC', data: data.map(d => d.test), backgroundColor: '#FFA726', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: { y: { beginAtZero: false, min: 0.7, max: 0.9 } }
+                }
+            });
+        }
+        
+        function renderClusteringComparisonChart(data) {
+            if (!data || data.length === 0) return;
+            const ctx = document.getElementById('chart-clustering-compare');
+            if (!ctx) return;
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.model.replace(' (K=4)', '')),
+                    datasets: [{
+                        label: 'Silhouette Score',
+                        data: data.map(d => d.silhouette),
+                        backgroundColor: data.map(d => d.is_baseline ? '#9E9E9E' : '#42A5F5'),
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, max: 0.25 } }
+                }
+            });
+        }
+        
+        function renderMultitaskRadarChart(models) {
+            if (!models || models.length === 0) return;
+            const ctx = document.getElementById('chart-multitask-radar');
+            if (!ctx) return;
+            
+            const mt = models[0];
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['死亡率\n(AUROC)', '免疫状态\n(F1)', '器官功能\n(F1)', '液体平衡\n(F1)'],
+                    datasets: [{
+                        label: 'S6 Multitask',
+                        data: [
+                            mt.performance.mortality_auroc,
+                            mt.performance.immune_f1,
+                            mt.performance.organ_f1,
+                            mt.performance.fluid_f1
+                        ],
+                        backgroundColor: 'rgba(66, 165, 245, 0.2)',
+                        borderColor: '#42A5F5',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 1.0,
+                            ticks: { stepSize: 0.2 }
+                        }
+                    }
+                }
+            });
+        }
+        
+        async function refreshResearchDashboard() {
+            await fetchResearchDashboardData();
+        }
+
+        // ========== AI医学知识助手系统 ==========
+        
+        // 全局AI助手状态
+        let aiAssistantContext = {
+            currentPatient: null,
+            currentStage: null,
+            explanationCache: new Map()
+        };
+        
+        // AI助手悬浮窗组件
+        function createAIAssistantWidget() {
+            // 检查是否已存在
+            if (document.getElementById('ai-assistant-widget')) return;
+            
+            const widget = document.createElement('div');
+            widget.id = 'ai-assistant-widget';
+            widget.className = 'fixed bottom-4 right-4 z-50';
+            widget.innerHTML = `
+                <!-- AI助手按钮 -->
+                <button onclick="toggleAIAssistant()" id="ai-assistant-btn" 
+                    class="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full shadow-lg flex items-center justify-center text-white text-2xl hover:scale-110 transition-transform">
+                    🤖
+                </button>
+                
+                <!-- AI助手对话框 -->
+                <div id="ai-assistant-panel" class="hidden absolute bottom-16 right-0 w-96 bg-white rounded-xl shadow-2xl border overflow-hidden">
+                    <!-- 头部 -->
+                    <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-3 flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xl">🤖</span>
+                            <div>
+                                <div class="text-white font-medium text-sm">AI医学助手</div>
+                                <div class="text-blue-100 text-xs">MiniMax abab6.5s</div>
+                            </div>
+                        </div>
+                        <button onclick="toggleAIAssistant()" class="text-white hover:text-gray-200">✕</button>
+                    </div>
+                    
+                    <!-- 快捷问题区 -->
+                    <div class="p-3 bg-gray-50 border-b">
+                        <div class="text-xs text-gray-500 mb-2">💡 快捷询问</div>
+                        <div class="flex flex-wrap gap-1">
+                            <button onclick="askAIQuick('SOFA评分是什么')" class="text-xs px-2 py-1 bg-white border rounded hover:bg-blue-50">SOFA评分?</button>
+                            <button onclick="askAIQuick('脓毒性休克诊断标准')" class="text-xs px-2 py-1 bg-white border rounded hover:bg-blue-50">休克标准?</button>
+                            <button onclick="askAIQuick('乳酸升高的意义')" class="text-xs px-2 py-1 bg-white border rounded hover:bg-blue-50">乳酸意义?</button>
+                            <button onclick="askAIQuick('qSOFA和SIRS的区别')" class="text-xs px-2 py-1 bg-white border rounded hover:bg-blue-50">qSOFAvsSIRS?</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 对话历史 -->
+                    <div id="ai-chat-history" class="h-64 overflow-y-auto p-3 space-y-3">
+                        <div class="flex items-start space-x-2">
+                            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm flex-shrink-0">🤖</div>
+                            <div class="bg-blue-50 rounded-lg p-2 text-sm text-gray-700 max-w-[85%]">
+                                您好！我是您的AI医学助手。点击任意医学术语旁的 <span class="text-blue-500">💡</span> 图标，或在此输入您的问题，我将为您解答。
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 输入区 -->
+                    <div class="p-3 border-t">
+                        <div class="flex space-x-2">
+                            <input type="text" id="ai-chat-input" 
+                                class="flex-1 px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                                placeholder="输入医学问题..."
+                                onkeypress="if(event.key==='Enter')sendAIQuestion()">
+                            <button onclick="sendAIQuestion()" class="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                                ➤
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(widget);
+        }
+        
+        function toggleAIAssistant() {
+            const panel = document.getElementById('ai-assistant-panel');
+            if (panel) {
+                panel.classList.toggle('hidden');
+            }
+        }
+        
+        // 添加解释按钮到元素
+        function addAIExplainButton(element, term, context = '') {
+            if (!element) return;
+            
+            // 检查是否已有解释按钮
+            if (element.querySelector('.ai-explain-btn')) return;
+            
+            const btn = document.createElement('button');
+            btn.className = 'ai-explain-btn inline-flex items-center justify-center w-4 h-4 ml-1 text-xs bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition-colors';
+            btn.innerHTML = '💡';
+            btn.title = 'AI解释：' + term;
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                explainMedicalTerm(term, context);
+            };
+            
+            element.appendChild(btn);
+        }
+        
+        // 解释医学术语
+        async function explainMedicalTerm(term, context = '') {
+            // 显示AI助手面板
+            const panel = document.getElementById('ai-assistant-panel');
+            if (panel) panel.classList.remove('hidden');
+            
+            // 添加用户问题到历史
+            addMessageToChat('user', `请解释：${term}${context ? ' (' + context + ')' : ''}`);
+            
+            // 显示加载中
+            const loadingId = 'loading-' + Date.now();
+            addMessageToChat('assistant', '<span class="animate-pulse">🤔 正在思考...</span>', loadingId, true);
+            
+            try {
+                const response = await fetch('/api/ai/explain', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        term: term,
+                        context: context,
+                        patient_context: aiAssistantContext.currentPatient
+                    })
+                });
+                
+                const result = await response.json();
+                
+                // 移除加载消息
+                const loadingMsg = document.getElementById(loadingId);
+                if (loadingMsg) loadingMsg.remove();
+                
+                // 添加AI回复
+                addMessageToChat('assistant', result.explanation || '抱歉，暂时无法解释该术语。');
+                
+            } catch (error) {
+                const loadingMsg = document.getElementById(loadingId);
+                if (loadingMsg) loadingMsg.remove();
+                addMessageToChat('assistant', '抱歉，解释服务暂时不可用。');
+            }
+        }
+        
+        // 快捷提问
+        function askAIQuick(question) {
+            const input = document.getElementById('ai-chat-input');
+            if (input) {
+                input.value = question;
+                sendAIQuestion();
+            }
+        }
+        
+        // 发送问题
+        async function sendAIQuestion() {
+            const input = document.getElementById('ai-chat-input');
+            const question = input?.value?.trim();
+            if (!question) return;
+            
+            input.value = '';
+            addMessageToChat('user', question);
+            
+            const loadingId = 'loading-' + Date.now();
+            addMessageToChat('assistant', '<span class="animate-pulse">🤔 思考中...</span>', loadingId, true);
+            
+            try {
+                const response = await fetch('/api/ai/assistant-chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question: question,
+                        context: aiAssistantContext
+                    })
+                });
+                
+                const result = await response.json();
+                
+                const loadingMsg = document.getElementById(loadingId);
+                if (loadingMsg) loadingMsg.remove();
+                
+                addMessageToChat('assistant', result.answer || '抱歉，我无法回答这个问题。');
+                
+            } catch (error) {
+                const loadingMsg = document.getElementById(loadingId);
+                if (loadingMsg) loadingMsg.remove();
+                addMessageToChat('assistant', '抱歉，服务暂时不可用。请稍后重试。');
+            }
+        }
+        
+        // 添加消息到聊天历史
+        function addMessageToChat(role, content, id = null, isHTML = false) {
+            const history = document.getElementById('ai-chat-history');
+            if (!history) return;
+            
+            const msgDiv = document.createElement('div');
+            if (id) msgDiv.id = id;
+            msgDiv.className = 'flex items-start space-x-2' + (role === 'user' ? ' flex-row-reverse space-x-reverse' : '');
+            
+            const avatar = role === 'user' 
+                ? '<div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 text-sm flex-shrink-0">👤</div>'
+                : '<div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm flex-shrink-0">🤖</div>';
+            
+            // AI助手的消息需要保留换行格式
+            const bubbleClass = role === 'user' 
+                ? 'bg-blue-500 text-white rounded-lg p-2 text-sm max-w-[85%]'
+                : 'bg-blue-50 rounded-lg p-2 text-sm text-gray-700 max-w-[85%]';
+            
+            // 处理内容
+            let processedContent = content;
+            if (typeof content === 'string' && !isHTML) {
+                // 转义HTML特殊字符防止XSS，但保留换行
+                processedContent = content
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                // 将换行符转换为<br>标签
+                processedContent = processedContent.replace(/\n/g, '<br>');
+            }
+            
+            msgDiv.innerHTML = `
+                ${avatar}
+                <div class="${bubbleClass}">${processedContent}</div>
+            `;
+            
+            history.appendChild(msgDiv);
+            history.scrollTop = history.scrollHeight;
+        }
+        
+        // 为页面上的医学术语添加解释按钮
+        function enhancePageWithAIExplanations() {
+            // 评分系统术语
+            const scoreTerms = [
+                { selector: 'td:contains("SOFA")', term: 'SOFA评分', context: 'Sequential Organ Failure Assessment' },
+                { selector: 'td:contains("qSOFA")', term: 'qSOFA评分', context: 'quick SOFA快速筛查' },
+                { selector: 'td:contains("SIRS")', term: 'SIRS标准', context: '全身炎症反应综合征' },
+                { selector: 'td:contains("NEWS")', term: 'NEWS评分', context: '早期预警评分' }
+            ];
+            
+            // 实验室指标
+            const labTerms = [
+                { selector: '[data-term="乳酸"]', term: '乳酸(Lactate)', context: '组织灌注指标' },
+                { selector: '[data-term="肌酐"]', term: '肌酐(Creatinine)', context: '肾功能指标' },
+                { selector: '[data-term="白细胞"]', term: '白细胞(WBC)', context: '炎症/感染指标' }
+            ];
+            
+            // 为已知术语添加data属性
+            document.querySelectorAll('td, th, .font-medium').forEach(el => {
+                const text = el.textContent;
+                if (text.includes('SOFA') && !el.querySelector('.ai-explain-btn')) {
+                    addAIExplainButton(el, 'SOFA评分', 'Sequential Organ Failure Assessment器官功能评估');
+                }
+                if (text.includes('乳酸') && !el.querySelector('.ai-explain-btn')) {
+                    addAIExplainButton(el, '乳酸(Lactate)', '组织缺氧和休克的重要指标');
+                }
+                if (text.includes('脓毒性休克') && !el.querySelector('.ai-explain-btn')) {
+                    addAIExplainButton(el, '脓毒性休克(Septic Shock)', 'Sepsis-3诊断标准');
+                }
+            });
+        }
+
+        // ========== 临床决策支持Pipeline仪表板（带AI助手增强） ==========
+        
+        async function loadAIView() {
+            const contentArea = document.getElementById('content-area');
+            contentArea.innerHTML = `
+                <!-- 顶部导航栏 -->
+                <div class="mb-3 flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-600 rounded-lg flex items-center justify-center text-white text-xl">🏥</div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="font-bold text-lg">临床决策支持中心</span>
+                                <span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">CDSS v2.0</span>
+                            </div>
+                            <span class="text-xs text-gray-500">危险评估 → 亚型识别 → 治疗决策 Pipeline</span>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="loadCriticalSample()" class="btn-flat px-3 py-2 text-sm bg-red-50 hover:bg-red-100 text-red-700 rounded-lg flex items-center">
+                            <span class="mr-1">🚨</span> 危重示例
+                        </button>
+                        <button onclick="loadSampleForAI()" class="btn-flat px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded-lg flex items-center">
+                            <span class="mr-1">📋</span> 普通示例
+                        </button>
+                        <button onclick="clearAIForm()" class="btn-flat px-3 py-2 text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg flex items-center">
+                            <span class="mr-1">🔄</span> 重置
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 三阶段Pipeline进度指示器 -->
+                <div class="mb-3 bg-white rounded-lg shadow-sm border p-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2 flex-1" id="pipeline-stage-1">
+                            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold">1</div>
+                            <div>
+                                <div class="text-sm font-medium">危险评估 
+                                    <button class="ai-explain-btn" onclick="event.stopPropagation();explainMedicalTerm('危险评估(Triage)', '脓毒症患者的初始风险评估流程，包括qSOFA、SOFA、SIRS、NEWS等多个评分系统')">💡</button>
+                                </div>
+                                <div class="text-xs text-gray-400">qSOFA/SOFA/SIRS/NEWS</div>
+                            </div>
+                        </div>
+                        <div class="text-gray-300">→</div>
+                        <div class="flex items-center space-x-2 flex-1 justify-center" id="pipeline-stage-2">
+                            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold">2</div>
+                            <div>
+                                <div class="text-sm font-medium">亚型识别
+                                    <button class="ai-explain-btn" onclick="event.stopPropagation();explainMedicalTerm('脓毒症亚型(Phenotyping)', '基于机器学习将脓毒症患者分为4个亚群(P0-P3)，每个亚群具有不同的生理特征和预后')">💡</button>
+                                </div>
+                                <div class="text-xs text-gray-400">P0-P3表型分类</div>
+                            </div>
+                        </div>
+                        <div class="text-gray-300">→</div>
+                        <div class="flex items-center space-x-2 flex-1 justify-end" id="pipeline-stage-3">
+                            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold">3</div>
+                            <div>
+                                <div class="text-sm font-medium">治疗决策
+                                    <button class="ai-explain-btn" onclick="event.stopPropagation();explainMedicalTerm('脓毒症治疗决策', '基于SSC指南的个体化治疗方案，包括抗生素、液体复苏、血管活性药物等')">💡</button>
+                                </div>
+                                <div class="text-xs text-gray-400">Bundle/药物/监测</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 主内容区 -->
+                <div class="grid grid-cols-12 gap-3" style="height: calc(100vh - 260px);">
+                    
+                    <!-- 左侧：患者数据录入 (2列) -->
+                    <div class="col-span-2 bg-white rounded-lg shadow-sm border flex flex-col overflow-hidden">
+                        <div class="p-2 border-b bg-gray-50">
+                            <div class="flex items-center justify-between">
+                                <span class="font-medium text-sm">📝 患者数据</span>
+                                <span class="text-xs text-gray-400">13项</span>
+                            </div>
+                        </div>
+                        <div class="flex-1 overflow-y-auto p-2 space-y-2 text-xs" id="ai-patient-form">
+                            <div class="grid grid-cols-2 gap-1">
+                                <input type="number" id="ai-age" class="w-full px-2 py-1 border rounded" placeholder="年龄" value="65">
+                                <select id="ai-sex" class="w-full px-2 py-1 border rounded">
+                                    <option value="1">男</option>
+                                    <option value="0">女</option>
+                                </select>
+                            </div>
+                            <select id="ai-icu-type" class="w-full px-2 py-1 border rounded">
+                                <option value="3">内科ICU</option>
+                                <option value="1">心内ICU</option>
+                                <option value="2">外科ICU</option>
+                                <option value="4">综合ICU</option>
+                            </select>
+                            
+                            <div class="font-semibold text-gray-500 mt-2">生命体征</div>
+                            <div class="grid grid-cols-2 gap-1">
+                                <input type="number" id="ai-hr" class="w-full px-2 py-1 border rounded" placeholder="HR" value="95">
+                                <input type="number" id="ai-sbp" class="w-full px-2 py-1 border rounded" placeholder="SBP" value="110">
+                                <input type="number" id="ai-dbp" class="w-full px-2 py-1 border rounded" placeholder="DBP" value="70">
+                                <input type="number" id="ai-rr" class="w-full px-2 py-1 border rounded" placeholder="RR" value="22">
+                                <input type="number" id="ai-spo2" class="w-full px-2 py-1 border rounded" placeholder="SpO2" value="94">
+                                <input type="number" id="ai-temp" step="0.1" class="w-full px-2 py-1 border rounded" placeholder="T" value="38.5">
+                            </div>
+                            <input type="number" id="ai-gcs" class="w-full px-2 py-1 border rounded" placeholder="GCS (默认15)" value="15">
+                            
+                            <div class="font-semibold text-gray-500 mt-2">实验室</div>
+                            <div class="grid grid-cols-2 gap-1">
+                                <input type="number" id="ai-creatinine" step="0.1" class="w-full px-2 py-1 border rounded" placeholder="Cr" value="1.8">
+                                <input type="number" id="ai-bun" class="w-full px-2 py-1 border rounded" placeholder="BUN" value="28">
+                                <input type="number" id="ai-wbc" step="0.1" class="w-full px-2 py-1 border rounded" placeholder="WBC" value="15.2">
+                                <input type="number" id="ai-lactate" step="0.1" class="w-full px-2 py-1 border rounded" placeholder="Lac" value="2.8">
+                                <input type="number" id="ai-platelet" class="w-full px-2 py-1 border rounded" placeholder="Plt" value="180">
+                                <input type="number" id="ai-bilirubin" step="0.1" class="w-full px-2 py-1 border rounded" placeholder="Bili" value="1.2">
+                            </div>
+                            <div class="grid grid-cols-2 gap-1">
+                                <input type="number" id="ai-pao2" class="w-full px-2 py-1 border rounded" placeholder="PaO2" value="80">
+                                <input type="number" id="ai-fio2" step="0.01" class="w-full px-2 py-1 border rounded" placeholder="FiO2" value="0.4">
+                            </div>
+                        </div>
+                        <div class="p-2 border-t bg-gray-50">
+                            <button onclick="runClinicalPipeline()" id="pipeline-btn" class="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-sm">
+                                🚀 运行Pipeline
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 中间：Stage 1 & 2 结果 (5列) -->
+                    <div class="col-span-5 space-y-3 overflow-y-auto">
+                        
+                        <!-- Stage 1: 危险评估卡片 -->
+                        <div class="bg-white rounded-lg shadow-sm border overflow-hidden" id="stage1-card">
+                            <div class="p-2 bg-red-50 border-b flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <span class="text-lg mr-2">⚡</span>
+                                    <span class="font-medium text-sm">Stage 1: 危险评估
+                                        <button class="ai-explain-btn" onclick="event.stopPropagation();explainMedicalTerm('危险评估(Triage)', '脓毒症患者的初始风险评估，包括qSOFA快速筛查、SOFA器官功能评估、SIRS炎症标准、NEWS早期预警等多维度评分体系')">💡</button>
+                                    </span>
+                                </div>
+                                <span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded" id="risk-badge">等待评估</span>
+                            </div>
+                            <div class="p-3">
+                                <!-- 评分卡片网格 -->
+                                <div class="grid grid-cols-4 gap-2 mb-3">
+                                    <div class="bg-gray-50 rounded p-2 text-center" id="qsofa-card">
+                                        <div class="text-xs text-gray-500">qSOFA
+                                            <button class="ai-explain-btn" onclick="event.stopPropagation();explainMedicalTerm('qSOFA评分', 'quick SOFA快速床边筛查工具，3项指标：呼吸频率≥22次/分、意识改变(GCS<15)、收缩压≤100mmHg。≥2分提示可能脓毒症，需进一步SOFA评估。敏感性高但特异性较低')">💡</button>
+                                        </div>
+                                        <div class="text-xl font-bold text-gray-400" id="qsofa-score">--</div>
+                                        <div class="text-xs text-gray-400" id="qsofa-status">待评估</div>
+                                    </div>
+                                    <div class="bg-gray-50 rounded p-2 text-center" id="sofa-card">
+                                        <div class="text-xs text-gray-500">SOFA
+                                            <button class="ai-explain-btn" onclick="event.stopPropagation();explainMedicalTerm('SOFA评分', 'Sequential Organ Failure Assessment序贯器官衰竭评估，评估6个器官系统：呼吸(PaO2/FiO2)、凝血(血小板)、肝脏(胆红素)、心血管(血压/血管活性药)、神经(GCS)、肾脏(肌酐)。总分0-24分，≥2分提示器官功能障碍，是Sepsis-3诊断标准之一')">💡</button>
+                                        </div>
+                                        <div class="text-xl font-bold text-gray-400" id="sofa-score">--</div>
+                                        <div class="text-xs text-gray-400" id="sofa-status">待评估</div>
+                                    </div>
+                                    <div class="bg-gray-50 rounded p-2 text-center" id="sirs-card">
+                                        <div class="text-xs text-gray-500">SIRS
+                                            <button class="ai-explain-btn" onclick="event.stopPropagation();explainMedicalTerm('SIRS标准', 'Systemic Inflammatory Response Syndrome全身炎症反应综合征，4项标准：体温>38°C或<36°C、心率>90次/分、呼吸>20次/分或PaCO2<32mmHg、白细胞>12,000或<4,000。满足≥2项即为SIRS阳性。Sepsis-2定义中用于筛查，但Sepsis-3已不再强调SIRS')">💡</button>
+                                        </div>
+                                        <div class="text-xl font-bold text-gray-400" id="sirs-score">--</div>
+                                        <div class="text-xs text-gray-400" id="sirs-status">待评估</div>
+                                    </div>
+                                    <div class="bg-gray-50 rounded p-2 text-center" id="news-card">
+                                        <div class="text-xs text-gray-500">NEWS
+                                            <button class="ai-explain-btn" onclick="event.stopPropagation();explainMedicalTerm('NEWS评分', 'National Early Warning Score国家早期预警评分，英国皇家医师学会制定。评估5项生理指标：呼吸频率、血氧饱和度、收缩压、心率、意识水平。总分0-20分，0-4分低风险，5-6分中等风险，≥7分高风险，需紧急医生评估')">💡</button>
+                                        </div>
+                                        <div class="text-xl font-bold text-gray-400" id="news-score">--</div>
+                                        <div class="text-xs text-gray-400" id="news-status">待评估</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- SOFA组分详情 -->
+                                <div class="mb-3">
+                                    <div class="text-xs font-semibold text-gray-500 mb-1">SOFA组分评分</div>
+                                    <div class="grid grid-cols-6 gap-1 text-xs" id="sofa-components">
+                                        ${['呼吸','凝血','肝脏','心血管','神经','肾脏'].map(o => `
+                                            <div class="bg-gray-100 rounded p-1 text-center text-gray-400">${o}</div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                
+                                <!-- 休克评估 -->
+                                <div class="flex items-center justify-between p-2 bg-gray-50 rounded" id="shock-banner">
+                                    <div class="flex items-center">
+                                        <span class="text-lg mr-2">🩸</span>
+                                        <span class="text-sm">脓毒性休克评估
+                                            <button class="ai-explain-btn" onclick="event.stopPropagation();explainMedicalTerm('脓毒性休克(Septic Shock)', 'Sepsis-3定义：脓毒症+持续性低血压(MAP<65mmHg)需血管活性药物维持+乳酸>2mmol/L，死亡率>40%')">💡</button>
+                                        </span>
+                                    </div>
+                                    <span class="text-xs px-2 py-1 bg-gray-200 rounded">等待数据</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Stage 2: S6亚型识别 -->
+                        <div class="bg-white rounded-lg shadow-sm border overflow-hidden" id="stage2-card">
+                            <div class="p-2 bg-yellow-50 border-b flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <span class="text-lg mr-2">🧬</span>
+                                    <span class="font-medium text-sm">Stage 2: S6亚型识别
+                                        <button class="ai-explain-btn" onclick="event.stopPropagation();explainMedicalTerm('S6脓毒症亚型识别', '基于S6多任务深度学习模型的双家族表型识别：临床表型族(clinical_phenotype: alpha/beta/gamma/delta)反映器官功能障碍模式，轨迹表型族(trajectory_phenotype: A/B/C/D)反映ICU早期生命体征演变趋势')">💡</button>
+                                    </span>
+                                </div>
+                                <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded" id="s6-status">等待分析</span>
+                            </div>
+                            <div class="p-3 space-y-3">
+                                <!-- Clinical Phenotype -->
+                                <div class="border rounded-lg p-3 bg-blue-50" id="clinical-phenotype-card">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs font-semibold text-blue-700">临床表型族</span>
+                                        <span class="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded" id="clinical-phenotype-badge">--</span>
+                                    </div>
+                                    <div class="text-lg font-bold text-blue-600" id="clinical-phenotype-name">--</div>
+                                    <div class="text-xs text-gray-600 mt-1" id="clinical-phenotype-desc">--</div>
+                                    <div class="mt-2 space-y-1" id="clinical-phenotype-probs">
+                                        <!-- 概率条 -->
+                                    </div>
+                                    <div class="mt-2 p-2 bg-yellow-100 rounded text-xs text-yellow-800" id="clinical-phenotype-confidence">
+                                        <span class="font-semibold">⚠️ 置信度提示：</span>模型对当前样本的分类置信度较低，建议结合临床表现综合判断
+                                    </div>
+                                </div>
+                                
+                                <!-- Trajectory Phenotype -->
+                                <div class="border rounded-lg p-3 bg-green-50" id="trajectory-phenotype-card">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs font-semibold text-green-700">轨迹表型族</span>
+                                        <span class="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded" id="trajectory-phenotype-badge">--</span>
+                                    </div>
+                                    <div class="text-lg font-bold text-green-600" id="trajectory-phenotype-name">--</div>
+                                    <div class="text-xs text-gray-600 mt-1" id="trajectory-phenotype-desc">--</div>
+                                    <div class="mt-2 space-y-1" id="trajectory-phenotype-probs">
+                                        <!-- 概率条 -->
+                                    </div>
+                                    <div class="mt-2 p-2 bg-yellow-100 rounded text-xs text-yellow-800" id="trajectory-phenotype-confidence">
+                                        <span class="font-semibold">⚠️ 置信度提示：</span>模型对当前样本的分类置信度较低，建议结合临床表现综合判断
+                                    </div>
+                                </div>
+                                
+                                <!-- S6其他任务结果 -->
+                                <div class="grid grid-cols-2 gap-2 text-xs" id="s6-other-tasks">
+                                    <div class="p-2 bg-gray-50 rounded">
+                                        <div class="text-gray-500">免疫状态</div>
+                                        <div class="font-medium" id="s6-immune-state">--</div>
+                                    </div>
+                                    <div class="p-2 bg-gray-50 rounded">
+                                        <div class="text-gray-500">液体策略</div>
+                                        <div class="font-medium" id="s6-fluid-strategy">--</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 临床指南参考 -->
+                        <div class="bg-blue-50 rounded-lg border border-blue-200 p-3">
+                            <div class="flex items-center mb-2">
+                                <span class="text-sm mr-2">📚</span>
+                                <span class="font-medium text-sm">临床指南参考
+                                    <button class="ai-explain-btn" onclick="event.stopPropagation();explainMedicalTerm('Surviving Sepsis Campaign (SSC)', '拯救脓毒症运动，全球脓毒症诊疗指南，推荐Bundle治疗策略')">💡</button>
+                                </span>
+                            </div>
+                            <div class="text-xs text-gray-600 space-y-1" id="guidelines-ref">
+                                <div>• Sepsis-3 (2016): SOFA≥2 + 感染</div>
+                                <div>• qSOFA: 呼吸≥22 + 意识改变 + SBP≤100</div>
+                                <div>• SSC Bundle: 1小时内抗生素+液体复苏</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 右侧：Stage 3 治疗决策 (5列) -->
+                    <div class="col-span-5 space-y-3 overflow-y-auto">
+                        
+                        <!-- Stage 3: 治疗决策 -->
+                        <div class="bg-white rounded-lg shadow-sm border overflow-hidden" id="stage3-card">
+                            <div class="p-2 bg-green-50 border-b flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <span class="text-lg mr-2">💊</span>
+                                    <span class="font-medium text-sm">Stage 3: 治疗决策
+                                        <button class="ai-explain-btn" onclick="event.stopPropagation();explainMedicalTerm('脓毒症治疗决策', '基于Surviving Sepsis Campaign(SSC)国际指南的个体化治疗方案。包括1小时Bundle(抗生素、血培养、乳酸、液体复苏)、3小时Bundle(30ml/kg液体、血管活性药物)、6小时Bundle(乳酸复测、血流动力学评估)。根据Phenotype亚型调整治疗强度')">💡</button>
+                                    </span>
+                                </div>
+                                <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">基于SSC指南</span>
+                            </div>
+                            <div class="p-3 space-y-3">
+                                
+                                <!-- Sepsis Bundles -->
+                                <div>
+                                    <div class="text-xs font-semibold text-gray-500 mb-2">脓毒症Bundle (Surviving Sepsis Campaign)</div>
+                                    <div class="space-y-2" id="sepsis-bundles">
+                                        <div class="p-2 bg-gray-50 rounded border-l-4 border-gray-300">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-sm font-medium">1小时Bundle</span>
+                                                <span class="text-xs text-gray-400">等待评估</span>
+                                            </div>
+                                        </div>
+                                        <div class="p-2 bg-gray-50 rounded border-l-4 border-gray-300">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-sm font-medium">3小时Bundle</span>
+                                                <span class="text-xs text-gray-400">等待评估</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 液体复苏策略 -->
+                                <div class="p-2 bg-blue-50 rounded" id="fluid-strategy">
+                                    <div class="flex items-center mb-1">
+                                        <span class="text-sm mr-1">💧</span>
+                                        <span class="text-sm font-medium">液体复苏策略</span>
+                                    </div>
+                                    <div class="text-xs text-gray-600" id="fluid-content">等待评估...</div>
+                                </div>
+                                
+                                <!-- 血管活性药物 -->
+                                <div class="p-2 bg-purple-50 rounded" id="vaso-strategy">
+                                    <div class="flex items-center mb-1">
+                                        <span class="text-sm mr-1">💉</span>
+                                        <span class="text-sm font-medium">血管活性药物</span>
+                                    </div>
+                                    <div class="text-xs text-gray-600" id="vaso-content">等待评估...</div>
+                                </div>
+                                
+                                <!-- 表型特异性建议 -->
+                                <div>
+                                    <div class="text-xs font-semibold text-gray-500 mb-2">表型特异性治疗策略</div>
+                                    <div class="p-2 bg-yellow-50 rounded text-xs" id="phenotype-treatment">
+                                        等待亚型识别结果...
+                                    </div>
+                                </div>
+                                
+                                <!-- 监测计划 -->
+                                <div>
+                                    <div class="text-xs font-semibold text-gray-500 mb-2">监测与复评计划</div>
+                                    <div class="grid grid-cols-2 gap-2 text-xs" id="monitoring-plan">
+                                        <div class="p-2 bg-gray-50 rounded">
+                                            <div class="text-gray-500">监测频率</div>
+                                            <div class="font-medium">等待评估</div>
+                                        </div>
+                                        <div class="p-2 bg-gray-50 rounded">
+                                            <div class="text-gray-500">乳酸复测</div>
+                                            <div class="font-medium">等待评估</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 临床决策时间线 -->
+                        <div class="bg-white rounded-lg shadow-sm border p-3">
+                            <div class="font-medium text-sm mb-2">⏱️ 关键时间节点</div>
+                            <div class="space-y-2 text-xs" id="timeline">
+                                <div class="flex items-center">
+                                    <div class="w-16 text-gray-500">0-1小时</div>
+                                    <div class="flex-1 p-2 bg-red-50 rounded">抗生素 + 血培养 + 乳酸</div>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-16 text-gray-500">0-3小时</div>
+                                    <div class="flex-1 p-2 bg-yellow-50 rounded">30ml/kg液体复苏</div>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-16 text-gray-500">6小时内</div>
+                                    <div class="flex-1 p-2 bg-green-50 rounded">乳酸复测 + 血流动力学评估</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 初始化图表和AI解释按钮
+            setTimeout(() => {
+                initPhenotypeChart();
+                addAIExplainButtonsToDashboard();
+            }, 100);
+        }
+        
+        // 为Dashboard添加AI解释按钮
+        function addAIExplainButtonsToDashboard() {
+            // Stage 1: 危险评估区的解释按钮
+            const stage1Terms = [
+                { selector: '#stage1-card .font-medium', term: '危险评估(Triage)', context: '脓毒症患者的初始风险评估流程' },
+                { selector: '#qsofa-card .text-gray-500', term: 'qSOFA评分', context: '快速SOFA评分，用于床边快速筛查脓毒症' },
+                { selector: '#sofa-card .text-gray-500', term: 'SOFA评分', context: 'Sequential Organ Failure Assessment，评估器官功能障碍程度' },
+                { selector: '#sirs-card .text-gray-500', term: 'SIRS标准', context: 'Systemic Inflammatory Response Syndrome，全身炎症反应综合征' },
+                { selector: '#news-card .text-gray-500', term: 'NEWS评分', context: 'National Early Warning Score，国家早期预警评分' }
+            ];
+            
+            // Stage 2: 亚型识别区的解释按钮
+            const stage2Terms = [
+                { selector: '#stage2-card .font-medium', term: '脓毒症亚型(Phenotype)', context: '基于生理指标的机器学习聚类分群' }
+            ];
+            
+            // Stage 3: 治疗决策区的解释按钮
+            const stage3Terms = [
+                { selector: '#stage3-card .font-medium', term: '脓毒症Bundle', context: 'Surviving Sepsis Campaign指南推荐的标准化治疗组合' }
+            ];
+            
+            // 合并所有术语并添加按钮
+            [...stage1Terms, ...stage2Terms, ...stage3Terms].forEach(({selector, term, context}) => {
+                const elements = document.querySelectorAll(selector);
+                elements.forEach(el => {
+                    if (!el.querySelector('.ai-explain-btn')) {
+                        const btn = document.createElement('button');
+                        btn.className = 'ai-explain-btn';
+                        btn.innerHTML = '💡';
+                        btn.title = `AI解释：${term}`;
+                        btn.onclick = (e) => {
+                            e.stopPropagation();
+                            explainMedicalTerm(term, context);
+                        };
+                        el.appendChild(btn);
+                    }
+                });
+            });
+            
+            // 为输入框标签添加解释
+            const inputLabels = [
+                { id: 'ai-lactate', term: '乳酸(Lactate)', context: '组织灌注和缺氧的重要指标，正常<2mmol/L' },
+                { id: 'ai-creatinine', term: '肌酐(Creatinine)', context: '肾功能指标，反映肾脏滤过功能' },
+                { id: 'ai-wbc', term: '白细胞(WBC)', context: '炎症和感染指标' },
+                { id: 'ai-platelet', term: '血小板(Platelet)', context: '凝血功能指标，SOFA评分组分之一' }
+            ];
+            
+            inputLabels.forEach(({id, term, context}) => {
+                const input = document.getElementById(id);
+                if (input) {
+                    const label = input.previousElementSibling;
+                    if (label && !label.querySelector('.ai-explain-btn')) {
+                        const btn = document.createElement('button');
+                        btn.className = 'ai-explain-btn';
+                        btn.innerHTML = '💡';
+                        btn.title = `AI解释：${term}`;
+                        btn.onclick = (e) => {
+                            e.stopPropagation();
+                            explainMedicalTerm(term, context);
+                        };
+                        label.appendChild(btn);
+                    }
+                }
+            });
+        }
+        
+        let phenotypeChart = null;
+        let s6Metadata = null;  // S6 metadata缓存
+        
+        // 加载S6 Metadata
+        async function loadS6Metadata() {
+            try {
+                const response = await fetch('/api/sepsis-subtypes/metadata');
+                s6Metadata = await response.json();
+                console.log('S6 Metadata loaded:', s6Metadata);
+            } catch (error) {
+                console.warn('Failed to load S6 metadata:', error);
+            }
+        }
+        
+        // 页面加载时获取metadata
+        document.addEventListener('DOMContentLoaded', loadS6Metadata);
+        
+        function initPhenotypeChart() {
+            const ctx = document.getElementById('phenotype-chart');
+            if (!ctx) return;
+            
+            phenotypeChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['P0', 'P1', 'P2', 'P3'],
+                    datasets: [{
+                        data: [25, 25, 25, 25],
+                        backgroundColor: ['#4CAF50', '#FFC107', '#F44336', '#9C27B0'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    cutout: '60%'
+                }
+            });
+        }
+        
+        function getAIPatientData() {
+            const mapVal = ((parseFloat(document.getElementById('ai-sbp')?.value) || 120) + 
+                           2 * (parseFloat(document.getElementById('ai-dbp')?.value) || 80)) / 3;
+            
+            return {
+                age: parseInt(document.getElementById('ai-age')?.value) || 65,
+                sex: parseInt(document.getElementById('ai-sex')?.value) || 1,
+                icu_type: parseInt(document.getElementById('ai-icu-type')?.value) || 3,
+                vitals: {
+                    heart_rate: parseFloat(document.getElementById('ai-hr')?.value) || 80,
+                    sbp: parseFloat(document.getElementById('ai-sbp')?.value) || 120,
+                    dbp: parseFloat(document.getElementById('ai-dbp')?.value) || 80,
+                    map: mapVal,
+                    resp_rate: parseFloat(document.getElementById('ai-rr')?.value) || 18,
+                    spo2: parseFloat(document.getElementById('ai-spo2')?.value) || 97,
+                    temperature: parseFloat(document.getElementById('ai-temp')?.value) || 37.0,
+                    gcs: parseFloat(document.getElementById('ai-gcs')?.value) || 15
+                },
+                labs: {
+                    creatinine: parseFloat(document.getElementById('ai-creatinine')?.value) || 1.0,
+                    bun: parseFloat(document.getElementById('ai-bun')?.value) || 15,
+                    wbc: parseFloat(document.getElementById('ai-wbc')?.value) || 10,
+                    lactate: parseFloat(document.getElementById('ai-lactate')?.value) || 1.5,
+                    glucose: parseFloat(document.getElementById('ai-glucose')?.value) || 100,
+                    platelet: parseFloat(document.getElementById('ai-platelet')?.value) || 200,
+                    bilirubin: parseFloat(document.getElementById('ai-bilirubin')?.value) || 1.0,
+                    pao2: parseFloat(document.getElementById('ai-pao2')?.value) || 80,
+                    fio2: parseFloat(document.getElementById('ai-fio2')?.value) || 0.21
+                }
+            };
+        }
+        
+        async function runClinicalPipeline() {
+            const btn = document.getElementById('pipeline-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="animate-spin">⏳</span> 分析中...';
+            
+            try {
+                const patientData = getAIPatientData();
+                
+                // 并行调用原有Pipeline和S6 API
+                const [pipelineRes, s6PredictRes, s6RecommendRes] = await Promise.all([
+                    fetch('/api/clinical/pipeline', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(patientData)
+                    }),
+                    fetch('/api/sepsis-subtypes/predict', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            time_series: prepareS6TimeSeries(patientData),
+                            mortality_threshold: 0.4
+                        })
+                    }),
+                    fetch('/api/sepsis-subtypes/recommend', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            time_series: prepareS6TimeSeries(patientData),
+                            mortality_threshold: 0.4,
+                            probability_threshold: 0.3,
+                            top_k: 2
+                        })
+                    })
+                ]);
+                
+                const pipelineResult = await pipelineRes.json();
+                const s6PredictResult = s6PredictRes.ok ? await s6PredictRes.json() : null;
+                const s6RecommendResult = s6RecommendRes.ok ? await s6RecommendRes.json() : null;
+                
+                // 更新原有Pipeline结果
+                updateClinicalDashboard(pipelineResult);
+                
+                // 更新S6结果
+                if (s6PredictResult && s6RecommendResult) {
+                    updateS6Dashboard(s6PredictResult, s6RecommendResult);
+                }
+                
+            } catch (error) {
+                alert('Pipeline运行失败: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🚀 运行Pipeline';
+            }
+        }
+        
+        // 准备S6时间序列数据 (B, T, F) 格式
+        function prepareS6TimeSeries(patientData) {
+            // S6需要43维特征: 42连续特征 + 1治疗特征
+            // 简化处理：使用患者当前数据作为单时间点输入
+            const vitals = patientData.vitals || {};
+            const labs = patientData.labs || {};
+            
+            const features = [
+                (vitals.heart_rate || 80) / 150.0,  // 归一化
+                (vitals.sbp || 120) / 200.0,
+                (vitals.dbp || 80) / 120.0,
+                (vitals.map || 93) / 120.0,
+                (vitals.resp_rate || 18) / 40.0,
+                (vitals.spo2 || 97) / 100.0,
+                (vitals.temperature || 37) / 42.0,
+                (vitals.gcs || 15) / 15.0,
+                (labs.creatinine || 1.0) / 5.0,
+                (labs.bun || 15) / 50.0,
+                (labs.wbc || 10) / 30.0,
+                (labs.lactate || 1.5) / 10.0,
+                (labs.platelet || 200) / 500.0,
+                (labs.bilirubin || 1.0) / 10.0,
+                (labs.pao2 || 80) / 100.0,
+                (labs.fio2 || 0.21) / 1.0,
+                // 填充剩余特征到43维
+                ...Array(27).fill(0.0)
+            ];
+            return [[features]];  // (B=1, T=1, F=43)
+        }
+        
+        // 更新S6仪表板
+        function updateS6Dashboard(predictResult, recommendResult) {
+            console.log('S6 Predict:', predictResult);
+            console.log('S6 Recommend:', recommendResult);
+            
+            const prediction = predictResult.predictions?.[0];
+            if (!prediction) {
+                console.warn('No prediction data');
+                return;
+            }
+            
+            const families = prediction.families || {};
+            console.log('Families:', families);
+            
+            // 1. Clinical Phenotype (alpha/beta/gamma/delta)
+            const clinicalPheno = families.clinical_phenotype;
+            console.log('Clinical Pheno:', clinicalPheno);
+            if (clinicalPheno) {
+                const isUnclassified = clinicalPheno.predicted_label === 'Unclassified';
+                const confidence = clinicalPheno.predicted_probability || 0;
+                const isLowConfidence = confidence < 0.5;
+                
+                // 显示预测结果
+                document.getElementById('clinical-phenotype-badge').textContent = clinicalPheno.predicted_label || '--';
+                document.getElementById('clinical-phenotype-name').textContent = clinicalPheno.predicted_display_name_zh || clinicalPheno.predicted_label || '--';
+                document.getElementById('clinical-phenotype-desc').textContent = clinicalPheno.description || '';
+                
+                // 渲染概率条 - 过滤低概率项(>5%才显示)
+                if (clinicalPheno.probabilities && Array.isArray(clinicalPheno.probabilities)) {
+                    const filteredProbs = clinicalPheno.probabilities.filter(p => (p.probability || 0) > 0.05);
+                    renderProbabilityBarsFromArray('clinical-phenotype-probs', filteredProbs);
+                }
+                
+                // 置信度提示
+                const confidenceDiv = document.getElementById('clinical-phenotype-confidence');
+                if (isUnclassified || isLowConfidence) {
+                    confidenceDiv.innerHTML = `
+                        <span class="font-semibold">⚠️ 分类不确定</span> 
+                        最高概率仅 ${(confidence * 100).toFixed(1)}%，模型无法确定具体表型。<br>
+                        <span class="text-gray-600">建议：继续监测器官功能趋势(SOFA评分、乳酸、尿量)，6-12小时后重新评估。</span>
+                    `;
+                    confidenceDiv.className = 'mt-2 p-2 bg-yellow-100 rounded text-xs text-yellow-800';
+                } else {
+                    confidenceDiv.innerHTML = `
+                        <span class="font-semibold">✓ 分类置信度良好</span> 
+                        置信度 ${(confidence * 100).toFixed(1)}%
+                    `;
+                    confidenceDiv.className = 'mt-2 p-2 bg-green-100 rounded text-xs text-green-800';
+                }
+            }
+            
+            // 2. Trajectory Phenotype (A/B/C/D)
+            const trajectoryPheno = families.trajectory_phenotype;
+            console.log('Trajectory Pheno:', trajectoryPheno);
+            if (trajectoryPheno) {
+                const isUnclassified = trajectoryPheno.predicted_label === 'Unclassified';
+                const confidence = trajectoryPheno.predicted_probability || 0;
+                const isLowConfidence = confidence < 0.5;
+                
+                document.getElementById('trajectory-phenotype-badge').textContent = trajectoryPheno.predicted_label || '--';
+                document.getElementById('trajectory-phenotype-name').textContent = trajectoryPheno.predicted_display_name_zh || trajectoryPheno.predicted_label || '--';
+                document.getElementById('trajectory-phenotype-desc').textContent = trajectoryPheno.description || '';
+                
+                // 渲染概率条 - 过滤低概率项
+                if (trajectoryPheno.probabilities && Array.isArray(trajectoryPheno.probabilities)) {
+                    const filteredProbs = trajectoryPheno.probabilities.filter(p => (p.probability || 0) > 0.05);
+                    renderProbabilityBarsFromArray('trajectory-phenotype-probs', filteredProbs);
+                }
+                
+                // 置信度提示
+                const confidenceDiv = document.getElementById('trajectory-phenotype-confidence');
+                if (isUnclassified || isLowConfidence) {
+                    confidenceDiv.innerHTML = `
+                        <span class="font-semibold">⚠️ 轨迹不确定</span> 
+                        最高概率仅 ${(confidence * 100).toFixed(1)}%，早期生命体征轨迹尚不明确。<br>
+                        <span class="text-gray-600">建议：密切监测生命体征变化趋势，关注体温、心率、血压的动态演变。</span>
+                    `;
+                    confidenceDiv.className = 'mt-2 p-2 bg-yellow-100 rounded text-xs text-yellow-800';
+                } else {
+                    confidenceDiv.innerHTML = `
+                        <span class="font-semibold">✓ 轨迹识别良好</span> 
+                        置信度 ${(confidence * 100).toFixed(1)}%
+                    `;
+                    confidenceDiv.className = 'mt-2 p-2 bg-green-100 rounded text-xs text-green-800';
+                }
+            }
+            
+            // 3. 其他任务结果
+            if (families.immune_state) {
+                document.getElementById('s6-immune-state').textContent = families.immune_state.predicted_display_name_zh || families.immune_state.predicted_label;
+            }
+            if (families.fluid_strategy) {
+                document.getElementById('s6-fluid-strategy').textContent = families.fluid_strategy.predicted_display_name_zh || families.fluid_strategy.predicted_label;
+            }
+            
+            // 4. 更新状态
+            document.getElementById('s6-status').textContent = '分析完成';
+            document.getElementById('s6-status').className = 'text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded';
+            
+            // 5. 更新Pipeline进度
+            document.getElementById('pipeline-stage-2').querySelector('.w-8').className = 'w-8 h-8 rounded-full bg-yellow-500 text-white flex items-center justify-center text-sm font-bold';
+        }
+        
+        // 渲染概率条 (从数组格式)
+        function renderProbabilityBarsFromArray(containerId, probabilities) {
+            const container = document.getElementById(containerId);
+            if (!container || !probabilities || !Array.isArray(probabilities)) return;
+            
+            // 找到最大概率
+            const maxProb = Math.max(...probabilities.map(p => p.probability || 0));
+            
+            // 按概率排序并渲染
+            container.innerHTML = probabilities
+                .slice() // 复制数组
+                .sort((a, b) => (b.probability || 0) - (a.probability || 0))
+                .map((item) => {
+                    const label = item.display_name_zh || item.label || 'Unknown';
+                    const prob = item.probability || 0;
+                    const percentage = (prob * 100).toFixed(1);
+                    const isTop = prob === maxProb;
+                    return `
+                        <div class="flex items-center text-xs mb-1">
+                            <span class="w-28 truncate ${isTop ? 'font-semibold text-gray-800' : 'text-gray-500'}">${label}</span>
+                            <div class="flex-1 mx-2 bg-gray-200 rounded-full h-2 overflow-hidden">
+                                <div class="${isTop ? 'bg-blue-500' : 'bg-gray-400'} h-full rounded-full" style="width: ${percentage}%"></div>
+                            </div>
+                            <span class="w-12 text-right ${isTop ? 'font-semibold' : 'text-gray-500'}">${percentage}%</span>
+                        </div>
+                    `;
+                }).join('');
+        }
+        
+        function updateClinicalDashboard(result) {
+            const stage1 = result.stage1_triage;
+            const stage2 = result.stage2_phenotyping;
+            const stage3 = result.stage3_treatment;
+            
+            // Stage 1: 危险评估
+            const scores = stage1.scores;
+            
+            // qSOFA
+            document.getElementById('qsofa-score').textContent = scores.qsofa.score + '/3';
+            document.getElementById('qsofa-status').textContent = scores.qsofa.interpretation;
+            document.getElementById('qsofa-card').className = scores.qsofa.score >= 2 
+                ? 'bg-red-50 rounded p-2 text-center border border-red-200' 
+                : 'bg-green-50 rounded p-2 text-center border border-green-200';
+            document.getElementById('qsofa-score').className = scores.qsofa.score >= 2 
+                ? 'text-xl font-bold text-red-600' : 'text-xl font-bold text-green-600';
+            
+            // SOFA
+            document.getElementById('sofa-score').textContent = scores.sofa.total_score;
+            document.getElementById('sofa-status').textContent = scores.sofa.interpretation.substring(0, 10);
+            document.getElementById('sofa-card').className = scores.sofa.total_score >= 2 
+                ? 'bg-red-50 rounded p-2 text-center border border-red-200' 
+                : 'bg-green-50 rounded p-2 text-center border border-green-200';
+            document.getElementById('sofa-score').className = scores.sofa.total_score >= 2 
+                ? 'text-xl font-bold text-red-600' : 'text-xl font-bold text-green-600';
+            
+            // SOFA组分
+            const sofaComps = scores.sofa.components;
+            document.getElementById('sofa-components').innerHTML = [
+                {k: 'respiratory', n: '呼吸', v: sofaComps.respiratory.score},
+                {k: 'coagulation', n: '凝血', v: sofaComps.coagulation.score},
+                {k: 'liver', n: '肝脏', v: sofaComps.liver.score},
+                {k: 'cardiovascular', n: '心血管', v: sofaComps.cardiovascular.score},
+                {k: 'nervous', n: '神经', v: sofaComps.nervous.score},
+                {k: 'renal', n: '肾脏', v: sofaComps.renal.score}
+            ].map(c => `<div class="${c.v > 0 ? 'bg-red-100 text-red-700' : 'bg-green-50 text-green-600'} rounded p-1 text-center font-medium">${c.n}:${c.v}</div>`).join('');
+            
+            // SIRS
+            document.getElementById('sirs-score').textContent = scores.sirs.score + '/4';
+            document.getElementById('sirs-status').textContent = scores.sirs.interpretation.substring(0, 8);
+            document.getElementById('sirs-card').className = scores.sirs.sirs_positive 
+                ? 'bg-yellow-50 rounded p-2 text-center border border-yellow-200' 
+                : 'bg-green-50 rounded p-2 text-center border border-green-200';
+            
+            // NEWS
+            document.getElementById('news-score').textContent = scores.news.total_score;
+            document.getElementById('news-status').textContent = scores.news.risk_level;
+            const newsColor = scores.news.total_score >= 7 ? 'red' : scores.news.total_score >= 5 ? 'yellow' : 'green';
+            document.getElementById('news-card').className = `bg-${newsColor}-50 rounded p-2 text-center border border-${newsColor}-200`;
+            
+            // 休克评估
+            const shock = stage1.shock_assessment;
+            document.getElementById('shock-banner').className = shock.is_septic_shock 
+                ? 'flex items-center justify-between p-2 bg-red-100 rounded border border-red-300'
+                : 'flex items-center justify-between p-2 bg-green-50 rounded';
+            document.getElementById('shock-banner').innerHTML = shock.is_septic_shock
+                ? `<div class="flex items-center"><span class="text-lg mr-2">🚨</span><span class="text-sm font-bold text-red-700">脓毒性休克确诊</span></div><span class="text-xs px-2 py-1 bg-red-200 text-red-800 rounded font-bold">立即抢救</span>`
+                : `<div class="flex items-center"><span class="text-lg mr-2">✅</span><span class="text-sm">无休克征象</span></div><span class="text-xs px-2 py-1 bg-green-200 text-green-800 rounded">MAP ${shock.map.toFixed(0)} Lac ${shock.lactate.toFixed(1)}</span>`;
+            
+            // 风险徽章
+            const risk = stage1.risk_stratification;
+            document.getElementById('risk-badge').textContent = risk.level;
+            document.getElementById('risk-badge').className = risk.level === '极高危' ? 'text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold'
+                : risk.level === '高危' ? 'text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold'
+                : risk.level === '中危' ? 'text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded'
+                : 'text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded';
+            
+            // Stage 2: 原有Phenotype逻辑已迁移到S6 API
+            // S6结果在updateS6Dashboard中单独更新
+            // 保留旧版图表但不显示数据
+            if (phenotypeChart) {
+                phenotypeChart.data.datasets[0].data = [25, 25, 25, 25];
+                phenotypeChart.update();
+            }
+            
+            // Stage 3: 治疗决策
+            const bundles = stage3.sepsis_bundles;
+            document.getElementById('sepsis-bundles').innerHTML = `
+                <div class="p-2 bg-red-50 rounded border-l-4 border-red-500">
+                    <div class="font-medium text-sm mb-1">1小时Bundle (必须)</div>
+                    <div class="space-y-1">
+                        ${bundles['1_hour'].map(b => `<div class="flex items-center text-xs"><span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span>${b.action} <span class="ml-auto text-gray-400">${b.evidence}</span></div>`).join('')}
+                    </div>
+                </div>
+                ${bundles['3_hour'].length > 0 ? `
+                <div class="p-2 bg-yellow-50 rounded border-l-4 border-yellow-500">
+                    <div class="font-medium text-sm mb-1">3小时Bundle (推荐)</div>
+                    <div class="space-y-1">
+                        ${bundles['3_hour'].map(b => `<div class="flex items-center text-xs"><span class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>${b.action}</div>`).join('')}
+                    </div>
+                </div>` : ''}
+            `;
+            
+            // 液体策略
+            const fluid = stage3.fluid_therapy;
+            document.getElementById('fluid-content').innerHTML = `
+                <div class="font-medium">${fluid.strategy}</div>
+                <div>${fluid.amount} ${fluid.type}</div>
+                <div class="mt-1 text-green-700">目标: ${fluid.targets.join(', ')}</div>
+            `;
+            
+            // 血管活性药物
+            const vaso = stage3.vasopressor_guidance;
+            document.getElementById('vaso-content').innerHTML = vaso.indicated
+                ? `<div class="font-bold text-red-700">需要血管活性药物</div><div>首选: ${vaso.first_line}</div><div>目标: ${vaso.target}</div>`
+                : vaso.standby ? `<div>备用方案: ${vaso.first_line}</div><div>触发: ${vaso.trigger}</div>`
+                : '<div>暂不需要</div>';
+            
+            // 表型特异性治疗
+            const phenoTreat = stage3.phenotype_specific;
+            document.getElementById('phenotype-treatment').innerHTML = `
+                <div class="font-medium">${phenoTreat.primary_strategy}</div>
+                <div class="mt-1">抗生素: ${phenoTreat.antibiotics}</div>
+                <div>监测: ${phenoTreat.monitoring}</div>
+            `;
+            
+            // 监测计划
+            const monitor = stage3.monitoring_plan;
+            document.getElementById('monitoring-plan').innerHTML = `
+                <div class="p-2 bg-blue-50 rounded">
+                    <div class="text-gray-500">监测频率</div>
+                    <div class="font-medium text-blue-700">${monitor.frequency}</div>
+                </div>
+                <div class="p-2 bg-green-50 rounded">
+                    <div class="text-gray-500">复评计划</div>
+                    <div class="font-medium text-green-700">${stage3.reassessment.lactate_recheck || '常规'}</div>
+                </div>
+            `;
+            
+            // 更新Pipeline进度指示器
+            document.getElementById('pipeline-stage-1').querySelector('.w-8').className = 'w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center text-sm font-bold';
+            document.getElementById('pipeline-stage-2').querySelector('.w-8').className = 'w-8 h-8 rounded-full bg-yellow-500 text-white flex items-center justify-center text-sm font-bold';
+            document.getElementById('pipeline-stage-3').querySelector('.w-8').className = 'w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-bold';
+        }
+        
+        function loadCriticalSample() {
+            document.getElementById('ai-age').value = 72;
+            document.getElementById('ai-sex').value = 1;
+            document.getElementById('ai-icu-type').value = 4;
+            document.getElementById('ai-hr').value = 125;
+            document.getElementById('ai-sbp').value = 85;
+            document.getElementById('ai-dbp').value = 50;
+            document.getElementById('ai-rr').value = 32;
+            document.getElementById('ai-spo2').value = 88;
+            document.getElementById('ai-temp').value = 39.5;
+            document.getElementById('ai-gcs').value = 11;
+            document.getElementById('ai-creatinine').value = 3.2;
+            document.getElementById('ai-bun').value = 55;
+            document.getElementById('ai-wbc').value = 22.5;
+            document.getElementById('ai-lactate').value = 5.8;
+            document.getElementById('ai-platelet').value = 65;
+            document.getElementById('ai-bilirubin').value = 4.2;
+            document.getElementById('ai-pao2').value = 55;
+            document.getElementById('ai-fio2').value = 0.6;
+        }
+        
+        function loadSampleForAI() {
+            document.getElementById('ai-age').value = 65;
+            document.getElementById('ai-sex').value = 1;
+            document.getElementById('ai-icu-type').value = 3;
+            document.getElementById('ai-hr').value = 95;
+            document.getElementById('ai-sbp').value = 110;
+            document.getElementById('ai-dbp').value = 70;
+            document.getElementById('ai-rr').value = 22;
+            document.getElementById('ai-spo2').value = 94;
+            document.getElementById('ai-temp').value = 38.5;
+            document.getElementById('ai-gcs').value = 15;
+            document.getElementById('ai-creatinine').value = 1.8;
+            document.getElementById('ai-bun').value = 28;
+            document.getElementById('ai-wbc').value = 15.2;
+            document.getElementById('ai-lactate').value = 2.8;
+            document.getElementById('ai-platelet').value = 180;
+            document.getElementById('ai-bilirubin').value = 1.2;
+            document.getElementById('ai-pao2').value = 80;
+            document.getElementById('ai-fio2').value = 0.4;
+        }
+        
+        function clearAIForm() {
+            const fields = ['ai-age', 'ai-hr', 'ai-sbp', 'ai-dbp', 'ai-rr', 'ai-spo2', 'ai-temp', 'ai-gcs',
+                          'ai-creatinine', 'ai-bun', 'ai-wbc', 'ai-lactate', 'ai-platelet', 'ai-bilirubin',
+                          'ai-pao2', 'ai-fio2'];
+            fields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            
+            // 重置显示
+            ['qsofa', 'sofa', 'sirs', 'news'].forEach(id => {
+                const el = document.getElementById(id + '-score');
+                if (el) {
+                    el.textContent = '--';
+                    el.className = 'text-xl font-bold text-gray-400';
+                }
+                const card = document.getElementById(id + '-card');
+                if (card) card.className = 'bg-gray-50 rounded p-2 text-center';
+            });
+            
+            document.getElementById('phenotype-result').textContent = '--';
+            document.getElementById('risk-badge').textContent = '等待评估';
+            document.getElementById('risk-badge').className = 'text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded';
+            
+            // 重置进度指示器
+            [1, 2, 3].forEach(i => {
+                document.getElementById('pipeline-stage-' + i).querySelector('.w-8').className = 'w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold';
+            });
+        }
+        
+        // ========== 系统配置视图 ==========
+        async function loadSettingsView() {
+            const contentArea = document.getElementById('content-area');
+            contentArea.innerHTML = `
+                <div class="mb-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xl">⚙️</span>
+                        <span class="font-medium text-lg">系统配置管理</span>
+                        <span class="text-sm text-gray-500">系统设置与参数调整</span>
+                    </div>
+                    <button onclick="saveSettings()" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">💾 保存配置</button>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-6">
+                    <!-- 通用设置 -->
+                    <div class="section-flat">
+                        <div class="section-header"><span class="mr-2">🌐</span>通用设置</div>
+                        <div class="section-body space-y-4">
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">系统名称</label>
+                                <input type="text" id="setting-site-name" class="w-full px-3 py-2 border rounded text-sm" value="ICU脓毒症科研患者浏览中台">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">时区</label>
+                                <select id="setting-timezone" class="w-full px-3 py-2 border rounded text-sm">
+                                    <option value="Asia/Shanghai">Asia/Shanghai (UTC+8)</option>
+                                    <option value="UTC">UTC</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">界面语言</label>
+                                <select id="setting-language" class="w-full px-3 py-2 border rounded text-sm">
+                                    <option value="zh-CN">简体中文</option>
+                                    <option value="en">English</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">主题</span>
+                                <div class="flex space-x-2">
+                                    <button class="px-3 py-1 bg-blue-100 text-blue-600 rounded text-sm">浅色</button>
+                                    <button class="px-3 py-1 border rounded text-sm text-gray-500">深色</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 数据配置 -->
+                    <div class="section-flat">
+                        <div class="section-header"><span class="mr-2">💾</span>数据配置</div>
+                        <div class="section-body space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-sm">自动刷新</div>
+                                    <div class="text-xs text-gray-500">定时更新患者数据</div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="setting-auto-refresh" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">刷新间隔 (秒)</label>
+                                <input type="number" id="setting-refresh-interval" class="w-full px-3 py-2 border rounded text-sm" value="300">
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-sm">数据缓存</div>
+                                    <div class="text-xs text-gray-500">启用本地缓存提升性能</div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="setting-cache-enabled" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">数据保留期限 (天)</label>
+                                <input type="number" id="setting-retention" class="w-full px-3 py-2 border rounded text-sm" value="365">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 告警配置 -->
+                    <div class="section-flat">
+                        <div class="section-header"><span class="mr-2">🔔</span>告警配置</div>
+                        <div class="section-body space-y-4">
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">高风险阈值</label>
+                                <input type="range" id="setting-high-risk" class="w-full" min="0.5" max="0.9" step="0.1" value="0.7">
+                                <div class="flex justify-between text-xs text-gray-500"><span>0.5</span><span id="val-high-risk">0.7</span><span>0.9</span></div>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">中风险阈值</label>
+                                <input type="range" id="setting-medium-risk" class="w-full" min="0.2" max="0.6" step="0.1" value="0.4">
+                                <div class="flex justify-between text-xs text-gray-500"><span>0.2</span><span id="val-medium-risk">0.4</span><span>0.6</span></div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Web通知</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="setting-web-notify" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">邮件通知</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="setting-email-notify" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 隐私安全 -->
+                    <div class="section-flat">
+                        <div class="section-header"><span class="mr-2">🔒</span>隐私安全</div>
+                        <div class="section-body space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-sm">数据脱敏</div>
+                                    <div class="text-xs text-gray-500">自动隐藏敏感信息</div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="setting-anonymization" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">ID哈希算法</label>
+                                <select id="setting-hash" class="w-full px-3 py-2 border rounded text-sm">
+                                    <option value="MD5">MD5</option>
+                                    <option value="SHA256">SHA-256</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-sm">审计日志</div>
+                                    <div class="text-xs text-gray-500">记录所有操作</div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="setting-audit" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">访问控制</label>
+                                <select id="setting-access" class="w-full px-3 py-2 border rounded text-sm">
+                                    <option value="role_based">基于角色 (RBAC)</option>
+                                    <option value="acl">访问控制列表 (ACL)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 系统信息 -->
+                <div class="section-flat mt-6">
+                    <div class="section-header"><span class="mr-2">ℹ️</span>系统信息</div>
+                    <div class="section-body">
+                        <div class="grid grid-cols-4 gap-4 text-sm">
+                            <div><span class="text-gray-500">版本:</span> <span class="font-medium">2.1.0</span></div>
+                            <div><span class="text-gray-500">数据源:</span> <span>PhysioNet 2012</span></div>
+                            <div><span class="text-gray-500">最后更新:</span> <span>2026-04-02</span></div>
+                            <div><span class="text-gray-500">服务器状态:</span> <span class="text-green-600">● 运行中</span></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 绑定滑块事件
+            document.getElementById('setting-high-risk')?.addEventListener('input', (e) => {
+                document.getElementById('val-high-risk').textContent = e.target.value;
+            });
+            document.getElementById('setting-medium-risk')?.addEventListener('input', (e) => {
+                document.getElementById('val-medium-risk').textContent = e.target.value;
+            });
+        }
+        
+        function saveSettings() {
+            alert('✅ 配置已保存（演示模式）');
+        }
+        
+        // 页面加载完成后初始化AI助手
+        document.addEventListener('DOMContentLoaded', function() {
+            createAIAssistantWidget();
+        });
+    </script>
+</body>
+</html>

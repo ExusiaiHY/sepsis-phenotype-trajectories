@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICU Sepsis Phenotype Visualization Dashboard</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .card { @apply bg-white rounded-lg shadow-md p-6; }
+        .phenotype-0 { background-color: #2196F3; }
+        .phenotype-1 { background-color: #FF5722; }
+        .phenotype-2 { background-color: #4CAF50; }
+        .phenotype-3 { background-color: #9C27B0; }
+        .nav-item { @apply px-4 py-2 rounded-lg cursor-pointer transition-colors; }
+        .nav-item:hover { @apply bg-gray-100; }
+        .nav-item.active { @apply bg-blue-500 text-white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">ICU Sepsis Phenotype Dashboard</h1>
+                    <p class="text-sm text-gray-600 mt-1">Self-Supervised Temporal Phenotype Trajectory Analysis</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-500">PhysioNet 2012 Dataset</span>
+                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">11,986 Patients</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="bg-white border-b">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex space-x-2 py-3">
+                <div class="nav-item active" onclick="showTab('overview')">📊 Overview</div>
+                <div class="nav-item" onclick="showTab('comparison')">🔬 Method Comparison</div>
+                <div class="nav-item" onclick="showTab('trajectories')">📈 Trajectories</div>
+                <div class="nav-item" onclick="showTab('transitions')">🔄 Transitions</div>
+                <div class="nav-item" onclick="showTab('spatiotemporal')">🌌 Spatio-Temporal</div>
+                <div class="nav-item" onclick="showTab('patients')">👤 Patient Browser</div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <!-- Summary Cards -->
+                <div class="card">
+                    <div class="text-sm text-gray-600 mb-1">Total Patients</div>
+                    <div class="text-3xl font-bold text-gray-900" id="total-patients">-</div>
+                </div>
+                <div class="card">
+                    <div class="text-sm text-gray-600 mb-1">Stable Patients</div>
+                    <div class="text-3xl font-bold text-blue-600" id="stable-pct">-</div>
+                    <div class="text-xs text-gray-500 mt-1">No phenotype change</div>
+                </div>
+                <div class="card">
+                    <div class="text-sm text-gray-600 mb-1">Single Transition</div>
+                    <div class="text-3xl font-bold text-orange-600" id="single-pct">-</div>
+                    <div class="text-xs text-gray-500 mt-1">One phenotype change</div>
+                </div>
+                <div class="card">
+                    <div class="text-sm text-gray-600 mb-1">Multi Transition</div>
+                    <div class="text-3xl font-bold text-purple-600" id="multi-pct">-</div>
+                    <div class="text-xs text-gray-500 mt-1">Multiple changes</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Mortality by Phenotype -->
+                <div class="card">
+                    <h3 class="text-lg font-semibold mb-4">Mortality by Stable Phenotype</h3>
+                    <canvas id="mortalityChart" height="250"></canvas>
+                </div>
+                
+                <!-- Method Comparison Summary -->
+                <div class="card">
+                    <h3 class="text-lg font-semibold mb-4">Method Comparison (K=4)</h3>
+                    <canvas id="methodComparisonChart" height="250"></canvas>
+                </div>
+            </div>
+
+            <!-- Phenotype Legend -->
+            <div class="card mt-6">
+                <h3 class="text-lg font-semibold mb-4">Phenotype Definitions</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                        <div class="flex items-center mb-2">
+                            <div class="w-4 h-4 rounded phenotype-0 mr-2"></div>
+                            <span class="font-semibold">Phenotype 0 (P0)</span>
+                        </div>
+                        <p class="text-sm text-gray-600">Low-risk phenotype</p>
+                        <p class="text-sm font-medium text-gray-900 mt-1">~4% mortality</p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-orange-50 border border-orange-200">
+                        <div class="flex items-center mb-2">
+                            <div class="w-4 h-4 rounded phenotype-1 mr-2"></div>
+                            <span class="font-semibold">Phenotype 1 (P1)</span>
+                        </div>
+                        <p class="text-sm text-gray-600">Intermediate-high risk</p>
+                        <p class="text-sm font-medium text-gray-900 mt-1">~22.5% mortality</p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-green-50 border border-green-200">
+                        <div class="flex items-center mb-2">
+                            <div class="w-4 h-4 rounded phenotype-2 mr-2"></div>
+                            <span class="font-semibold">Phenotype 2 (P2)</span>
+                        </div>
+                        <p class="text-sm text-gray-600">High-risk phenotype</p>
+                        <p class="text-sm font-medium text-gray-900 mt-1">~31.7% mortality</p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-purple-50 border border-purple-200">
+                        <div class="flex items-center mb-2">
+                            <div class="w-4 h-4 rounded phenotype-3 mr-2"></div>
+                            <span class="font-semibold">Phenotype 3 (P3)</span>
+                        </div>
+                        <p class="text-sm text-gray-600">Low-intermediate risk</p>
+                        <p class="text-sm font-medium text-gray-900 mt-1">~9.7% mortality</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Method Comparison Tab -->
+        <div id="comparison" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card">
+                    <h3 class="text-lg font-semibold mb-4">Silhouette Score by Method</h3>
+                    <canvas id="silhouetteChart" height="300"></canvas>
+                </div>
+                <div class="card">
+                    <h3 class="text-lg font-semibold mb-4">Mortality Range by Method</h3>
+                    <canvas id="mortRangeChart" height="300"></canvas>
+                </div>
+            </div>
+            
+            <div class="card mt-6">
+                <h3 class="text-lg font-semibold mb-4">Detailed Comparison Table</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-medium text-gray-700">Method</th>
+                                <th class="px-4 py-3 text-right font-medium text-gray-700">K=2 Silhouette</th>
+                                <th class="px-4 py-3 text-right font-medium text-gray-700">K=2 Mort Range</th>
+                                <th class="px-4 py-3 text-right font-medium text-gray-700">K=4 Silhouette</th>
+                                <th class="px-4 py-3 text-right font-medium text-gray-700">K=4 Mort Range</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparison-table-body" class="divide-y">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trajectories Tab -->
+        <div id="trajectories" class="tab-content">
+            <div class="card mb-6">
+                <h3 class="text-lg font-semibold mb-4">Phenotype Prevalence by Window Position</h3>
+                <p class="text-sm text-gray-600 mb-4">
+                    Rolling 24h windows with 6h stride: [0,24), [6,30), [12,36), [18,42), [24,48)
+                </p>
+                <canvas id="prevalenceChart" height="300"></canvas>
+            </div>
+            
+            <div class="card">
+                <h3 class="text-lg font-semibold mb-4">Trajectory Pattern Distribution</h3>
+                <div id="trajectory-patterns" class="space-y-2">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Transitions Tab -->
+        <div id="transitions" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card">
+                    <h3 class="text-lg font-semibold mb-4">Transition Probability Matrix</h3>
+                    <div id="transition-heatmap" style="height: 400px;"></div>
+                </div>
+                <div class="card">
+                    <h3 class="text-lg font-semibold mb-4">Top Non-Self Transitions</h3>
+                    <div id="top-transitions" class="space-y-3">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-6">
+                <h3 class="text-lg font-semibold mb-4">Transition Statistics</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="text-sm text-gray-600">Total Transition Events</div>
+                        <div class="text-2xl font-bold" id="total-transitions">-</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="text-sm text-gray-600">Self-Transitions</div>
+                        <div class="text-2xl font-bold" id="self-transitions">-</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="text-sm text-gray-600">Non-Self Fraction</div>
+                        <div class="text-2xl font-bold" id="non-self-fraction">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Spatio-Temporal Tab -->
+        <div id="spatiotemporal" class="tab-content">
+            <div class="mb-4 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                <h3 class="text-lg font-semibold text-purple-900">🌌 Spatio-Temporal Embedding Space</h3>
+                <p class="text-sm text-purple-700 mt-1">
+                    Explore how patient embeddings evolve through time in the 128-dimensional representation space.
+                    Each point represents a patient at a specific time window.
+                </p>
+            </div>
+            
+            <!-- 2D Projection -->
+            <div class="card mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold">Embedding Space Projection (PCA)</h3>
+                    <div class="flex items-center space-x-4">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="show-trajectories" class="rounded" onchange="toggleTrajectories()">
+                            <span class="text-sm">Show Sample Trajectories</span>
+                        </label>
+                        <button onclick="refreshProjection()" class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">
+                            🔄 Refresh Sample
+                        </button>
+                    </div>
+                </div>
+                <div id="embedding-projection" style="height: 500px;"></div>
+                <p class="text-xs text-gray-500 mt-2 text-center">
+                    Each point is a (patient, window) pair. Color = Phenotype. Hover to see details.
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Embedding Movement -->
+                <div class="card">
+                    <h3 class="text-lg font-semibold mb-4">Embedding Movement Between Windows</h3>
+                    <div id="movement-chart" style="height: 300px;"></div>
+                    <p class="text-sm text-gray-600 mt-2">
+                        Average L2 distance of embeddings between consecutive time windows.
+                        Higher values indicate more dramatic patient state changes.
+                    </p>
+                </div>
+                
+                <!-- Embedding Norm by Phenotype -->
+                <div class="card">
+                    <h3 class="text-lg font-semibold mb-4">Embedding Norm by Phenotype</h3>
+                    <div id="norm-chart" style="height: 300px;"></div>
+                    <p class="text-sm text-gray-600 mt-2">
+                        Magnitude of embeddings for each phenotype. Different phenotypes occupy 
+                        different regions in the representation space.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Individual Patient Embedding Trajectory -->
+            <div class="card mt-6">
+                <h3 class="text-lg font-semibold mb-4">Individual Patient Embedding Trajectory</h3>
+                <div class="flex items-center space-x-4 mb-4">
+                    <select id="st-patient-select" class="px-3 py-2 border rounded-lg">
+                        <option value="">Select a patient...</option>
+                    </select>
+                    <button onclick="loadSTPatientTrajectory()" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600">
+                        Load Trajectory
+                    </button>
+                </div>
+                <div id="individual-trajectory" style="height: 400px;"></div>
+                <p class="text-xs text-gray-500 mt-2 text-center">
+                    3D visualization of one patient's embedding trajectory through 5 time windows.
+                    Axes are PCA components of the trajectory.
+                </p>
+            </div>
+            
+            <!-- Window Evolution Stats -->
+            <div class="card mt-6">
+                <h3 class="text-lg font-semibold mb-4">Window Evolution Statistics</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left">Transition</th>
+                                <th class="px-4 py-3 text-right">Mean Distance</th>
+                                <th class="px-4 py-3 text-right">Std Distance</th>
+                                <th class="px-4 py-3 text-right">Interpretation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="evolution-stats-body" class="divide-y">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient Browser Tab -->
+        <div id="patients" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Patient Selection -->
+                <div class="card">
+                    <h3 class="text-lg font-semibold mb-4">Browse Patients</h3>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <select id="patient-category" class="w-full px-3 py-2 border rounded-lg" onchange="loadPatientList()">
+                            <option value="stable">Stable (no change)</option>
+                            <option value="single_transition">Single Transition</option>
+                            <option value="multi_transition">Multi Transition</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Patient ID</label>
+                        <select id="patient-select" class="w-full px-3 py-2 border rounded-lg">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                    
+                    <button onclick="loadPatientDetail()" 
+                            class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                        Load Patient
+                    </button>
+                    
+                    <div class="mt-6 pt-6 border-t">
+                        <h4 class="font-medium mb-2">Quick Stats</h4>
+                        <div class="text-sm text-gray-600 space-y-1">
+                            <div>Total: <span id="browser-total">-</span></div>
+                            <div>Stable: <span id="browser-stable">-</span></div>
+                            <div>Single: <span id="browser-single">-</span></div>
+                            <div>Multi: <span id="browser-multi">-</span></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Patient Detail -->
+                <div class="card lg:col-span-2">
+                    <h3 class="text-lg font-semibold mb-4">Patient Trajectory</h3>
+                    <div id="patient-detail-content">
+                        <p class="text-gray-500 text-center py-12">Select a patient to view their trajectory</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t mt-12">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <p class="text-sm text-gray-500 text-center">
+                ICU Sepsis Phenotype Research • Data from PhysioNet/CinC Challenge 2012
+            </p>
+        </div>
+    </footer>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
