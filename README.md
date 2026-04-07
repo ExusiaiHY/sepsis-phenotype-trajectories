@@ -224,12 +224,115 @@ Completed on `2026-03-24`:
 
 ## Visual Overview
 
+### System Architecture & Data Pipeline
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/figures/paper/s0_data_pipeline.png" alt="Data Pipeline" width="100%">
+      <br>
+      <sub>S0: Data pipeline from raw ICU data to aligned tensors</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/figures/paper/s0_missingness_pattern.png" alt="Missingness Pattern" width="100%">
+      <br>
+      <sub>Missingness patterns across 48-hour ICU stays</sub>
+    </td>
+  </tr>
+</table>
+
+### Self-Supervised Learning (S1.5)
+
+<table>
+  <tr>
+    <td align="center" width="55%">
+      <img src="docs/figures/paper/s15_representation_comparison.png" alt="Representation Comparison" width="100%">
+      <br>
+      <sub>Comparison of PCA, S1, and S1.5 representations</sub>
+    </td>
+    <td align="center" width="45%">
+      <img src="docs/figures/paper/s15_training_convergence.png" alt="Training Convergence" width="100%">
+      <br>
+      <sub>S1.5 training convergence with dual objectives</sub>
+    </td>
+  </tr>
+</table>
+
+### Temporal Trajectory Analysis (S2) & Mortality Stratification (S3)
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/figures/paper/s2_temporal_trajectories.png" alt="Temporal Trajectories" width="100%">
+      <br>
+      <sub>S2: Phenotype transitions across rolling windows</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/figures/paper/s3_mortality_stratification.png" alt="Mortality Stratification" width="100%">
+      <br>
+      <sub>S3: Cross-center mortality stratification validation</sub>
+    </td>
+  </tr>
+</table>
+
+### Calibration (S3.5) & Treatment Effects (S4)
+
+<table>
+  <tr>
+    <td align="center" width="100%">
+      <img src="docs/figures/paper/s35_calibration_comparison.png" alt="Calibration Comparison" width="80%">
+      <br>
+      <sub>S3.5: Calibration improvement - ECE reduced by 91% (0.222 → 0.020)</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="100%">
+      <table width="100%">
+        <tr>
+          <td align="center" width="65%">
+            <img src="docs/figures/paper/s4_treatment_effects_comparison.png" alt="Treatment Effects" width="100%">
+            <br>
+            <sub>S4: CATE estimation across phenotypes</sub>
+          </td>
+          <td align="center" width="35%">
+            <img src="docs/figures/paper/s4_cross_database_performance.png" alt="Cross-Database Performance" width="100%">
+            <br>
+            <sub>Cross-database validation</sub>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+### Real-Time Deployment (S5)
+
+<table>
+  <tr>
+    <td align="center" width="60%">
+      <img src="docs/figures/paper/s5_deployment_profile.png" alt="Deployment Profile" width="100%">
+      <br>
+      <sub>S5: Real-time model deployment profile (90K params, 1.1ms latency)</sub>
+    </td>
+    <td align="center" width="40%">
+      <img src="docs/figures/paper/s5_validation_gates.png" alt="Validation Gates" width="100%">
+      <br>
+      <sub>Validation gates for production readiness</sub>
+    </td>
+  </tr>
+</table>
+
+### Legacy Visualizations
+
+<details>
+<summary><strong>Show Additional Figures</strong></summary>
+
 <table>
   <tr>
     <td align="center" width="50%">
       <img src="docs/figures/pipeline_diagram.png" alt="Pipeline diagram" width="100%">
       <br>
-      <sub>Pipeline from preprocessing to temporal phenotype analysis</sub>
+      <sub>Legacy pipeline from preprocessing to temporal phenotype analysis</sub>
     </td>
     <td align="center" width="50%">
       <img src="docs/figures/sankey_transitions.png" alt="Phenotype transitions" width="100%">
@@ -237,7 +340,21 @@ Completed on `2026-03-24`:
       <sub>Descriptive transition flow across five rolling windows</sub>
     </td>
   </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/figures/summary_dashboard.png" alt="Summary Dashboard" width="100%">
+      <br>
+      <sub>Project summary dashboard</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/figures/trajectory_comparison.png" alt="Trajectory Comparison" width="100%">
+      <br>
+      <sub>Trajectory comparison across phenotypes</sub>
+    </td>
+  </tr>
 </table>
+
+</details>
 
 ---
 
