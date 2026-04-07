@@ -41,12 +41,10 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from s6_optimization.missingness_encoder import (
-    compute_missingness_features,
-    compute_patient_missingness_summary,
-)
+from s0.schema import CONTINUOUS_NAMES
 from s6_optimization.baseline_comparison import generate_baseline_comparison_report
 from s6_optimization.causal_phenotyping import run_causal_phenotyping_pipeline
+from s6_optimization.missingness_encoder import run_missingness_stage
 
 logging.basicConfig(
     level=logging.INFO,
@@ -74,6 +72,23 @@ def parse_args() -> argparse.Namespace:
         default=50,
         help="Minimum group size used by baseline comparison",
     )
+    parser.add_argument(
+        "--domain-alpha",
+        type=float,
+        default=None,
+        help="Optional override for domain adaptation alpha blending strength",
+    )
+    parser.add_argument(
+        "--missingness-selected-features",
+        nargs="+",
+        default=None,
+        help="Optional override for patient-level missingness feature subset",
+    )
+    parser.add_argument(
+        "--disable-missingness-patient-features",
+        action="store_true",
+        help="Disable appending patient-level missingness covariates into Stage 2",
+    )
     return parser.parse_args()
 
 
@@ -90,6 +105,15 @@ def main():
         cfg = yaml.safe_load(f)
     if args.output_dir:
         cfg["paths"]["output_dir"] = args.output_dir
+    if args.domain_alpha is not None:
+        cfg.setdefault("domain_adaptation", {})
+        cfg["domain_adaptation"]["alpha"] = float(args.domain_alpha)
+    if args.missingness_selected_features is not None:
+        cfg.setdefault("missingness", {})
+        cfg["missingness"]["selected_features"] = list(args.missingness_selected_features)
+    if args.disable_missingness_patient_features:
+        cfg.setdefault("missingness", {})
+        cfg["missingness"]["append_patient_features"] = False
 
     s0_dir = PROJECT_ROOT / cfg["paths"]["s0_dir"]
     s2_dir = PROJECT_ROOT / cfg["paths"]["s2_dir"]
@@ -103,6 +127,9 @@ def main():
             "config": str(config_path),
             "output_dir": str(output_dir),
             "min_group_size": int(args.min_group_size),
+            "domain_alpha": None if args.domain_alpha is None else float(args.domain_alpha),
+            "missingness_selected_features": args.missingness_selected_features,
+            "disable_missingness_patient_features": bool(args.disable_missingness_patient_features),
         },
         "stages": {},
     }
@@ -117,33 +144,18 @@ def main():
     t1 = time.time()
 
     masks = np.load(s0_dir / "processed" / "masks_continuous.npy", mmap_mode="r")
-    masks_array = np.array(masks)  # load into memory for computation
-
-    # Compute missingness summary
-    miss_summary = compute_patient_missingness_summary(masks_array)
-    miss_summary_path = output_dir / "missingness_summary.json"
-    with open(miss_summary_path, "w") as f:
-        json.dump(miss_summary, f, indent=2)
-    logger.info("Missingness summary saved: %s", miss_summary_path)
-
-    # Compute enhanced missingness features
-    enhanced_masks = compute_missingness_features(
-        masks_array,
-        gap_window=cfg["missingness"]["gap_window"],
+    missingness_stage = run_missingness_stage(
+        masks=np.array(masks),
+        output_dir=output_dir,
+        config=cfg.get("missingness"),
+        feature_names=CONTINUOUS_NAMES,
     )
-    enhanced_path = output_dir / "missingness_enhanced.npy"
-    np.save(enhanced_path, enhanced_masks)
-    logger.info("Enhanced mask tensor: %s -> %s", masks_array.shape, enhanced_masks.shape)
-
-    del masks_array, enhanced_masks  # free memory
 
     report["stages"]["missingness"] = {
         "duration_sec": round(time.time() - t1, 1),
-        "summary": miss_summary,
-        "artifacts": {
-            "summary": str(miss_summary_path),
-            "enhanced_masks": str(enhanced_path),
-        },
+        "summary": missingness_stage["summary"],
+        "artifacts": missingness_stage["artifacts"],
+        "covariate_summary": missingness_stage["feature_summary"],
     }
 
     # ================================================================
@@ -160,10 +172,17 @@ def main():
         s2_dir=s2_dir,
         output_dir=output_dir,
         splits_path=s0_dir / "splits.json",
+        missingness_features=missingness_stage["features_df"],
+        missingness_feature_summary=missingness_stage["feature_summary"],
         causal_method=cfg["causal"]["method"],
+        causal_config=cfg.get("causal"),
         treatment_horizon=cfg["causal"]["treatment_horizon"],
         organ_horizon=cfg["organ_scoring"]["horizon"],
         phenotype_config=cfg["phenotype_naming"],
+        imputation_config=cfg.get("imputation"),
+        dowhy_config=cfg.get("dowhy"),
+        timesfm_config=cfg.get("timesfm"),
+        domain_adaptation_config=cfg.get("domain_adaptation"),
     )
 
     report["stages"]["causal_phenotyping"] = {

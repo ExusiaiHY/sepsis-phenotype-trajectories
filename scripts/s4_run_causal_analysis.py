@@ -89,6 +89,7 @@ def main():
         outcome_col=outcome_col,
         max_embedding_dims=int(cfg.get("causal", {}).get("max_embedding_dims", 16)),
     )
+    outcome_col = _resolve_outcome_col(causal_frame, outcome_col)
     causal_frame_path = output_dir / "causal_frame.csv"
     causal_frame.to_csv(causal_frame_path, index=False)
 
@@ -110,6 +111,20 @@ def main():
     results["covariate_cols"] = covariate_cols
     save_causal_results(results, output_dir / "causal_analysis_report.json")
     logging.getLogger("s4.causal").info("Saved causal analysis to %s", output_dir / "causal_analysis_report.json")
+
+
+def _resolve_outcome_col(frame: pd.DataFrame, preferred: str | None) -> str:
+    candidates = []
+    if preferred:
+        candidates.append(preferred)
+    candidates.extend(["mortality_inhospital", "mortality_28d", "hospital_expire_flag"])
+    for candidate in candidates:
+        if candidate in frame.columns:
+            return candidate
+    raise KeyError(
+        "No supported outcome column found in causal frame. "
+        f"Tried {candidates}, available columns include: {frame.columns.tolist()}"
+    )
 
 
 def _auto_treatment_cols(frame: pd.DataFrame) -> list[str]:
