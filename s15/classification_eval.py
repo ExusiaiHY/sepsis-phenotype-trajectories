@@ -41,6 +41,7 @@ def train_mortality_classifier(
     c_value: float = 1.0,
     max_iter: int = 1000,
     threshold_metric: str = "balanced_accuracy",
+    target_positive_rate: float | None = None,
     seed: int = 42,
 ) -> dict:
     """
@@ -96,6 +97,7 @@ def train_mortality_classifier(
         labels[split_arrays["val"]],
         val_probs,
         metric_name=threshold_metric,
+        target_positive_rate=target_positive_rate,
     )
 
     report = {
@@ -112,6 +114,7 @@ def train_mortality_classifier(
         "threshold_selection": {
             "metric": threshold_metric,
             "selected_threshold": round(float(threshold), 4),
+            "target_positive_rate": None if target_positive_rate is None else round(float(target_positive_rate), 4),
             "search": threshold_search,
         },
         "splits": {},
@@ -175,6 +178,7 @@ def _select_threshold(
     probs: np.ndarray,
     *,
     metric_name: str = "balanced_accuracy",
+    target_positive_rate: float | None = None,
 ) -> tuple[float, list[dict]]:
     if len(np.unique(y_true)) < 2:
         return 0.5, [{"threshold": 0.5, metric_name: None, "note": "single class in validation"}]
@@ -186,13 +190,23 @@ def _select_threshold(
 
     for threshold in candidates:
         preds = (probs >= threshold).astype(int)
-        score = _threshold_metric(y_true, preds, metric_name)
-        search.append(
-            {
-                "threshold": round(float(threshold), 4),
-                metric_name: round(float(score), 4),
-            }
+        predicted_positive_rate = float(np.mean(preds))
+        score = _threshold_metric(
+            y_true,
+            preds,
+            metric_name,
+            target_positive_rate=target_positive_rate,
         )
+        entry = {
+            "threshold": round(float(threshold), 4),
+            "predicted_positive_rate": round(predicted_positive_rate, 4),
+        }
+        if metric_name == "predicted_positive_rate":
+            entry["target_positive_rate"] = None if target_positive_rate is None else round(float(target_positive_rate), 4)
+            entry["distance_to_target"] = round(abs(predicted_positive_rate - float(target_positive_rate or 0.0)), 4)
+        else:
+            entry[metric_name] = round(float(score), 4)
+        search.append(entry)
         if score > best_score or (np.isclose(score, best_score) and abs(threshold - 0.5) < abs(best_threshold - 0.5)):
             best_score = score
             best_threshold = float(threshold)
@@ -200,13 +214,27 @@ def _select_threshold(
     return best_threshold, search
 
 
-def _threshold_metric(y_true: np.ndarray, preds: np.ndarray, metric_name: str) -> float:
+def _threshold_metric(
+    y_true: np.ndarray,
+    preds: np.ndarray,
+    metric_name: str,
+    *,
+    target_positive_rate: float | None = None,
+) -> float:
     if metric_name == "balanced_accuracy":
         return float(balanced_accuracy_score(y_true, preds))
     if metric_name == "f1":
         return float(f1_score(y_true, preds, zero_division=0))
     if metric_name == "accuracy":
         return float(accuracy_score(y_true, preds))
+    if metric_name == "precision":
+        return float(precision_score(y_true, preds, zero_division=0))
+    if metric_name == "recall":
+        return float(recall_score(y_true, preds, zero_division=0))
+    if metric_name == "predicted_positive_rate":
+        if target_positive_rate is None:
+            raise ValueError("target_positive_rate is required when threshold_metric='predicted_positive_rate'")
+        return -abs(float(np.mean(preds)) - float(target_positive_rate))
     raise ValueError(f"Unsupported threshold metric: {metric_name}")
 
 

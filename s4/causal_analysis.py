@@ -283,7 +283,7 @@ def estimate_causal_forest_dml(
         n_estimators=n_estimators,
         min_samples_leaf=10,
         random_state=random_state,
-        n_jobs=1,
+        n_jobs=-1,
     )
     x_aug = np.column_stack([x_cov, w])
     outcome_model.fit(x_aug, y)
@@ -296,7 +296,7 @@ def estimate_causal_forest_dml(
         n_estimators=n_estimators,
         min_samples_leaf=10,
         random_state=random_state,
-        n_jobs=1,
+        n_jobs=-1,
     )
     tau_model.fit(x_eff, pseudo)
     cate = tau_model.predict(x_eff)
@@ -545,8 +545,11 @@ def _append_low_dim_covariates(
         proj = PCA(n_components=n_components, random_state=42).fit_transform(values)
     else:
         proj = values[:, :n_components]
-    for i in range(proj.shape[1]):
-        frame[f"{prefix}_{i}"] = proj[:, i]
+    proj_cols = pd.DataFrame(
+        {f"{prefix}_{i}": proj[:, i] for i in range(proj.shape[1])},
+        index=frame.index,
+    )
+    frame[proj_cols.columns] = proj_cols
 
 
 def _prepare_causal_inputs(

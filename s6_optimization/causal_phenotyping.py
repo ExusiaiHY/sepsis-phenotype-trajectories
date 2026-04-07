@@ -21,7 +21,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import (
-    HistGradientBoostingClassifier,
+    HistGradientBoostingRegressor,
     RandomForestRegressor,
 )
 from sklearn.impute import SimpleImputer
@@ -29,39 +29,25 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-from s0.schema import CONTINUOUS_NAMES, N_CONTINUOUS
+from s0.schema import CONTINUOUS_NAMES
+from s6_optimization.domain_adaptation import align_covariates_by_group
+from s6_optimization.dowhy_validation import run_dowhy_validation
 from s6_optimization.phenotype_naming import (
     assign_all_phenotypes,
     compute_organ_scores,
-    classify_trajectory_direction,
     PHENOTYPE_NAMES,
 )
+from s6_optimization.saits_imputation import run_saits_imputation
+from s6_optimization.timesfm_features import run_timesfm_feature_extraction
 
 logger = logging.getLogger("s6.causal_phenotyping")
 
 
-def estimate_cate_with_causalml(
+def _prepare_causal_inputs(
     X: np.ndarray,
     treatment: np.ndarray,
     outcome: np.ndarray,
-    method: str = "t_learner",
-) -> np.ndarray:
-    """
-    Estimate Conditional Average Treatment Effect using CausalML.
-
-    Falls back to sklearn-based DML if CausalML fails.
-
-    Parameters
-    ----------
-    X: (N, D) covariate matrix
-    treatment: (N,) binary treatment indicator
-    outcome: (N,) binary or continuous outcome
-    method: 't_learner' or 'x_learner'
-
-    Returns
-    -------
-    cate: (N,) individual treatment effect estimates
-    """
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     # Impute and scale
     pipe = Pipeline([
         ("imputer", SimpleImputer(strategy="median")),
@@ -76,39 +62,144 @@ def estimate_cate_with_causalml(
     X_clean = X_clean[valid]
     treatment = treatment[valid]
     outcome = outcome[valid]
+    return X_clean, treatment, outcome, valid
+
+
+def _estimate_causalml_on_clean_inputs(
+    X_clean: np.ndarray,
+    treatment: np.ndarray,
+    outcome: np.ndarray,
+    method: str = "t_learner",
+) -> np.ndarray:
+    if method == "t_learner":
+        from causalml.inference.meta import BaseTRegressor
+        learner = BaseTRegressor(
+            learner=HistGradientBoostingRegressor(
+                max_depth=5, max_iter=200, random_state=42,
+            ),
+            control_name=0,
+        )
+    else:
+        from causalml.inference.meta import BaseXRegressor
+        learner = BaseXRegressor(
+            learner=HistGradientBoostingRegressor(
+                max_depth=5, max_iter=200, random_state=42,
+            ),
+            control_name=0,
+        )
+
+    cate = learner.fit_predict(
+        X=X_clean,
+        treatment=treatment,
+        y=outcome,
+    )
+    if cate.ndim == 2:
+        cate = cate[:, 0]
+    return np.asarray(cate, dtype=np.float64)
+
+
+def summarize_cate(cate: np.ndarray) -> dict:
+    cate = np.asarray(cate, dtype=np.float64)
+    q10 = float(np.quantile(cate, 0.10))
+    q50 = float(np.quantile(cate, 0.50))
+    q90 = float(np.quantile(cate, 0.90))
+    return {
+        "mean": round(float(cate.mean()), 4),
+        "std": round(float(cate.std()), 4),
+        "q10": round(q10, 4),
+        "q50": round(q50, 4),
+        "q90": round(q90, 4),
+        "abs_q90": round(float(max(abs(q10), abs(q90))), 4),
+    }
+
+
+def _evaluate_stability_gate(summary: dict, config: dict | None = None) -> tuple[bool, str | None]:
+    cfg = {
+        "enabled": True,
+        "max_std": 0.12,
+        "max_abs_q90": 0.15,
+    }
+    if config:
+        cfg.update({k: v for k, v in config.items() if v is not None})
+    if not cfg.get("enabled", True):
+        return False, None
+
+    reasons = []
+    if float(summary["std"]) > float(cfg["max_std"]):
+        reasons.append(f"std={summary['std']:.4f} > max_std={float(cfg['max_std']):.4f}")
+    if float(summary["abs_q90"]) > float(cfg["max_abs_q90"]):
+        reasons.append(
+            f"abs_q90={summary['abs_q90']:.4f} > max_abs_q90={float(cfg['max_abs_q90']):.4f}"
+        )
+    if reasons:
+        return True, "; ".join(reasons)
+    return False, None
+
+
+def estimate_cate_with_causalml(
+    X: np.ndarray,
+    treatment: np.ndarray,
+    outcome: np.ndarray,
+    method: str = "t_learner",
+    stability_gate: dict | None = None,
+) -> dict:
+    """
+    Estimate Conditional Average Treatment Effect using CausalML, with an
+    optional stability gate that falls back to cross-fitted DML.
+    """
+    X_clean, treatment_clean, outcome_clean, valid_mask = _prepare_causal_inputs(
+        X,
+        treatment,
+        outcome,
+    )
 
     try:
-        if method == "t_learner":
-            from causalml.inference.meta import BaseTRegressor
-            learner = BaseTRegressor(
-                learner=HistGradientBoostingClassifier(
-                    max_depth=5, max_iter=200, random_state=42,
-                ),
-                control_name=0,
-            )
-        else:
-            from causalml.inference.meta import BaseXRegressor
-            learner = BaseXRegressor(
-                learner=HistGradientBoostingClassifier(
-                    max_depth=5, max_iter=200, random_state=42,
-                ),
-                control_name=0,
-            )
-
-        cate = learner.fit_predict(
-            X=X_clean,
-            treatment=treatment.astype(str),
-            y=outcome,
+        causalml_cate = _estimate_causalml_on_clean_inputs(
+            X_clean=X_clean,
+            treatment=treatment_clean,
+            outcome=outcome_clean,
+            method=method,
         )
-        # fit_predict returns (N, n_treatment_groups) — take first column
-        if cate.ndim == 2:
-            cate = cate[:, 0]
-        logger.info("CausalML %s: CATE mean=%.4f, std=%.4f", method, cate.mean(), cate.std())
-        return cate
+        candidate_summary = summarize_cate(causalml_cate)
+        logger.info(
+            "CausalML %s candidate: mean=%.4f, std=%.4f, abs_q90=%.4f",
+            method,
+            candidate_summary["mean"],
+            candidate_summary["std"],
+            candidate_summary["abs_q90"],
+        )
+        should_fallback, fallback_reason = _evaluate_stability_gate(
+            candidate_summary,
+            stability_gate,
+        )
+        if should_fallback:
+            logger.warning(
+                "CausalML %s rejected by stability gate; using cross-fitted DML (%s)",
+                method,
+                fallback_reason,
+            )
+            selected_cate = _fallback_dml_cate(X_clean, treatment_clean, outcome_clean)
+            estimator_selected = "cross_fitted_dml"
+        else:
+            selected_cate = causalml_cate
+            estimator_selected = f"causalml_{method}"
+    except Exception as exc:
+        logger.warning("CausalML failed (%s), falling back to DML: %s", method, exc)
+        candidate_summary = None
+        fallback_reason = f"causalml_exception: {exc}"
+        selected_cate = _fallback_dml_cate(X_clean, treatment_clean, outcome_clean)
+        estimator_selected = "cross_fitted_dml"
 
-    except Exception as e:
-        logger.warning("CausalML failed (%s), falling back to DML: %s", method, e)
-        return _fallback_dml_cate(X_clean, treatment, outcome)
+    full_cate = np.zeros(len(X), dtype=np.float32)
+    full_cate[valid_mask] = np.asarray(selected_cate, dtype=np.float32)
+    return {
+        "cate": full_cate,
+        "valid_mask": valid_mask,
+        "estimator_selected": estimator_selected,
+        "candidate_summary": candidate_summary,
+        "selected_summary": summarize_cate(selected_cate),
+        "fallback_reason": fallback_reason if estimator_selected == "cross_fitted_dml" else None,
+    }
 
 
 def _fallback_dml_cate(
@@ -196,6 +287,8 @@ def build_physiology_covariates(
     masks: np.ndarray,
     feature_names: list[str],
     horizon: int = 24,
+    imputed_continuous: np.ndarray | None = None,
+    extra_features: pd.DataFrame | None = None,
 ) -> np.ndarray:
     """
     Build patient-level covariate matrix from processed physiology for causal analysis.
@@ -222,18 +315,25 @@ def build_physiology_covariates(
         if name not in idx:
             continue
         fi = idx[name]
-        vals = continuous[:, :T_use, fi]
-        m = masks[:, :T_use, fi]
+        if imputed_continuous is not None:
+            vals = imputed_continuous[:, :T_use, fi]
+            covariates.append(np.mean(vals, axis=1))
+            covariates.append(np.min(vals, axis=1))
+            covariates.append(np.max(vals, axis=1))
+        else:
+            vals = continuous[:, :T_use, fi]
+            m = masks[:, :T_use, fi]
 
-        # Masked statistics
-        masked_vals = np.where(m > 0.5, vals, np.nan)
-        with np.errstate(all="ignore"):
-            covariates.append(np.nanmean(masked_vals, axis=1))
-            covariates.append(np.nanmin(masked_vals, axis=1))
-            covariates.append(np.nanmax(masked_vals, axis=1))
+            masked_vals = np.where(m > 0.5, vals, np.nan)
+            with np.errstate(all="ignore"):
+                covariates.append(np.nanmean(masked_vals, axis=1))
+                covariates.append(np.nanmin(masked_vals, axis=1))
+                covariates.append(np.nanmax(masked_vals, axis=1))
 
     # Overall observation density
     covariates.append(masks[:, :T_use, :].mean(axis=(1, 2)))
+    if extra_features is not None and not extra_features.empty:
+        covariates.append(extra_features.to_numpy(dtype=np.float32))
 
     X = np.column_stack(covariates)
     X = np.nan_to_num(X, nan=0.0)
@@ -245,10 +345,17 @@ def run_causal_phenotyping_pipeline(
     s2_dir: Path,
     output_dir: Path,
     splits_path: Path | None = None,
+    missingness_features: pd.DataFrame | None = None,
+    missingness_feature_summary: dict | None = None,
     causal_method: str = "t_learner",
+    causal_config: dict | None = None,
     treatment_horizon: int = 24,
     organ_horizon: int = 24,
     phenotype_config: dict | None = None,
+    imputation_config: dict | None = None,
+    dowhy_config: dict | None = None,
+    timesfm_config: dict | None = None,
+    domain_adaptation_config: dict | None = None,
 ) -> dict:
     """
     End-to-end causal phenotyping pipeline.
@@ -279,6 +386,7 @@ def run_causal_phenotyping_pipeline(
     logger.info("=" * 60)
     logger.info("Starting causal phenotyping pipeline")
     logger.info("=" * 60)
+    causal_cfg = dict(causal_config or {})
 
     # Step 1: Load data
     logger.info("Step 1: Loading data...")
@@ -334,19 +442,67 @@ def run_causal_phenotyping_pipeline(
     logger.info("  Dominant organs:\n%s",
                 organ_scores_df["dominant_organ"].value_counts().to_string())
 
-    # Step 3: Build covariates for causal analysis (from PROCESSED/standardized data)
-    logger.info("Step 3: Building physiology covariates (from processed z-score data)...")
+    # Step 3: Optional SAITS-based imputation on processed covariates
+    saits_bundle = run_saits_imputation(
+        continuous=np.array(continuous_processed),
+        masks=np.array(masks),
+        output_dir=output_dir,
+        config=imputation_config,
+    )
+
+    # Step 4: Optional TimesFM dynamic features
+    logger.info("Step 3: Extracting optional TimesFM dynamic features...")
+    timesfm_bundle = run_timesfm_feature_extraction(
+        continuous=np.array(continuous_processed),
+        masks=np.array(masks),
+        feature_names=CONTINUOUS_NAMES,
+        output_dir=output_dir,
+        config=timesfm_config,
+        imputed_continuous=saits_bundle["imputed"] if saits_bundle.get("enabled") else None,
+    )
+
+    # Step 5: Build covariates for causal analysis (from processed z-score data)
+    logger.info("Step 4: Building physiology covariates (from processed z-score data)...")
+    extra_features = []
+    if missingness_features is not None and not missingness_features.empty:
+        logger.info(
+            "  Appending patient-level missingness covariates: shape=%s",
+            missingness_features.shape,
+        )
+        extra_features.append(missingness_features)
+    if saits_bundle.get("enabled") and not saits_bundle["features_df"].empty:
+        extra_features.append(saits_bundle["features_df"])
+    if timesfm_bundle.get("enabled") and not timesfm_bundle["features_df"].empty:
+        extra_features.append(timesfm_bundle["features_df"])
+    merged_extra_features = pd.concat(extra_features, axis=1) if extra_features else None
     X_covariates = build_physiology_covariates(
         continuous=np.array(continuous_processed),
         masks=np.array(masks),
         feature_names=CONTINUOUS_NAMES,
         horizon=organ_horizon,
+        imputed_continuous=saits_bundle["imputed"] if saits_bundle.get("enabled") else None,
+        extra_features=merged_extra_features,
     )
     logger.info("  Covariates shape: %s", X_covariates.shape)
 
-    # Step 4: Extract proxy treatment indicator
+    logger.info("Step 4b: Applying optional domain adaptation on covariates...")
+    if "center_id" in static.columns:
+        domain_bundle = align_covariates_by_group(
+            X_covariates,
+            static["center_id"].astype(str).values,
+            output_dir=output_dir,
+            config=domain_adaptation_config,
+        )
+        X_covariates = domain_bundle["X_aligned"]
+    else:
+        domain_bundle = {
+            "X_aligned": X_covariates,
+            "summary": {"enabled": False, "reason": "center_id_unavailable"},
+        }
+
+    # Step 6: Extract proxy treatment indicator
     # Use vasopressor_proxy from S0 proxy indicators (MAP < 65)
-    logger.info("Step 4: Extracting proxy treatment indicator...")
+    logger.info("Step 5: Extracting proxy treatment indicator...")
     proxy_path = s0_dir / "processed" / "proxy_indicators.npy"
     if proxy_path.exists():
         proxy = np.load(proxy_path, mmap_mode="r")
@@ -361,29 +517,24 @@ def run_causal_phenotyping_pipeline(
         treatment_indicator = (map_vals < 65).any(axis=1).astype(int)
         logger.info("  Treatment (MAP<65 fallback): %d/%d", treatment_indicator.sum(), N)
 
-    # Step 5: Get outcome
-    outcome_col = "mortality_inhospital"
+    # Step 7: Get outcome
+    outcome_col = causal_cfg.get("outcome_col", "mortality_inhospital")
     outcome = static[outcome_col].fillna(0).values.astype(float)
     logger.info("  Outcome: %s, rate=%.3f", outcome_col, outcome.mean())
 
-    # Step 6: Estimate CATE
-    logger.info("Step 5: Estimating CATE via %s...", causal_method)
-    cate_scores = estimate_cate_with_causalml(
+    # Step 8: Estimate CATE
+    logger.info("Step 6: Estimating CATE via %s...", causal_method)
+    cate_bundle = estimate_cate_with_causalml(
         X=X_covariates,
         treatment=treatment_indicator,
         outcome=outcome,
         method=causal_method,
+        stability_gate=causal_cfg.get("stability_gate"),
     )
+    cate_scores = cate_bundle["cate"]
 
-    # Align cate_scores length (in case of NaN filtering)
-    if len(cate_scores) < N:
-        full_cate = np.zeros(N, dtype=np.float32)
-        valid_mask = ~np.isnan(outcome)
-        full_cate[valid_mask] = cate_scores
-        cate_scores = full_cate
-
-    # Step 7: Compute cluster mortality ordering
-    logger.info("Step 6: Computing cluster mortality ordering...")
+    # Step 9: Compute cluster mortality ordering
+    logger.info("Step 7: Computing cluster mortality ordering...")
     cluster_mortality_order = {}
     dominant_clusters = []
     for i in range(N):
@@ -397,8 +548,8 @@ def run_causal_phenotyping_pipeline(
             logger.info("  Cluster %d: n=%d, mortality=%.3f",
                         c, mask.sum(), cluster_mortality_order[c])
 
-    # Step 8: Mortality risk estimates (simple logistic regression)
-    logger.info("Step 7: Computing mortality risk estimates...")
+    # Step 10: Mortality risk estimates (simple logistic regression)
+    logger.info("Step 8: Computing mortality risk estimates...")
     risk_model = Pipeline([
         ("imputer", SimpleImputer(strategy="median")),
         ("scaler", StandardScaler()),
@@ -408,8 +559,8 @@ def run_causal_phenotyping_pipeline(
     risk_model.fit(X_covariates[train_idx], outcome[train_idx])
     mortality_risks = risk_model.predict_proba(X_covariates)[:, 1]
 
-    # Step 9: Assign phenotypes
-    logger.info("Step 8: Assigning mechanism-based phenotype names...")
+    # Step 11: Assign phenotypes
+    logger.info("Step 9: Assigning mechanism-based phenotype names...")
     phenotype_df = assign_all_phenotypes(
         window_labels=window_labels,
         organ_scores_df=organ_scores_df,
@@ -419,8 +570,8 @@ def run_causal_phenotyping_pipeline(
         thresholds=phenotype_config,
     )
 
-    # Step 10: Validation — mortality by phenotype
-    logger.info("Step 9: Validating phenotype assignments...")
+    # Step 12: Validation — mortality by phenotype
+    logger.info("Step 10: Validating phenotype assignments...")
     phenotype_df["mortality_actual"] = outcome
     phenotype_df["center_id"] = static["center_id"].values if "center_id" in static.columns else "unknown"
 
@@ -438,7 +589,7 @@ def run_causal_phenotyping_pipeline(
     logger.info("  Phenotype validation:\n%s",
                 json.dumps(validation, indent=2))
 
-    # Step 11: Cross-center consistency check
+    # Step 13: Cross-center consistency check
     if "center_id" in static.columns:
         center_validation = {}
         for center in phenotype_df["center_id"].unique():
@@ -456,6 +607,15 @@ def run_causal_phenotyping_pipeline(
     else:
         center_validation = {}
 
+    # Step 14: DoWhy refutation report
+    dowhy_report = run_dowhy_validation(
+        X_covariates=X_covariates,
+        treatment=treatment_indicator,
+        outcome=outcome,
+        output_dir=output_dir,
+        config=dowhy_config,
+    )
+
     # Save results
     phenotype_df.to_csv(output_dir / "phenotype_assignments.csv", index=False)
     organ_scores_df.to_csv(output_dir / "organ_scores.csv", index=False)
@@ -465,22 +625,25 @@ def run_causal_phenotyping_pipeline(
         "pipeline": "causal_phenotyping",
         "n_patients": N,
         "causal_method": causal_method,
+        "cate_estimator_selected": cate_bundle["estimator_selected"],
+        "causal_stability_gate": causal_cfg.get("stability_gate", {}),
+        "causalml_candidate_summary": cate_bundle["candidate_summary"],
+        "cate_fallback_reason": cate_bundle["fallback_reason"],
         "data_sources": {
             "covariates": str(processed_continuous_path),
             "organ_scores": str(raw_continuous_path),
         },
+        "missingness_covariate_summary": missingness_feature_summary or {"enabled": False},
+        "imputation_summary": saits_bundle.get("summary", {"enabled": False}),
+        "timesfm_summary": timesfm_bundle.get("summary", {"enabled": False}),
+        "domain_adaptation_summary": domain_bundle.get("summary", {"enabled": False}),
+        "dowhy_validation": dowhy_report,
         "treatment_horizon": int(treatment_horizon),
         "organ_horizon": int(organ_horizon),
         "phenotype_config": phenotype_config or {},
         "treatment_exposure_rate": round(float(treatment_indicator.mean()), 4),
         "outcome_rate": round(float(outcome.mean()), 4),
-        "cate_summary": {
-            "mean": round(float(cate_scores.mean()), 4),
-            "std": round(float(cate_scores.std()), 4),
-            "q10": round(float(np.quantile(cate_scores, 0.10)), 4),
-            "q50": round(float(np.quantile(cate_scores, 0.50)), 4),
-            "q90": round(float(np.quantile(cate_scores, 0.90)), 4),
-        },
+        "cate_summary": summarize_cate(cate_scores),
         "phenotype_validation": validation,
         "center_validation": center_validation,
         "cluster_mortality_order": {str(k): round(v, 4) for k, v in cluster_mortality_order.items()},
@@ -488,6 +651,8 @@ def run_causal_phenotyping_pipeline(
             "phenotype_assignments": str(output_dir / "phenotype_assignments.csv"),
             "organ_scores": str(output_dir / "organ_scores.csv"),
             "cate_scores": str(output_dir / "cate_scores.npy"),
+            "timesfm_features": timesfm_bundle["summary"]["artifacts"]["patient_features"],
+            "domain_adaptation_summary": domain_bundle["summary"].get("report_path"),
         },
     }
 

@@ -38,6 +38,7 @@ from s15.advanced_classifier import (
 )
 from s15.calibration import (
     PlattScaling,
+    TemperatureScaling,
     calibration_metrics,
     select_calibrated_threshold,
     threshold_metrics,
@@ -45,24 +46,24 @@ from s15.calibration import (
 
 logger = logging.getLogger("s15.calibrated_stacking")
 
-# Optimal hyperparameters from calibration hparam search:
-# depth=3, lr=0.03, iter=300 yields best Brier+ECE with AUROC>=0.85
+# Broader branch-specific combo search on 2026-03-31 found that both HGB
+# branches calibrate best at depth=5, lr=0.03, iter=200.
 CALIBRATED_BASE_SPECS = [
     {
-        "name": "stats_hgb_d3",
+        "name": "stats_hgb_d5",
         "view": "stats_mask_proxy_static",
         "model_type": "hgb",
-        "hgb_max_depth": 3,
+        "hgb_max_depth": 5,
         "hgb_learning_rate": 0.03,
-        "hgb_max_iter": 300,
+        "hgb_max_iter": 200,
     },
     {
-        "name": "fused_hgb_d3",
+        "name": "fused_hgb_d5",
         "view": "fused_all",
         "model_type": "hgb",
-        "hgb_max_depth": 3,
+        "hgb_max_depth": 5,
         "hgb_learning_rate": 0.03,
-        "hgb_max_iter": 300,
+        "hgb_max_iter": 200,
     },
     {
         "name": "fused_lr",
@@ -73,6 +74,11 @@ CALIBRATED_BASE_SPECS = [
         "hgb_max_iter": 300,
     },
 ]
+
+# Branch-specific combo search on 2026-03-31 improved the calibration objective
+# further with a lighter meta-learner and temperature scaling.
+CALIBRATED_META_C = 0.02
+CALIBRATED_POSTHOC_METHOD = "temperature"
 
 
 def train_calibrated_stacking(
@@ -175,7 +181,7 @@ def train_calibrated_stacking(
         ("sc", StandardScaler()),
         ("clf", LogisticRegression(
             max_iter=2000,
-            C=0.05,  # Optimal from hparam search
+            C=CALIBRATED_META_C,
             random_state=seed,
         )),
     ])
@@ -189,11 +195,17 @@ def train_calibrated_stacking(
     if apply_posthoc_calibration:
         val_start = len(split_arrays["train"])
         val_oof_probs = dev_probs[val_start:]
-        calibrator = PlattScaling()
+        if CALIBRATED_POSTHOC_METHOD == "temperature":
+            calibrator = TemperatureScaling()
+        else:
+            calibrator = PlattScaling()
         calibrator.fit(val_oof_probs, y_val)
         dev_probs_cal = calibrator.predict(dev_probs)
         test_probs_cal = calibrator.predict(test_probs)
-        logger.info("Post-hoc Platt scaling: a=%.4f, b=%.4f", calibrator.a, calibrator.b)
+        if isinstance(calibrator, TemperatureScaling):
+            logger.info("Post-hoc temperature scaling: T=%.4f", calibrator.temperature)
+        else:
+            logger.info("Post-hoc Platt scaling: a=%.4f, b=%.4f", calibrator.a, calibrator.b)
     else:
         dev_probs_cal = dev_probs
         test_probs_cal = test_probs
@@ -215,6 +227,8 @@ def train_calibrated_stacking(
         "model_type": "calibrated_cv_stacking",
         "n_splits": int(n_splits),
         "threshold_metric": threshold_metric,
+        "meta_model_c": round(float(CALIBRATED_META_C), 4),
+        "posthoc_method": CALIBRATED_POSTHOC_METHOD if apply_posthoc_calibration else "none",
         "threshold": round(float(threshold), 4),
         "use_calibrated_specs": use_calibrated_specs,
         "apply_posthoc_calibration": apply_posthoc_calibration,

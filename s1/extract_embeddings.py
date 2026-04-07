@@ -152,3 +152,4 @@ def extract_pca_embeddings(
     logger.info(f"PCA embeddings saved: {embeddings.shape} → {out_path}")
 
     return embeddings
+1

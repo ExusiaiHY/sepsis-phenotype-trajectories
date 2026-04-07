@@ -22,6 +22,7 @@ def render_clinical_dashboard_html(
     risk_series = [float(item.get("risk_probability", 0.0)) for item in snapshots]
     phenotype_series = [item.get("phenotype") for item in snapshots]
     treatment_series = [item.get("top_treatment_signal", "none") for item in snapshots]
+    current_status = _current_alert_status(current)
 
     html = f"""<!doctype html>
 <html lang="zh-CN">
@@ -51,7 +52,7 @@ def render_clinical_dashboard_html(
         radial-gradient(circle at 10% 10%, rgba(196,85,45,0.14), transparent 26%),
         radial-gradient(circle at 90% 20%, rgba(15,118,110,0.12), transparent 28%),
         linear-gradient(180deg, #f8f3e6 0%, #ede4d2 100%);
-      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      font-family: "Times New Roman", Times, serif;
     }}
     .shell {{
       max-width: 1180px;
@@ -74,7 +75,7 @@ def render_clinical_dashboard_html(
     }}
     .title {{
       margin: 0 0 8px;
-      font-family: "Iowan Old Style", "Palatino Linotype", serif;
+      font-family: "Times New Roman", Times, serif;
       font-size: 34px;
       line-height: 1.05;
     }}
@@ -215,7 +216,7 @@ def render_clinical_dashboard_html(
       <div class="panel">
         <h1 class="title">Sepsis Trajectory Monitor</h1>
         <p class="subtitle">Patient <strong>{patient_id}</strong> · bedside-ready rolling phenotype and mortality surveillance built on the distilled treatment-aware S1.5 backbone.</p>
-        <div style="margin-top:14px"><span class="risk-pill">{"High-risk alert" if current.get("risk_alert") else "No current high-risk alert"}</span></div>
+        <div style="margin-top:14px"><span class="risk-pill">{current_status}</span></div>
         <div class="status">
           <div class="metric">
             <div class="label">Current Risk</div>
@@ -248,7 +249,7 @@ def render_clinical_dashboard_html(
         <div class="chart">
           {_bars_html(risk_series)}
         </div>
-        <div class="meta">The chart shows rolling risk updates from the online buffer. Intended action thresholding should prioritize recall for deteriorating patients.</div>
+        <div class="meta">The chart shows rolling risk updates from the online buffer. Deployment logic can delay firing until minimum history, consecutive high-risk persistence, and alert-budget constraints are satisfied.</div>
       </div>
       <div class="panel">
         <h2 style="margin:0;font-size:22px;">Workflow Fit</h2>
@@ -304,9 +305,21 @@ def _timeline_html(snapshots: list[dict], phenotype_series: list, treatment_seri
               <div class="hour">Update {idx + 1}</div>
               <div>
                 <strong>Risk {float(snap.get("risk_probability", 0.0)):.1%} · Phenotype {snap.get("phenotype", "N/A")}</strong>
-                <div>Alert: {"yes" if snap.get("risk_alert") else "no"} · Dominant treatment signal: {treatment_series[idx] or "none"} · Hours seen: {snap.get("hours_seen", 0)}</div>
+                <div>Status: {_current_alert_status(snap)} · Dominant treatment signal: {treatment_series[idx] or "none"} · Hours seen: {snap.get("hours_seen", 0)}</div>
               </div>
             </div>
             """
         )
     return "".join(rows)
+
+
+def _current_alert_status(snapshot: dict) -> str:
+    if not snapshot:
+        return "No current high-risk alert"
+    if not snapshot.get("deployment_ready", True):
+        return "Monitoring only"
+    if snapshot.get("alert_event"):
+        return "Alert event emitted"
+    if snapshot.get("risk_alert"):
+        return "High-risk state active"
+    return "No current high-risk alert"
